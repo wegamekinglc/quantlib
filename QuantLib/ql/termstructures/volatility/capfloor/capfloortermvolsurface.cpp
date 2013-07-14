@@ -178,9 +178,9 @@ namespace QuantLib {
 
     void CapFloorTermVolSurface::registerWithMarketData()
     {
-        for (Size i=0; i<nOptionTenors_; ++i)
-            for (Size j=0; j<nStrikes_; ++j)
-                registerWith(volHandles_[i][j]);
+        //for (Size i=0; i<nOptionTenors_; ++i)
+        //  for (Size j=0; j<nStrikes_; ++j)
+                //registerWith(volHandles_[i][j]);
     }
 
     void CapFloorTermVolSurface::interpolate()

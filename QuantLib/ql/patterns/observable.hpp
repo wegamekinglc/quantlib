@@ -1,9 +1,10 @@
-/* -*- mode: c++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*- */
+/* -*- Mode: c++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*- */
 
 /*
  Copyright (C) 2000, 2001, 2002, 2003 RiskMap srl
  Copyright (C) 2003, 2004, 2005, 2006 StatPro Italia srl
- Copyright (C) 2011, 2012 Ferdinando Ametrano
+ Copyright (C) 2011 Ferdinando Ametrano
+ Copyright (C) 2013 Klaus Spanderen
 
  This file is part of QuantLib, a free-software/open-source library
  for financial quantitative analysts and developers - http://quantlib.org/
@@ -30,12 +31,47 @@
 #include <ql/types.hpp>
 
 #include <boost/shared_ptr.hpp>
+#include <boost/thread/mutex.hpp>
+#include <boost/signals2/signal.hpp>
 
 #include <set>
 
 namespace QuantLib {
 
-    class Observer;
+    class Observable;
+
+    //! Object that gets notified when a given observable changes
+    /*! \ingroup patterns */
+    class Observer {
+        friend class Observable;
+      public:
+        // constructors, assignment, destructor
+        Observer();
+        Observer(const Observer&);
+        Observer& operator=(const Observer&);
+        virtual ~Observer();
+        // observer interface
+        std::pair<std::set<boost::shared_ptr<Observable> >::iterator, bool>
+                            registerWith(const boost::shared_ptr<Observable>&);
+        Size unregisterWith(const boost::shared_ptr<Observable>&);
+        /*! This method must be implemented in derived classes. An
+            instance of %Observer does not call this method directly:
+            instead, it will be called by the observables the instance
+            registered with when they need to notify any changes.
+        */
+        virtual void update() {};
+        bool isActive() const;
+        void deactivate();
+
+      private:
+        class Proxy;
+        boost::shared_ptr<Proxy> proxy_;
+
+        mutable boost::mutex mutex_;
+
+        std::set<boost::shared_ptr<Observable> > observables_;
+        typedef std::set<boost::shared_ptr<Observable> >::iterator iterator;
+    };
 
     //! Object that notifies its changes to a set of observers
     /*! \ingroup patterns */
@@ -52,37 +88,14 @@ namespace QuantLib {
         */
         void notifyObservers();
       private:
-        typedef std::set<Observer*>::iterator iterator;
-        std::pair<iterator, bool> registerObserver(Observer*);
-        Size unregisterObserver(Observer*);
-        std::set<Observer*> observers_;
-    };
+        void registerObserver(const boost::shared_ptr<Observer::Proxy>&);
+        void unregisterObserver(const boost::shared_ptr<Observer::Proxy>&);
 
-    //! Object that gets notified when a given observable changes
-    /*! \ingroup patterns */
-    class Observer {
-      public:
-        // constructors, assignment, destructor
-        Observer() {}
-        Observer(const Observer&);
-        Observer& operator=(const Observer&);
-        virtual ~Observer();
-        // observer interface
-        std::pair<std::set<boost::shared_ptr<Observable> >::iterator, bool>
-                            registerWith(const boost::shared_ptr<Observable>&);
-        Size unregisterWith(const boost::shared_ptr<Observable>&);
-        /*! This method must be implemented in derived classes. An
-            instance of %Observer does not call this method directly:
-            instead, it will be called by the observables the instance
-            registered with when they need to notify any changes.
-        */
-        void unregisterWithAll();
-        virtual void update() = 0;
-      private:
-        std::set<boost::shared_ptr<Observable> > observables_;
-        typedef std::set<boost::shared_ptr<Observable> >::iterator iterator;
-    };
+        typedef boost::signals2::signal<void()> signal_type;
+        signal_type sig_;
 
+        boost::mutex mutex_;
+    };
 
     // inline definitions
 
@@ -106,84 +119,18 @@ namespace QuantLib {
             notifyObservers();
         return *this;
     }
-
-    inline std::pair<std::set<Observer*>::iterator, bool>
-    Observable::registerObserver(Observer* o) {
-        return observers_.insert(o);
-    }
-
-    inline Size Observable::unregisterObserver(Observer* o) {
-        return observers_.erase(o);
-    }
-
-    inline void Observable::notifyObservers() {
-        bool successful = true;
-        std::string errMsg;
-        for (iterator i=observers_.begin(); i!=observers_.end(); ++i) {
-            try {
-                (*i)->update();
-            } catch (std::exception& e) {
-                // quite a dilemma. If we don't catch the exception,
-                // other observers will not receive the notification
-                // and might be left in an incorrect state. If we do
-                // catch it and continue the loop (as we do here) we
-                // lose the exception. The least evil might be to try
-                // and notify all observers, while raising an
-                // exception if something bad happened.
-                successful = false;
-                errMsg = e.what();
-            } catch (...) {
-                successful = false;
-            }
-        }
-        QL_ENSURE(successful,
-                  "could not notify one or more observers: " << errMsg);
-    }
-
-
-    inline Observer::Observer(const Observer& o)
-    : observables_(o.observables_) {
-        for (iterator i=observables_.begin(); i!=observables_.end(); ++i)
-            (*i)->registerObserver(this);
-    }
-
-    inline Observer& Observer::operator=(const Observer& o) {
-        iterator i;
-        for (i=observables_.begin(); i!=observables_.end(); ++i)
-            (*i)->unregisterObserver(this);
-        observables_ = o.observables_;
-        for (i=observables_.begin(); i!=observables_.end(); ++i)
-            (*i)->registerObserver(this);
-        return *this;
-    }
-
-    inline Observer::~Observer() {
-        for (iterator i=observables_.begin(); i!=observables_.end(); ++i)
-            (*i)->unregisterObserver(this);
-    }
-
-    inline std::pair<std::set<boost::shared_ptr<Observable> >::iterator, bool>
-    Observer::registerWith(const boost::shared_ptr<Observable>& h) {
-        if (h) {
-            h->registerObserver(this);
-            return observables_.insert(h);
-        }
-        return std::make_pair(observables_.end(), false);
-    }
-
-    inline
-    Size Observer::unregisterWith(const boost::shared_ptr<Observable>& h) {
-        if (h)
-            h->unregisterObserver(this);
-        return observables_.erase(h);
-    }
-
-    inline void Observer::unregisterWithAll() {
-        for (iterator i=observables_.begin(); i!=observables_.end(); ++i)
-            (*i)->unregisterObserver(this);
-        observables_.clear();
-    }
-
 }
+
+// enable thread-safe observer pattern
+namespace boost {
+  namespace detail {
+    template<>
+    inline void sp_counted_impl_p<QuantLib::Observer>::dispose() {
+      px_->deactivate();
+      checked_delete( px_ );
+    }
+  }
+}
+
 
 #endif
