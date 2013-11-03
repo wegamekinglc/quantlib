@@ -1,7 +1,7 @@
 <Category name='credit'>
   <description>QuantLib Credit</description>
   <displayName>QuantLib Credit</displayName>
-  <xlFunctionWizardCategory>QuantLib Credit</xlFunctionWizardCategory>
+  <xlFunctionWizardCategory>QuantLib - Credit</xlFunctionWizardCategory>
   <addinIncludes>
     <include>qlo/credit.hpp</include>
     <include>qlo/pricingengines.hpp</include>
