@@ -59,6 +59,10 @@
           <string>OldCDS</string>
           <value>QuantLib::DateGeneration::OldCDS</value>
         </EnumeratedType>
+        <EnumeratedType>
+          <string>CDS</string>
+          <value>QuantLib::DateGeneration::CDS</value>
+        </EnumeratedType>
       </EnumeratedTypes>
     </EnumeratedTypeGroup>
 
