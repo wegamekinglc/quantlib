@@ -153,6 +153,7 @@
     <DataType defaultSuperType='libraryClass'>QuantLib::OvernightIndexedSwap</DataType>
     <DataType defaultSuperType='libraryClass'>QuantLib::VanillaSwap</DataType>
     <DataType defaultSuperType='libraryClass'>QuantLib::VolatilityTermStructure</DataType>
+    <DataType defaultSuperType='libraryClass'>QuantLib::CreditDefaultSwap</DataType>
     <!--RL ADD 2010-07-22-->
     <DataType defaultSuperType='libraryClass'>QuantLib::DefaultProbabilityHelper</DataType>
     <!--RL ADD 2010-07-22-->

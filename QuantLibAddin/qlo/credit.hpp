@@ -34,6 +34,7 @@
 #include <ql/types.hpp>
 #include <ql/instruments/creditdefaultswap.hpp>
 #include <ql/termstructures/credit/defaultprobabilityhelpers.hpp>
+#include <ql/currency.hpp>
 
 namespace QuantLib {
     class Quote;
@@ -57,6 +58,7 @@ namespace QuantLibAddin {
               bool paysAtDefaultTime,
               const QuantLib::Date& protectionStart,
               const QuantLib::Date& upfrontDate,
+              bool rebatesAccrual,
               bool permanent);
     };
 
@@ -93,6 +95,7 @@ namespace QuantLibAddin {
             const QuantLib::Handle<QuantLib::YieldTermStructure>& yieldTS,
             bool settlesAccrual,
             bool paysAtDefaultTime,
+            bool includeLastDay,
             bool permanent);
     };
 
@@ -114,6 +117,7 @@ namespace QuantLibAddin {
             QuantLib::Natural upfrontSettlementDays,
             bool settlesAccrual,
             bool paysAtDefaultTime,
+            bool includeLastDay,
             bool permanent);
     };
     
@@ -196,6 +200,25 @@ namespace QuantLibAddin {
             InterpolatedYieldCurve::Traits traits,
             InterpolatedYieldCurve::Interpolator interpolator) const;
         */
+    };
+
+    class RiskyFixedBond : public Instrument {
+    public:
+        RiskyFixedBond(
+            const boost::shared_ptr<ObjectHandler::ValueObject>& properties,
+            std::string name,
+            QuantLib::Currency ccy,
+            QuantLib::Real recoveryRate,
+            QuantLib::Handle<QuantLib::DefaultProbabilityTermStructure> 
+                defaultTS,
+            const boost::shared_ptr<QuantLib::Schedule>&  schedule,
+            QuantLib::Real rate,
+            QuantLib::DayCounter dayCounter,
+            QuantLib::BusinessDayConvention paymentConvention,
+            QuantLib::Real notionals,
+            QuantLib::Handle<QuantLib::YieldTermStructure> yieldTS,
+            QuantLib::Date npvDate,
+            bool permanent);
     };
 
 }

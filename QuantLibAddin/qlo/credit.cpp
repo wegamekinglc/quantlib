@@ -24,12 +24,15 @@
 #include <ql/instruments/stock.hpp>
 #include <ql/quote.hpp>
 #include <ql/time/daycounter.hpp>
+#include <ql/time/daycounters/actual360.hpp>
 #include <ql/termstructures/credit/interpolatedhazardratecurve.hpp>
 #include <ql/termstructures/yield/piecewiseyieldcurve.hpp>
 #include <ql/termstructures/credit/piecewisedefaultcurve.hpp>
 #include <ql/math/interpolations/backwardflatinterpolation.hpp>
 #include <ql/math/interpolations/loginterpolation.hpp>
 #include <ql/pricingengines/credit/midpointcdsengine.hpp>
+
+#include <ql/experimental/credit/riskybond.hpp>
 
 #include <boost/algorithm/string/case_conv.hpp>
 
@@ -52,6 +55,7 @@ namespace QuantLibAddin {
               bool paysAtDefaultTime,
               const QuantLib::Date& protectionStart,
               const QuantLib::Date& upfrontDate,
+              bool rebatesAccrual,
               bool permanent)
         : Instrument(properties, permanent) {
         libraryObject_ = boost::shared_ptr<QuantLib::CreditDefaultSwap>(
@@ -65,7 +69,10 @@ namespace QuantLibAddin {
                                                     settlesAccrual,
                                                     paysAtDefaultTime,
                                                     protectionStart,
-                                                    upfrontDate));
+                                                    upfrontDate,
+                                                    boost::shared_ptr<QuantLib::Claim>(),
+                                                    QuantLib::Actual360(true),
+                                                    rebatesAccrual));
     }
     
     MidPointCdsEngine::MidPointCdsEngine(
@@ -95,7 +102,12 @@ namespace QuantLibAddin {
             const QuantLib::Handle<QuantLib::YieldTermStructure>& yieldTS,
             bool settlesAccrual,
             bool paysAtDefaultTime,
+            bool includeLastDay,
             bool permanent) : DefaultProbabilityHelper(properties, permanent) {
+
+        QuantLib::DayCounter lastPeriodDC;
+        if(includeLastDay) 
+            lastPeriodDC = QuantLib::Actual360(true);
 
         libraryObject_ = boost::shared_ptr<QuantLib::DefaultProbabilityHelper>(new
 		       QuantLib::SpreadCdsHelper(quote,
@@ -109,7 +121,8 @@ namespace QuantLibAddin {
 						 recoveryRate,
 						 yieldTS,
 						 settlesAccrual,
-						 paysAtDefaultTime));
+						 paysAtDefaultTime,
+                         lastPeriodDC));
     }
 
     UpfrontCdsHelper::UpfrontCdsHelper(
@@ -128,7 +141,14 @@ namespace QuantLibAddin {
             QuantLib::Natural upfrontSettlementDays,
             bool settlesAccrual,
             bool paysAtDefaultTime,
+            bool includeLastDay,
             bool permanent) : DefaultProbabilityHelper(properties, permanent) {
+
+
+        QuantLib::DayCounter lastPeriodDC;
+        if(includeLastDay) 
+            lastPeriodDC = QuantLib::Actual360(true);
+
         libraryObject_ = boost::shared_ptr<QuantLib::DefaultProbabilityHelper>(new
 		       QuantLib::UpfrontCdsHelper(quote,
                                           runningSpread,
@@ -143,7 +163,8 @@ namespace QuantLibAddin {
                                           yieldTS,
                                           upfrontSettlementDays,
                                           settlesAccrual,
-                                          paysAtDefaultTime));
+                                          paysAtDefaultTime,
+                                          lastPeriodDC));
     }
 
     HazardRateCurve::HazardRateCurve(
@@ -184,5 +205,34 @@ namespace QuantLibAddin {
         libraryObject_ = boost::shared_ptr<QuantLib::Extrapolator>(new
                QuantLib::PiecewiseYieldCurve<QuantLib::Discount,QuantLib::LogLinear>(referenceDate, helpers, dayCounter));
     }
+
+
+
+    RiskyFixedBond::RiskyFixedBond(
+        const boost::shared_ptr<ObjectHandler::ValueObject>& properties,
+        std::string name,
+        QuantLib::Currency ccy,
+        QuantLib::Real recoveryRate,
+        QuantLib::Handle<QuantLib::DefaultProbabilityTermStructure> defaultTS,
+        const boost::shared_ptr<QuantLib::Schedule>& schedule,
+        QuantLib::Real rate,
+        QuantLib::DayCounter dayCounter,
+        QuantLib::BusinessDayConvention paymentConvention,
+        QuantLib::Real notional,
+        QuantLib::Handle<QuantLib::YieldTermStructure> yieldTS,
+        QuantLib::Date npvDate,
+        bool permanent)
+    : Instrument(properties, permanent) {
+
+        std::vector<QuantLib::Real> notionals(1,notional);
+
+        libraryObject_ = boost::shared_ptr<QuantLib::RiskyFixedBond>(
+            new QuantLib::RiskyFixedBond(
+                    name,ccy,recoveryRate,defaultTS,*schedule,rate,dayCounter,
+                    paymentConvention,notionals,yieldTS, npvDate
+                                       ));
+
+    }
+
 
 }
