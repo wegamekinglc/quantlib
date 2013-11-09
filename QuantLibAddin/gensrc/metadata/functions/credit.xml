@@ -369,8 +369,8 @@
       </ReturnValue>
     </Member>
 
-    <Constructor name='qlPiecewiseFlatHazardRateCurve'>
-      <libraryFunction>PiecewiseFlatHazardRateCurve</libraryFunction>
+    <Constructor name='qlPiecewiseHazardRateCurve'>
+      <libraryFunction>PiecewiseHazardRateCurve</libraryFunction>
       <SupportedPlatforms>
         <!--SupportedPlatform name='Excel' calcInWizard='false'/-->
         <SupportedPlatform name='Excel'/>
@@ -379,11 +379,13 @@
       </SupportedPlatforms>
       <ParameterList>
         <Parameters>
+          <!-- relative date now
           <Parameter name='ReferenceDate' default='QuantLib::Date()'>
             <type>QuantLib::Date</type>
             <tensorRank>scalar</tensorRank>
             <description>term structure reference date.</description>
           </Parameter>
+          -->
           <Parameter name='Helpers' exampleValue ='CDS1Y, CDS5Y, CDS10Y'>
             <type>QuantLib::DefaultProbabilityHelper</type>
             <tensorRank>vector</tensorRank>
@@ -393,6 +395,16 @@
             <type>QuantLib::DayCounter</type>
             <tensorRank>scalar</tensorRank>
             <description>DayCounter ID.</description>
+          </Parameter>
+          <Parameter name='Calendar' exampleValue='TARGET'>
+            <type>QuantLib::Calendar</type>
+            <tensorRank>scalar</tensorRank>
+            <description>holiday calendar (e.g. TARGET).</description>
+          </Parameter>
+          <Parameter name='Interpolation' exampleValue='LIN, BAKF'>
+            <type>string</type>
+            <tensorRank>scalar</tensorRank>
+            <description>The interpolator for hazard rates.</description>
           </Parameter>
           <Parameter name='Accuracy' default='1.0e-12'>
             <type>QuantLib::Real</type>

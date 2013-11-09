@@ -182,16 +182,37 @@ namespace QuantLibAddin {
  				 dates, hazardRates, dayCounter));
     }
 
-    PiecewiseFlatHazardRateCurve::PiecewiseFlatHazardRateCurve(
+    PiecewiseHazardRateCurve::PiecewiseHazardRateCurve(
             const boost::shared_ptr<ObjectHandler::ValueObject>& properties,
-            const QuantLib::Date& referenceDate,
             const std::vector<boost::shared_ptr<QuantLib::DefaultProbabilityHelper> >& helpers,
             const QuantLib::DayCounter& dayCounter,
+            const QuantLib::Calendar& calendar,
+            const std::string& interpolator,
             QuantLib::Real accuracy,
             bool permanent) 
         : DefaultProbabilityTermStructure(properties, permanent) {
-        libraryObject_ = boost::shared_ptr<QuantLib::Extrapolator>(new
-               QuantLib::PiecewiseDefaultCurve<QuantLib::HazardRate,QuantLib::BackwardFlat>(referenceDate, helpers, dayCounter));
+
+        if(interpolator == std::string("LIN")){
+            libraryObject_ = boost::shared_ptr<QuantLib::Extrapolator>(new
+                   QuantLib::PiecewiseDefaultCurve<QuantLib::HazardRate,
+                        QuantLib::Linear>(
+                            0, 
+                            calendar,
+                            helpers, 
+                            dayCounter));
+        }else if(interpolator == std::string("BAKF")) {
+            libraryObject_ = boost::shared_ptr<QuantLib::Extrapolator>(new
+                   QuantLib::PiecewiseDefaultCurve<QuantLib::HazardRate,
+                        QuantLib::BackwardFlat>(
+                            0, 
+                            calendar,
+                            helpers, 
+                            dayCounter));
+        }else{
+            QL_FAIL("Unrecognised interpolator");
+        }
+
+        libraryObject_->enableExtrapolation();
     }
 
     PiecewiseFlatForwardCurve::PiecewiseFlatForwardCurve(

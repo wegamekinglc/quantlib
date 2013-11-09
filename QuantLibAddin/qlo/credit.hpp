@@ -137,13 +137,14 @@ namespace QuantLibAddin {
 
     // Bootstrapped piecewise flat hazard rate curve 
     // traits = hazard rates, interpolator = backward flat
-    class PiecewiseFlatHazardRateCurve : public DefaultProbabilityTermStructure {
+    class PiecewiseHazardRateCurve : public DefaultProbabilityTermStructure {
       public:
-        PiecewiseFlatHazardRateCurve(
+        PiecewiseHazardRateCurve(
             const boost::shared_ptr<ObjectHandler::ValueObject>& properties,
-            const QuantLib::Date& referenceDate,
             const std::vector<boost::shared_ptr<QuantLib::DefaultProbabilityHelper> >& helpers,
             const QuantLib::DayCounter& dayCounter,
+            const QuantLib::Calendar& calendar,
+            const std::string& interpolator,
             QuantLib::Real accuracy,
             bool permanent);
         /*
