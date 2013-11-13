@@ -31,6 +31,7 @@
 #include <ql/math/interpolations/backwardflatinterpolation.hpp>
 #include <ql/math/interpolations/loginterpolation.hpp>
 #include <ql/pricingengines/credit/midpointcdsengine.hpp>
+#include <ql/currencies/europe.hpp>
 
 #include <ql/experimental/credit/riskybond.hpp>
 
@@ -41,6 +42,70 @@
 using boost::algorithm::to_upper_copy;
 
 namespace QuantLibAddin {
+
+    Issuer::Issuer(
+            const boost::shared_ptr<ObjectHandler::ValueObject>& properties,
+            const boost::shared_ptr<QuantLib::DefaultProbabilityTermStructure>& dfts,
+            const boost::shared_ptr<QuantLib::DefaultEventSet>& evtSet,
+            bool permanent
+        )
+        : ObjectHandler::LibraryObject<QuantLib::Issuer>(properties, permanent) {
+
+        std::vector<QuantLib::Issuer::key_curve_pair> curves(1, std::make_pair(
+            QuantLib::NorthAmericaCorpDefaultKey(QuantLib::EURCurrency(),
+                                                     QuantLib::SeniorSec, 
+                                                     QuantLib::Period(),
+                                                     1. // amount threshold
+                                                     ),
+            QuantLib::Handle<QuantLib::DefaultProbabilityTermStructure>(dfts)
+        ));
+        libraryObject_ = boost::shared_ptr<QuantLib::Issuer>(new QuantLib::Issuer(curves, *evtSet));
+    }
+
+    DefaultEventSet::DefaultEventSet(
+            const boost::shared_ptr<ObjectHandler::ValueObject>& properties,
+            const std::string& eventType,
+            const QuantLib::Date& eventDate,
+            const QuantLib::Currency& cur,
+            QuantLib::Seniority sen,
+            const QuantLib::Date& settlementDate,
+            QuantLib::Real settledRecovery,
+            bool permanent
+        ) 
+    : ObjectHandler::LibraryObject<QuantLib::DefaultEventSet>(properties, permanent) {
+        // change constructor policy (revise this in the future)
+        QuantLib::Date implSettlemt = (settlementDate == QuantLib::Null<QuantLib::Date>() ? eventDate : settlementDate);
+        // if no match return empty set
+        libraryObject_ = boost::shared_ptr<QuantLib::DefaultEventSet>(new QuantLib::DefaultEventSet());
+        // only one recovery parsed by now:
+        std::map<QuantLib::Seniority, QuantLib::Real> rrs;
+        rrs.insert(std::pair<QuantLib::Seniority, QuantLib::Real>(sen, settledRecovery));
+        if(eventType==std::string("FailureToPayEvent")) {
+            libraryObject_->insert(boost::shared_ptr<QuantLib::FailureToPayEvent> (
+                new QuantLib::FailureToPayEvent(eventDate, cur, sen, 1.e7, 
+                //implSettlemt, 
+                settlementDate == QuantLib::Null<QuantLib::Date>() ? eventDate : settlementDate,
+                rrs)));
+        }else if(eventType==std::string("BankruptcyEvent")){
+            libraryObject_->insert(boost::shared_ptr<QuantLib::BankruptcyEvent> (
+                new QuantLib::BankruptcyEvent(eventDate, cur, sen, implSettlemt, rrs)));
+        }
+    }
+
+    /* Code essentially copied from QuantLibAddIn::SimpleQuote. 
+         Same considerations mentioned there apply. Here the
+         Seniority of the quote is considered a fixed 
+         property, not a market value.
+    */
+    RecoveryRateQuote::RecoveryRateQuote(
+            const boost::shared_ptr<ObjectHandler::ValueObject>& properties,
+            QuantLib::Seniority sen,
+            QuantLib::Real value,
+            bool permanent) : Quote(properties, permanent) {
+        libraryObject_ = recoveryQuote_ = boost::shared_ptr<QuantLib::RecoveryRateQuote>(
+            new QuantLib::RecoveryRateQuote(value, sen));
+    }
+
 
     CreditDefaultSwap::CreditDefaultSwap(
               const boost::shared_ptr<ObjectHandler::ValueObject>& properties,

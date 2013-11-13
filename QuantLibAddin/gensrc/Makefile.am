@@ -26,6 +26,7 @@ GENSRC_METADATA :=  metadata/addins/calc.xml \
                     metadata/functions/calendar.xml \
                     metadata/functions/capfloor.xml \
                     metadata/functions/capletvolstructure.xml \
+					metadata/functions/cmcds.xml \
                     metadata/functions/cmsmarketcalibration.xml \
                     metadata/functions/cmsmarket.xml \
                     metadata/functions/correlation.xml \

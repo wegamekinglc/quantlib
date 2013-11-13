@@ -15,6 +15,7 @@ noinst_HEADERS = \
     serialization_btp.hpp \
     serialization_capfloor.hpp \
     serialization_capletvolstructure.hpp \
+	serialization_cmcds.hpp \
     serialization_cmsmarketcalibration.hpp \
     serialization_cmsmarket.hpp \
     serialization_correlation.hpp \
@@ -71,6 +72,7 @@ libRegister_la_SOURCES = \
     serialization_btp.cpp \
     serialization_capfloor.cpp \
     serialization_capletvolstructure.cpp \
+	serialization_cmcds.cpp \
     serialization_cmsmarketcalibration.cpp \
     serialization_cmsmarket.cpp \
     serialization_correlation.cpp \

@@ -7350,6 +7350,14 @@
 					>
 				</File>
 				<File
+					RelativePath=".\ql\experimental\credit\blackcmcdsengine.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\ql\experimental\credit\blackcmcdsengine.hpp"
+					>
+				</File>
+				<File
 					RelativePath=".\ql\experimental\credit\cdo.cpp"
 					>
 				</File>
@@ -7363,6 +7371,38 @@
 				</File>
 				<File
 					RelativePath=".\ql\experimental\credit\cdsoption.hpp"
+					>
+				</File>
+				<File
+					RelativePath=".\ql\experimental\credit\constantmaturitycds.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\ql\experimental\credit\constantmaturitycds.hpp"
+					>
+				</File>
+				<File
+					RelativePath=".\ql\experimental\credit\creditcmcoupon.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\ql\experimental\credit\creditcmcoupon.hpp"
+					>
+				</File>
+				<File
+					RelativePath=".\ql\experimental\credit\creditcouponpricer.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\ql\experimental\credit\creditcouponpricer.hpp"
+					>
+				</File>
+				<File
+					RelativePath=".\ql\experimental\credit\creditindex.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\ql\experimental\credit\creditindex.hpp"
 					>
 				</File>
 				<File

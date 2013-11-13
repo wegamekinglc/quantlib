@@ -160,7 +160,13 @@
     <DataType defaultSuperType='libraryClass'>QuantLib::SpreadCdsHelper</DataType>
     <!--RL ADD 2010-07-22-->
     <DataType defaultSuperType='libraryClass'>QuantLib::UpfrontCdsHelper</DataType>
-
+    <DataType defaultSuperType='libraryClass'>QuantLib::Issuer</DataType>
+    <DataType defaultSuperType='libraryClass'>QuantLib::DefaultEventSet</DataType>
+    <DataType defaultSuperType='enumeration'>QuantLib::Seniority</DataType>
+    <DataType defaultSuperType='libraryClass'>QuantLib::SingleNameCreditIndex</DataType>
+    <DataType defaultSuperType='libraryClass'>QuantLib::RecoveryRateQuote</DataType>
+    <DataType defaultSuperType='libraryClass'>QuantLib::ConstantMaturityCDS</DataType>
+    
     <DataType defaultSuperType='libraryQuote'>QuantLib::FuturesConvAdjustmentQuote</DataType>
     <DataType defaultSuperType='libraryQuote'>QuantLib::Quote</DataType>
     <DataType defaultSuperType='libraryQuote'>QuantLib::SimpleQuote</DataType>

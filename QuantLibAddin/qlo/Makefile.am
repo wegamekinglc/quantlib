@@ -22,6 +22,7 @@ include_HEADERS = \
     capfloor.hpp \
     capletvolstructure.hpp \
     cliquetoption.hpp \
+	cmcds.hpp \
     cmsmarketcalibration.hpp \
     cmsmarket.hpp \
     config.hpp \
@@ -104,6 +105,7 @@ libQuantLibAddin_la_SOURCES = \
     capfloor.cpp \
     capletvolstructure.cpp \
     cliquetoption.cpp \
+	cmcds.cpp \
     cmsmarketcalibration.cpp \
     cmsmarket.cpp \
     conundrumpricer.cpp \

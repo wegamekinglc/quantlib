@@ -1,0 +1,371 @@
+<Category name='cmcds'>
+  <description>Functions to define and price cmcds</description>
+  <displayName>QuantLib CMCDS</displayName>
+  <xlFunctionWizardCategory>QuantLib - Credit</xlFunctionWizardCategory>
+  <serializationIncludes>
+    <include>ql/time/dategenerationrule.hpp</include>
+    <include>ql/time/daycounter.hpp</include>
+    <include>ql/termstructures/yieldtermstructure.hpp</include>
+    <include>ql/experimental/credit/creditindex.hpp</include>
+    
+    <include>qlo/credit.hpp</include> <!--This is here just for the issuer, move the AddIn issuer to a separate file and avoid the cascaded depends-->
+    <include>qlo/cmcds.hpp</include>
+    <include>qlo/conversions/coercetermstructure.hpp</include>
+    <include>qlo/conversions/coerceobject.hpp</include>
+  </serializationIncludes>
+  
+  <addinIncludes>
+    <include>ql/time/dategenerationrule.hpp</include>
+    <include>ql/termstructures/yieldtermstructure.hpp</include>
+    <include>ql/experimental/credit/constantmaturitycds.hpp</include>
+
+    <include>qlo/conversions/coercequote.hpp</include>
+    <include>qlo/credit.hpp</include> <!--This is here just for the issuer, move the AddIn issuer to a separate file and avoid the cascaded depends-->
+    <include>qlo/cmcds.hpp</include>
+  </addinIncludes>
+  <copyright>
+    Copyright (C) 2013 Jose Aparicio
+  </copyright>
+
+  <Functions>
+
+    <Constructor name='qlSingleNameCreditIndex'>
+      <libraryFunction>SingleNameCreditIndex</libraryFunction>
+      <SupportedPlatforms>
+        <SupportedPlatform name='Excel' calcInWizard='false'/>
+      </SupportedPlatforms>
+      
+      <ParameterList>
+        <Parameters>
+          <Parameter name='FamiliyName' exampleValue='ACME_5YSS'>
+            <type>string</type>
+            <tensorRank>scalar</tensorRank>
+            <description>The name of the credit index.</description>
+          </Parameter>
+          <Parameter name='Issuer'>
+            <type>QuantLib::Issuer</type>
+            <!--<superType>libToHandle</superType>--> <!--Use it once the Issuer becomes Observable-->
+            <superType>libraryClass</superType>
+            <tensorRank>scalar</tensorRank>
+            <description>The issuer object id corresponding to the index underlying credit.</description>
+          </Parameter>
+          <!-- TO DO: Add default event key.-->
+          <Parameter name='Tenor'>
+            <type>QuantLib::Period</type>
+            <tensorRank>scalar</tensorRank>
+            <description>Tenor of the reference credit spread.</description>
+          </Parameter>
+          <Parameter name='Frequency' exampleValue='Annual'>
+            <type>QuantLib::Frequency</type>
+            <tensorRank>scalar</tensorRank>
+            <description>Payment frequency of the underlying index swap.</description>
+          </Parameter>
+          <Parameter name='FixingDays'>
+            <type>QuantLib::Size</type>
+            <tensorRank>scalar</tensorRank>
+            <description>Index fixing days.</description>
+          </Parameter>
+          <Parameter name='GenRule' exampleValue='CDS'>
+            <type>QuantLib::DateGeneration::Rule</type>
+            <tensorRank>scalar</tensorRank>
+            <description>Date generation rule.</description>
+          </Parameter>
+          <Parameter name='Calendar' exampleValue='TARGET'>
+            <type>QuantLib::Calendar</type>
+            <tensorRank>scalar</tensorRank>
+            <description>Fixing calendar.</description>
+          </Parameter>
+          <Parameter name='DayCounter' exampleValue='30/360 (Bond Basis)'>
+            <type>QuantLib::DayCounter</type>
+            <tensorRank>scalar</tensorRank>
+            <description>day counter (e.g. Actual/360).</description>
+          </Parameter>
+          <Parameter name='DiscountingCurve'>
+            <type>QuantLib::YieldTermStructure</type>
+            <superType>libToHandle</superType>
+            <tensorRank>scalar</tensorRank>
+            <description>discounting YieldTermStructure object ID.</description>
+          </Parameter>
+          
+          <Parameter name='IndexFixingsDates'>
+             <type>QuantLib::Date</type>
+            <tensorRank>vector</tensorRank>
+            <description>Array of fixing dates.</description>
+          </Parameter>
+          <Parameter name='IndexFixingsValues'>
+             <type>QuantLib::Real</type>
+            <tensorRank>vector</tensorRank>
+            <description>Array of fixing values.</description>
+          </Parameter>
+         
+        </Parameters>
+      </ParameterList>
+    </Constructor>
+    
+
+    <Constructor name='qlCmCdsLeg'>
+      <libraryFunction>CmCdsLeg</libraryFunction>
+      <SupportedPlatforms>
+        <SupportedPlatform name='Excel' calcInWizard='false'/>
+      </SupportedPlatforms>
+      <ParameterList>
+        <processorName>LegProcessor</processorName>
+        <Parameters>
+          <Parameter name='PaymentBDC' default='"Following"'>
+            <type>QuantLib::BusinessDayConvention</type>
+            <tensorRank>scalar</tensorRank>
+            <description>payment business day convention.</description>
+          </Parameter>
+          <Parameter name='Nominals' exampleValue='1000000'>
+            <type>double</type>
+            <tensorRank>vector</tensorRank>
+            <description>Nominal amount vector.</description>
+          </Parameter>
+          <Parameter name='ScheduleID'>
+            <type>QuantLib::Schedule</type>
+            <superType>libraryClass</superType>
+            <tensorRank>scalar</tensorRank>
+            <description>Schedule object ID.</description>
+          </Parameter>
+          <Parameter name='FixingDays' default='std::vector&lt;QuantLib::Natural&gt;()'>
+            <type>QuantLib::Natural</type>
+            <tensorRank>vector</tensorRank>
+            <description>fixing days (e.g. 2).</description>
+          </Parameter>
+          <Parameter name='IsInArrears' default='false'>
+            <type>bool</type>
+            <tensorRank>scalar</tensorRank>
+            <description>TRUE if the fixing is in arrears.</description>
+          </Parameter>
+          <Parameter name='DayCounter' exampleValue='Actual/Actual (ISMA)'>
+            <type>QuantLib::DayCounter</type>
+            <tensorRank>scalar</tensorRank>
+            <description>Payment DayCounter ID.</description>
+          </Parameter>
+          
+          <!--<Parameter name='Floors' default='std::vector&lt;QuantLib::Rate&gt;()'>
+            <type>QuantLib::Rate</type>
+            <tensorRank>vector</tensorRank>
+            <description>floor strikes.</description>
+          </Parameter>-->
+          
+          <Parameter name='Gearings' default='1.0'>
+            <type>double</type>
+            <tensorRank>vector</tensorRank>
+            <description>floating rate gearings.</description>
+          </Parameter>
+          <Parameter name='SwapIndex'>
+            <type>QuantLib::SingleNameCreditIndex</type>
+            <superType>libraryClass</superType>
+            <tensorRank>scalar</tensorRank>
+            <description>underlying Single name credit index object ID.</description>
+          </Parameter>
+          <Parameter name='Spreads' default='0.0'>
+            <type>QuantLib::Spread</type>
+            <tensorRank>vector</tensorRank>
+            <description>floating rate spreads.</description>
+          </Parameter>
+          <!--<Parameter name='Caps' default='std::vector&lt;QuantLib::Rate&gt;()'>
+            <type>QuantLib::Rate</type>
+            <tensorRank>vector</tensorRank>
+            <description>cap strikes.</description>
+          </Parameter>-->
+        </Parameters>
+      </ParameterList>
+    </Constructor>
+
+
+
+
+
+
+
+    <Constructor name='qlCdsCmCouponPricer'>
+      <libraryFunction>CdsCmCouponPricer</libraryFunction>
+      <SupportedPlatforms>
+        <SupportedPlatform name='Excel' calcInWizard='false'/>
+        <SupportedPlatform name='Calc'/>
+        <SupportedPlatform name='Cpp'/>
+      </SupportedPlatforms>
+      <ParameterList>
+        <Parameters>
+          <Parameter name='Volatility' exampleValue='0.05'>
+            <type>QuantLib::Quote</type>
+            <superType>libToHandle</superType>
+            <tensorRank>scalar</tensorRank>
+            <description>Black Volatility quote.</description>
+          </Parameter>
+          <Parameter name='Recovery' exmpleValue='0.4'>
+            <type>QuantLib::RecoveryRateQuote</type>
+            <superType>libToHandle</superType>
+            <tensorRank>scalar</tensorRank>
+            <description>Recovery Rate Quote.</description>
+          </Parameter>
+        </Parameters>
+      </ParameterList>
+    </Constructor>
+
+
+
+
+    <Constructor name='qlConstantMaturityCDS'>
+      <libraryFunction>ConstantMaturityCDS</libraryFunction>
+      <SupportedPlatforms>
+        <SupportedPlatform name='Excel'/>
+      </SupportedPlatforms>
+      <ParameterList>
+        <Parameters>
+          <Parameter name='BuyerSeller' default='"Buyer"'>
+            <type>QuantLib::Protection::Side</type>
+            <tensorRank>scalar</tensorRank>
+            <description>BUYER for bought, SELLER for sold protection.</description>
+          </Parameter>
+          <Parameter name='Notional'>
+            <type>QuantLib::Real</type>
+            <tensorRank>scalar</tensorRank>
+            <description>Nominal amount</description>
+          </Parameter>
+          <Parameter name='PremiumSchedule'>
+            <type>QuantLib::Schedule</type>
+            <superType>libraryClass</superType>
+            <tensorRank>scalar</tensorRank>
+            <description>premium leg Schedule object ID.</description>
+          </Parameter>
+          <Parameter name='FixingDays'>
+            <type>QuantLib::Natural</type>
+            <tensorRank>scalar</tensorRank>
+            <description>Coupon fixing delay.</description>
+          </Parameter>
+          <Parameter name='SwapIndex'>
+            <type>QuantLib::SingleNameCreditIndex</type>
+            <superType>libraryClass</superType>
+            <tensorRank>scalar</tensorRank>
+            <description>underlying Single name credit index object ID.</description>
+          </Parameter>
+          <Parameter name='PaymentConvention' default='"Following"'>
+            <type>QuantLib::BusinessDayConvention</type>
+            <tensorRank>scalar</tensorRank>
+            <description>Payment dates' business day convention.</description>
+          </Parameter>
+          <Parameter name='DayCounter' exampleValue='Actual/360'>
+            <type>QuantLib::DayCounter</type>
+            <tensorRank>scalar</tensorRank>
+            <description>premium leg day counter (e.g. Actual/360).</description>
+          </Parameter>
+          <Parameter name='Gearing' default='1.0'>
+            <type>double</type>
+            <tensorRank>scalar</tensorRank>
+            <description>floating rate gearing.</description>
+          </Parameter>
+          <Parameter name='Cap'>
+            <type>double</type>
+            <tensorRank>scalar</tensorRank>
+            <description>Cap rate.</description>
+          </Parameter>      
+          <Parameter name='SettlesAccrual' const='False' default='true'>
+            <type>bool</type>
+            <tensorRank>scalar</tensorRank>
+            <description>TRUE ensures settlement of accural.</description>
+          </Parameter>
+          <Parameter name='ProtectionStart' default='QuantLib::Date()'>
+            <type>QuantLib::Date</type>
+            <tensorRank>scalar</tensorRank>
+            <description>protection start date.</description>
+          </Parameter>
+
+        </Parameters>
+      </ParameterList>
+    </Constructor>
+
+    <Member name='qlCmsCdsCouponLegNPV' type='QuantLib::ConstantMaturityCDS'>
+      <description>Returns the NPV of coupon leg.</description>
+      <libraryFunction>couponLegNPV</libraryFunction>
+      <SupportedPlatforms>
+        <SupportedPlatform name='Excel'/>
+      </SupportedPlatforms>
+      <ParameterList>
+        <Parameters/>
+      </ParameterList>
+      <ReturnValue>
+        <type>QuantLib::Real</type>
+        <tensorRank>scalar</tensorRank>
+      </ReturnValue>
+    </Member>
+
+    <Member name='qlCmsCdsDefaultLegNPV' type='QuantLib::ConstantMaturityCDS'>
+      <description>Returns the NPV of default leg.</description>
+      <libraryFunction>defaultLegNPV</libraryFunction>
+      <SupportedPlatforms>
+        <SupportedPlatform name='Excel'/>
+      </SupportedPlatforms>
+      <ParameterList>
+        <Parameters/>
+      </ParameterList>
+      <ReturnValue>
+        <type>QuantLib::Real</type>
+        <tensorRank>scalar</tensorRank>
+      </ReturnValue>
+    </Member>
+
+    <Member name='qlCmsCdsFairGearing' type='QuantLib::ConstantMaturityCDS'>
+      <description>Returns gearing which sets the value to zero.</description>
+      <libraryFunction>fairGearing</libraryFunction>
+      <SupportedPlatforms>
+        <SupportedPlatform name='Excel'/>
+      </SupportedPlatforms>
+      <ParameterList>
+        <Parameters/>
+      </ParameterList>
+      <ReturnValue>
+        <type>QuantLib::Real</type>
+        <tensorRank>scalar</tensorRank>
+      </ReturnValue>
+    </Member>
+
+
+
+
+
+    <Constructor name='qlBlackConstantmaturityCDSEngine'>
+      <libraryFunction>BalckConstantMaturityCDSEngine</libraryFunction>
+      <SupportedPlatforms>
+        <SupportedPlatform name='Excel' calcInWizard='false'/>
+      </SupportedPlatforms>
+      <ParameterList>
+        <Parameters>
+
+          <Parameter name='DefaultCurve'>
+            <type>QuantLib::DefaultProbabilityTermStructure</type>
+            <superType>libToHandle</superType>
+            <tensorRank>scalar</tensorRank>
+            <description>default term structure object ID.</description>
+          </Parameter>
+          <Parameter name='RecoveryRate'>
+            <type>QuantLib::Real</type>
+            <tensorRank>scalar</tensorRank>
+            <description>constant recovery rate</description>
+          </Parameter>
+          <Parameter name='YieldCurve'>
+            <type>QuantLib::YieldTermStructure</type>
+            <superType>libToHandle</superType>
+            <tensorRank>scalar</tensorRank>
+            <description>discounting yield term structure object ID.</description>
+          </Parameter>
+
+          <Parameter name='Volatility'>
+            <type>QuantLib::Quote</type>
+            <superType>libToHandle</superType>
+            <tensorRank>scalar</tensorRank>
+            <description>Black spread volatility.</description>
+          </Parameter>
+
+        </Parameters>
+      </ParameterList>
+    </Constructor>
+
+
+    
+
+  </Functions>
+
+</Category>

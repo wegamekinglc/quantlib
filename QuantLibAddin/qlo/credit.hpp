@@ -26,6 +26,7 @@
 #include <qlo/defaulttermstructures.hpp>
 #include <qlo/schedule.hpp>
 #include <qlo/pricingengines.hpp>
+#include <qlo/quote.hpp>
 
 #include <ql/handle.hpp>
 #include <ql/time/daycounter.hpp>
@@ -35,6 +36,8 @@
 #include <ql/instruments/creditdefaultswap.hpp>
 #include <ql/termstructures/credit/defaultprobabilityhelpers.hpp>
 #include <ql/currency.hpp>
+#include <ql/experimental/credit/issuer.hpp>
+#include <ql/experimental/credit/recoveryratequote.hpp>
 
 namespace QuantLib {
     class Quote;
@@ -42,6 +45,44 @@ namespace QuantLib {
 }
 
 namespace QuantLibAddin {
+
+    class Issuer
+        : public ObjectHandler::LibraryObject<QuantLib::Issuer> {
+    public:
+        Issuer(
+            const boost::shared_ptr<ObjectHandler::ValueObject>& properties,
+            const boost::shared_ptr<QuantLib::DefaultProbabilityTermStructure>& dfts,
+            const boost::shared_ptr<QuantLib::DefaultEventSet>& evtSet,
+            bool permanent
+            );
+    };
+
+    class DefaultEventSet
+        : public ObjectHandler::LibraryObject<QuantLib::DefaultEventSet> {
+    public:
+        DefaultEventSet(
+            const boost::shared_ptr<ObjectHandler::ValueObject>& properties,
+            const std::string& eventType,
+            const QuantLib::Date& eventDate,
+            const QuantLib::Currency& cur,
+            QuantLib::Seniority sen,
+            const QuantLib::Date& settleDate,
+            QuantLib::Real settledRecovery,
+            bool permanent
+        );
+    };
+
+    // To do, implement a Seniority inspector in credit.xml
+    class RecoveryRateQuote : public Quote {
+      public:
+        RecoveryRateQuote(const boost::shared_ptr<ObjectHandler::ValueObject>& properties,
+                    QuantLib::Seniority sen,
+                    QuantLib::Real value,
+                    bool permanent);
+        QuantLib::Real setValue(QuantLib::Real value);
+    private:
+        boost::shared_ptr<QuantLib::RecoveryRateQuote> recoveryQuote_;
+    };
 
     class CreditDefaultSwap : public Instrument {
     public:

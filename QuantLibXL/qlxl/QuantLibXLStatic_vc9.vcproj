@@ -481,6 +481,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\register\register_cmcds.cpp"
+				>
+			</File>
+			<File
 				RelativePath="register\register_cmsmarket.cpp"
 				>
 			</File>
@@ -722,6 +726,10 @@
 			</File>
 			<File
 				RelativePath="functions\capletvolstructure.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\functions\cmcds.cpp"
 				>
 			</File>
 			<File
