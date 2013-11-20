@@ -136,6 +136,7 @@
     </Constructor>
 
     <Constructor name='qlHazardRateCurve'>
+      <description>Creates a backward flat interpolated hazard rate curve.</description>
       <libraryFunction>HazardRateCurve</libraryFunction>
       <SupportedPlatforms>
         <!--SupportedPlatform name='Excel' calcInWizard='false'/-->
@@ -148,7 +149,7 @@
           <Parameter name='CurveDates' exampleValue ="'2M,3M,4M,5M,6M">
             <type>QuantLib::Date</type>
             <tensorRank>vector</tensorRank>
-            <description>dates of the curve.</description>
+            <description>dates of the curve. First date corresponds to a survival probability of one.</description>
           </Parameter>
           <Parameter name='CurveRates' exampleValue ='0.02,0.02,0.02,0.02,0.02'>
             <type>QuantLib::Rate</type>
@@ -414,6 +415,38 @@
         </Parameters>
       </ParameterList>
     </Constructor>
+
+    <!--Avoids the template in library:-->
+    <Member name='qlHRDates' type='QuantLibAddin::PiecewiseHazardRateCurve'>
+      <description>Dates on which the hazard rate interpolation is performed.</description>
+      <libraryFunction>dates</libraryFunction>
+      <SupportedPlatforms>
+        <SupportedPlatform name='Excel'/>
+      </SupportedPlatforms>
+      <ParameterList>
+        <Parameters>
+        </Parameters>
+      </ParameterList>
+      <ReturnValue>
+        <type>QuantLib::Date</type>
+        <tensorRank>vector</tensorRank>
+      </ReturnValue>
+    </Member>
+    <Member name='qlHRates' type='QuantLibAddin::PiecewiseHazardRateCurve'>
+      <description>Dates on which the hazard rate interpolation is performed.</description>
+      <libraryFunction>data</libraryFunction>
+      <SupportedPlatforms>
+        <SupportedPlatform name='Excel'/>
+      </SupportedPlatforms>
+      <ParameterList>
+        <Parameters>
+        </Parameters>
+      </ParameterList>
+      <ReturnValue>
+        <type>QuantLib::Real</type>
+        <tensorRank>vector</tensorRank>
+      </ReturnValue>
+    </Member>
 
     <Constructor name='qlPiecewiseFlatForwardCurve'>
       <libraryFunction>PiecewiseFlatForwardCurve</libraryFunction>

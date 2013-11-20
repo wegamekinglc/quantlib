@@ -136,7 +136,9 @@ namespace QuantLibAddin {
     };
 
     // Bootstrapped piecewise flat hazard rate curve 
-    // traits = hazard rates, interpolator = backward flat
+    // traits = hazard rates
+    // To do: add a Registry Manager factory once the number of options in 
+    //   the combination of interpolation traits and algorithm grows.
     class PiecewiseHazardRateCurve : public DefaultProbabilityTermStructure {
       public:
         PiecewiseHazardRateCurve(
@@ -147,6 +149,9 @@ namespace QuantLibAddin {
             const std::string& interpolator,
             QuantLib::Real accuracy,
             bool permanent);
+
+        const std::vector<QuantLib::Date>& dates() const;
+        const std::vector<QuantLib::Real>& data() const;
         /*
         const std::vector<QuantLib::Time>& times() const;
         const std::vector<QuantLib::Date>& dates() const;

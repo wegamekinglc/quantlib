@@ -221,7 +221,7 @@
     <!--RL ADD 2010-07-22-->
     <DataType defaultSuperType='objectClass'>QuantLibAddin::PiecewiseFlatForwardCurve</DataType>
     <!--RL ADD 2010-07-22-->
-    <DataType defaultSuperType='objectClass'>QuantLibAddin::PiecewiseFlatHazardRateCurve</DataType>
+    <DataType defaultSuperType='objectClass'>QuantLibAddin::PiecewiseHazardRateCurve</DataType>
     <DataType defaultSuperType='objectClass'>QuantLibAddin::RandomSequenceGenerator</DataType>
     <DataType defaultSuperType='objectClass'>QuantLibAddin::RateHelper</DataType>
     <DataType defaultSuperType='objectClass'>QuantLibAddin::RelinkableHandle</DataType>
