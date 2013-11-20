@@ -257,7 +257,7 @@ namespace QuantLibAddin {
             bool permanent) 
         : DefaultProbabilityTermStructure(properties, permanent) {
 
-        if(interpolator == std::string("LIN")){
+        if(interpolator == std::string("LINEAR")){
             libraryObject_ = boost::shared_ptr<QuantLib::Extrapolator>(new
                    QuantLib::PiecewiseDefaultCurve<QuantLib::HazardRate,
                         QuantLib::Linear>(
@@ -265,7 +265,7 @@ namespace QuantLibAddin {
                             calendar,
                             helpers, 
                             dayCounter));
-        }else if(interpolator == std::string("BAKF")) {
+        }else if(interpolator == std::string("BACKWARDFLAT")) {
             libraryObject_ = boost::shared_ptr<QuantLib::Extrapolator>(new
                    QuantLib::PiecewiseDefaultCurve<QuantLib::HazardRate,
                         QuantLib::BackwardFlat>(
@@ -279,6 +279,33 @@ namespace QuantLibAddin {
 
         libraryObject_->enableExtrapolation();
     }
+
+    // ptr type check here would correspond to template spez in the  
+    //   subscribers factory solution.
+    const std::vector<QuantLib::Date>& PiecewiseHazardRateCurve::dates() const {
+        typedef QuantLib::PiecewiseDefaultCurve<QuantLib::HazardRate, QuantLib::BackwardFlat> flat_curve;
+        typedef QuantLib::PiecewiseDefaultCurve<QuantLib::HazardRate, QuantLib::Linear> lin_curve;
+        boost::shared_ptr<flat_curve> ptrBF =
+            boost::dynamic_pointer_cast<flat_curve>(libraryObject_);
+        if(ptrBF) return ptrBF->dates();
+        boost::shared_ptr<lin_curve> ptrLIN =
+            boost::dynamic_pointer_cast<lin_curve>(libraryObject_);
+        if(ptrLIN) return ptrLIN->dates();
+        QL_FAIL("Unable to cast default probability term structure.");
+    }
+
+    const std::vector<QuantLib::Real>& PiecewiseHazardRateCurve::data() const {
+        typedef QuantLib::PiecewiseDefaultCurve<QuantLib::HazardRate, QuantLib::BackwardFlat> flat_curve;
+        typedef QuantLib::PiecewiseDefaultCurve<QuantLib::HazardRate, QuantLib::Linear> lin_curve;
+        boost::shared_ptr<flat_curve> ptrBF =
+            boost::dynamic_pointer_cast<flat_curve>(libraryObject_);
+        if(ptrBF) return ptrBF->data();
+        boost::shared_ptr<lin_curve> ptrLIN =
+            boost::dynamic_pointer_cast<lin_curve>(libraryObject_);
+        if(ptrLIN) return ptrLIN->data();
+        QL_FAIL("Unable to cast default probability term structure.");
+        }        
+
 
     PiecewiseFlatForwardCurve::PiecewiseFlatForwardCurve(
             const boost::shared_ptr<ObjectHandler::ValueObject>& properties,
