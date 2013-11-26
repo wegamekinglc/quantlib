@@ -19,6 +19,8 @@
 
 #include <ql/experimental/models/kahalesmilesection.hpp>
 
+#include <iostream>
+
 namespace QuantLib {
 
     KahaleSmileSection::KahaleSmileSection(
@@ -91,7 +93,14 @@ namespace QuantLib {
                 // due to numerical effects. Move to the next index in
                 // these cases.
                 Real dig = digitalOptionPrice(k1/2.0);
-                QL_REQUIRE( dig >= -c1p && dig <= 1.0 , "dummy");
+                std::cout << std::setprecision(24)
+                          << "Sanity check k0=" << k_[0] << " k1=" << k1
+                          << " c0=" << c0 << " c1=" << c1 << " c1p=" << c1p
+                          << " dig=" << dig << " s=" << s << " f=" << sh1.f_
+                          << " b=" << sh1.b_
+                          << " passed=" << (dig >= -c1p && dig <= 1.0)
+                          << std::endl;
+                QL_REQUIRE(dig >= -c1p && dig <= 1.0, "dummy");
             }
             catch (...) {
                 leftIndex_++;
