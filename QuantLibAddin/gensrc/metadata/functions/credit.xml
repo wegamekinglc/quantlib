@@ -596,7 +596,7 @@
       </SupportedPlatforms>
       <ParameterList>
         <Parameters>
-          <Parameter name='DefaultCurves'>
+          <Parameter name='DefaultCurves' default='""'>
             <type>QuantLib::DefaultProbabilityTermStructure</type>
             <superType>libraryClass</superType>
             <superType>libraryTermStructure</superType>
