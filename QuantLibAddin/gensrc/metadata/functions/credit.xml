@@ -482,36 +482,6 @@
       </ParameterList>
     </Constructor>
 
-    <Member name='qlDefaultProbability' 
-            type='QuantLib::DefaultProbabilityTermStructure' 
-            superType='libraryTermStructure'>
-      <description>Returns the default probability from the curve reference date to a future date.</description>
-      <libraryFunction>defaultProbability</libraryFunction>
-      <SupportedPlatforms>
-        <SupportedPlatform name='Excel'/>
-        <SupportedPlatform name='Calc'/>
-        <SupportedPlatform name='Cpp'/>
-      </SupportedPlatforms>
-      <ParameterList>
-        <Parameters>
-          <Parameter name='ProbDate' default='QuantLib::Date()'>
-            <type>QuantLib::Date</type>
-            <tensorRank>scalar</tensorRank>
-            <description>future date of the desired probability.</description>
-          </Parameter>
-          <Parameter name='Extrapolate' default='true'>
-            <type>bool</type>
-            <tensorRank>scalar</tensorRank>
-            <description>FALSE to disable extrapolation beyond the largest date.</description>
-          </Parameter>
-        </Parameters>
-      </ParameterList>
-      <ReturnValue>
-        <type>QuantLib::Real</type>
-        <tensorRank>scalar</tensorRank>
-      </ReturnValue>
-    </Member>
-
     <Constructor name='qlRiskyFixedBond'>
       <libraryFunction>RiskyFixedBond</libraryFunction>
       <SupportedPlatforms>
