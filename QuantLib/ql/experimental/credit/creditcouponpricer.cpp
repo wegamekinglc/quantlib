@@ -227,7 +227,11 @@ namespace QuantLib {
             survivalProb_ = 1.;
         }
         // determine applicable rate
-        if(today < fixingDate_ ) {// THIS IS A CALL to index forecastFixing-------------------------------duplicates code
+        if(today < fixingDate_ ) {
+            // Although this is a call to index forecastFixing one can not call 
+            //   directly coupon_->creditIndex()->fixing; that would be at the 
+            //   risk of using the conventional recovery rather than the quoted 
+            //   one. 
             boost::shared_ptr<CreditDefaultSwap> cdsSwap = 
                 coupon_->creditIndex()->underlyingSwap(fixingDate_);
             cdsSwap->setPricingEngine(boost::shared_ptr<PricingEngine>(

@@ -46,6 +46,12 @@ namespace QuantLib {
     to derived classes.
 
     See example: http://www.creditfixings.com/CreditEventAuctions/fixings.jsp
+
+    \todo
+    Yet one can argue that an index fixing is a quote of two numbers; the spread
+    itself and the recovery. As it is today IndexManager can store Reals only
+    and not an arbitrary type or agregation types. I think this is the base of 
+    some potential inconsistent features of the way credit coupons are priced.
     */
 	class CreditIndex : public Index, public Observer {
     public:

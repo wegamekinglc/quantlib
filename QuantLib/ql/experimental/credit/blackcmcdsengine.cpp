@@ -17,10 +17,10 @@
  FOR A PARTICULAR PURPOSE.  See the license for more details.
 */
 
+#include <ql/experimental/credit/blackcmcdsengine.hpp>
 #include <ql/instruments/claim.hpp>
 #include <ql/termstructures/defaulttermstructure.hpp>
 #include <ql/termstructures/yieldtermstructure.hpp>
-#include <ql/experimental/credit/blackcmcdsengine.hpp>
 #include <ql/experimental/credit/creditcouponpricer.hpp>
 #include <ql/experimental/credit/creditcmcoupon.hpp>
 
@@ -35,13 +35,11 @@ namespace QuantLib {
     : probability_(dfts), recoveryRate_(recoveryRate), 
       discountCurve_(discountCurve), vol_(vol), 
       includeSettlementDateFlows_(includeSettlementDateFlows) 
-    {//make the pricer a local variable to calculate???????? cheaper?I have to recreate it everytime anyway, we might have been triggered by a change in vol or RR
+    {
         registerWith(vol_);
         registerWith(probability_);
         registerWith(discountCurve_);
     }
-
-    //// update method needs to recreate the coupon pricer.............or set calculated false and recreate the coupon pricer in the calculate..... I have to, I cant discriminate
 
     void BalckConstantMaturityCDSEngine::calculate() const {
         QL_REQUIRE(!discountCurve_.empty(),
@@ -63,7 +61,6 @@ namespace QuantLib {
                 continue;
             boost::shared_ptr<CmCdsCoupon> coupon = 
                 boost::dynamic_pointer_cast<CmCdsCoupon>(arguments_.leg[i]);
-            // check 'price' is accounting for a broken (accrued) coupon---------------------------------
 
             couponPricer.initialize(*coupon);
             if(coupon->isCapped()) {

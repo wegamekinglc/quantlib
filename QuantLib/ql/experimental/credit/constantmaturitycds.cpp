@@ -23,8 +23,6 @@
 
 namespace QuantLib {
 
-    /// caps
-    /// 
     ConstantMaturityCDS::ConstantMaturityCDS(
         Protection::Side side,
         Real notional,
@@ -37,7 +35,7 @@ namespace QuantLib {
         Rate cap, // only one 
         bool settlesAccrual,
         const Date& protectionStart,
-        const boost::shared_ptr<Claim>& claim // need this now???
+        const boost::shared_ptr<Claim>& claim
         )
     : side_(side), notional_(notional), creditIndex_(creditIndex), 
       paymentConvention_(convention), dayCount_(dayCounter), 
@@ -47,9 +45,9 @@ namespace QuantLib {
       protectionStart_(protectionStart == Null<Date>() ? schedule[0] :
                                                          protectionStart)
     {
-        // protection start should fall within the first coupon period, it is really an inception/settlement date....
-        QL_REQUIRE(gearing>=0. ,////////&& gearing <=1., 
-            "Incorrect gearing value.");
+        // protection start should fall within the first coupon period, 
+        //   it is really an inception/settlement date....
+        QL_REQUIRE(gearing>=0. , "Incorrect gearing value.");
 
         // create cmcds coupon leg
         couponLeg_ = CmCdsLeg(schedule, creditIndex)
@@ -134,7 +132,7 @@ namespace QuantLib {
         value = Null<Real>();
     }
 
-    //inline these..................................................? 
+ 
     Real ConstantMaturityCDS::couponLegNPV() const {
         calculate();
         QL_REQUIRE(couponLegNPV_ != Null<Rate>(),

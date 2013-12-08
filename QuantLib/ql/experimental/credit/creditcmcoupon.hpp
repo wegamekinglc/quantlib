@@ -68,6 +68,9 @@ namespace QuantLib {
         \warning This class does not perform any date adjustment,
                  i.e., the start and end date passed upon construction
                  should be already rolled to a business day.
+
+        \to do: Incorrect naming? In the future a cmcds _index_ coupon cant be 
+        named like this.
     */
     class CmCdsCoupon : public DefaultableCoupon, 
                         public Observer {
@@ -201,7 +204,7 @@ namespace QuantLib {
         CmCdsLeg& withSpreads(Spread spread);
         CmCdsLeg& withSpreads(const std::vector<Spread>& spreads);
 
-        /* @WORK PP */
+        /* WIP PP */
         CmCdsLeg& withCaps(Rate cap);
         CmCdsLeg& withCaps(const std::vector<Rate>& caps);
        

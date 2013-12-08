@@ -102,7 +102,6 @@
       </ParameterList>
     </Constructor>
     
-
     <Constructor name='qlCmCdsLeg'>
       <libraryFunction>CmCdsLeg</libraryFunction>
       <SupportedPlatforms>
@@ -174,12 +173,6 @@
       </ParameterList>
     </Constructor>
 
-
-
-
-
-
-
     <Constructor name='qlCdsCmCouponPricer'>
       <libraryFunction>CdsCmCouponPricer</libraryFunction>
       <SupportedPlatforms>
@@ -204,9 +197,6 @@
         </Parameters>
       </ParameterList>
     </Constructor>
-
-
-
 
     <Constructor name='qlConstantMaturityCDS'>
       <libraryFunction>ConstantMaturityCDS</libraryFunction>
@@ -322,10 +312,6 @@
       </ReturnValue>
     </Member>
 
-
-
-
-
     <Constructor name='qlBlackConstantmaturityCDSEngine'>
       <libraryFunction>BalckConstantMaturityCDSEngine</libraryFunction>
       <SupportedPlatforms>
@@ -364,6 +350,7 @@
     </Constructor>
 
 
+    
     
 
   </Functions>

@@ -34,8 +34,6 @@ namespace QuantLib {
     class Claim;
     class SingleNameCreditIndex;
 
-    // to do add a cap
-    /// credit index swap in between.. eventually, split functionality
     class ConstantMaturityCDS : public Instrument {
     public:
         class arguments;
@@ -51,15 +49,14 @@ namespace QuantLib {
             const DayCounter& dayCounter,
             Natural fixingDays,
             Real gearing,// rate , in [0,1]
-                    Rate cap, // only one 
+            Rate cap, // only one 
             bool settlesAccrual,
             const Date& protectionStart = Date(),
             const boost::shared_ptr<Claim>& claim =
                 boost::shared_ptr<Claim>()
             );
 
-//inspectors:
-//....
+        //inspectors:
         Protection::Side side() const;
         Real notional() const;
         Rate gearing() const;
@@ -74,7 +71,7 @@ namespace QuantLib {
 
         void setupArguments(PricingEngine::arguments* args) const;
         void fetchResults(const PricingEngine::results*) const;
-//calculated:
+        //calculated:
         Real couponLegNPV() const;
         Real defaultLegNPV() const;
         Real fairGearing() const;
@@ -83,7 +80,7 @@ namespace QuantLib {
         //! Inception date:
         const Date protectionStart_;
         Leg couponLeg_;
-        // give access to schedules????, at least be able to reconstruct???
+
         Protection::Side side_;
         Real notional_;
         boost::shared_ptr<SingleNameCreditIndex> creditIndex_;
