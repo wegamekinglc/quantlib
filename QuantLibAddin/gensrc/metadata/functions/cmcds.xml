@@ -257,6 +257,11 @@
             <tensorRank>scalar</tensorRank>
             <description>TRUE ensures settlement of accural.</description>
           </Parameter>
+          <Parameter name='PaysAtDefault' const='False' default='true'>
+            <type>bool</type>
+            <tensorRank>scalar</tensorRank>
+            <description>TRUE if pays accrual and default at default time.</description>
+          </Parameter>
           <Parameter name='ProtectionStart' default='QuantLib::Date()'>
             <type>QuantLib::Date</type>
             <tensorRank>scalar</tensorRank>

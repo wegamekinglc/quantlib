@@ -432,6 +432,7 @@
         <tensorRank>vector</tensorRank>
       </ReturnValue>
     </Member>
+    
     <Member name='qlHRates' type='QuantLibAddin::PiecewiseHazardRateCurve'>
       <description>Dates on which the hazard rate interpolation is performed.</description>
       <libraryFunction>data</libraryFunction>
@@ -571,7 +572,7 @@
             <superType>libraryClass</superType>
             <superType>libraryTermStructure</superType>
             <tensorRank>scalar</tensorRank>
-            <description>Default probability curve.</description>
+            <description>Default probability curve. By now it is associated to SeniorSec, EUR and NorthAmericaCorpDefaultKey</description>
           </Parameter>
           <Parameter name='DefaultEvents'>
             <type>QuantLib::DefaultEventSet</type>

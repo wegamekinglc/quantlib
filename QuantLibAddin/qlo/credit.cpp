@@ -74,21 +74,26 @@ namespace QuantLibAddin {
         ) 
     : ObjectHandler::LibraryObject<QuantLib::DefaultEventSet>(properties, permanent) {
         // change constructor policy (revise this in the future)
-        QuantLib::Date implSettlemt = (settlementDate == QuantLib::Null<QuantLib::Date>() ? eventDate : settlementDate);
+ //////--------       QuantLib::Date implSettlemt = (settlementDate == QuantLib::Null<QuantLib::Date>() ? eventDate : settlementDate);
         // if no match return empty set
         libraryObject_ = boost::shared_ptr<QuantLib::DefaultEventSet>(new QuantLib::DefaultEventSet());
-        // only one recovery parsed by now:
+
+        // only one recovery parsed by now; bankruptcy events need the whole
+        //  set or they fail to construct.
         std::map<QuantLib::Seniority, QuantLib::Real> rrs;
         rrs.insert(std::pair<QuantLib::Seniority, QuantLib::Real>(sen, settledRecovery));
         if(eventType==std::string("FailureToPayEvent")) {
             libraryObject_->insert(boost::shared_ptr<QuantLib::FailureToPayEvent> (
                 new QuantLib::FailureToPayEvent(eventDate, cur, sen, 1.e7, 
                 //implSettlemt, 
-                settlementDate == QuantLib::Null<QuantLib::Date>() ? eventDate : settlementDate,
+                settlementDate, ///////////////////// == QuantLib::Null<QuantLib::Date>() ? eventDate : settlementDate,
                 rrs)));
         }else if(eventType==std::string("BankruptcyEvent")){
             libraryObject_->insert(boost::shared_ptr<QuantLib::BankruptcyEvent> (
-                new QuantLib::BankruptcyEvent(eventDate, cur, sen, implSettlemt, rrs)));
+                new QuantLib::BankruptcyEvent(eventDate, cur, sen, 
+                //////////////////////////////////////////////////////////////////////////////////implSettlemt, 
+                settlementDate,
+                rrs)));
         }
     }
 

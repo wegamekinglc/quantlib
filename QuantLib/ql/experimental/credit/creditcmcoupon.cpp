@@ -69,7 +69,6 @@ namespace QuantLib {
         Spread spread,
         Rate cap,
         bool paysAccruedOnDefault,
-        bool settlesAtDefTime,
         const Date& refPeriodStart, 
         const Date& refPeriodEnd, 
         const DayCounter& dayCounter) 
@@ -85,8 +84,7 @@ namespace QuantLib {
       spread_(spread),
       cap_(cap),    
       isCapped_(cap != Null<Rate>() ? true : false ),
-      paysAccruedOnDefault_(paysAccruedOnDefault),
-      settlesAtDefTime_(settlesAtDefTime)
+      paysAccruedOnDefault_(paysAccruedOnDefault)
     {
         // strict zero comparison because protection includes the start 
         //   date, this has to be coherent with the flags when calling 
@@ -100,11 +98,10 @@ namespace QuantLib {
         registerWith(Settings::instance().evaluationDate());
     }
 
-    // move to credit coupon base class..................
     Rate CmCdsCoupon::rate() const {
         QL_REQUIRE(pricer_, "pricer not set");
         pricer_->initialize(*this);
-        return pricer_->swapletRate();// even with the cap now ????
+        return pricer_->swapletRate();
     }
 
     void CmCdsCoupon::accept(AcyclicVisitor& v) {
@@ -160,17 +157,10 @@ namespace QuantLib {
                        const boost::shared_ptr<SingleNameCreditIndex>& index)
     : schedule_(schedule), cdsIndex_(index),
       paymentAdjustment_(Following),
-      paysAccrual_(false),
-      accrdAtDefault_(false),
-      globalProtection_(false) {}
+      paysAccrual_(false) {}
 
     CmCdsLeg& CmCdsLeg::withAccrualSettlement(bool flag) {
         paysAccrual_ = flag;
-        return *this;
-    }
-
-    CmCdsLeg& CmCdsLeg::withAccrualAtDefault(bool flag) {
-        accrdAtDefault_ = flag;
         return *this;
     }
 
@@ -236,8 +226,20 @@ namespace QuantLib {
         return *this;
     }
 
-    CmCdsLeg& CmCdsLeg::withGlobalProtectionDate(bool flag) {
-        globalProtection_ = flag;
+    CmCdsLeg& CmCdsLeg::withGlobalProtectionDate(boost::optional<Date> d) {
+        if(d) {
+			Date globalProtStartDate = d.get();
+			// default behaviour with global protection
+            if(globalProtStartDate == Null<Date>())
+				// this looks twisted, otherwise use a second variable.
+                globalProtStartDate = schedule_.date(0);
+			globalProtectionStart_ = 
+				boost::optional<Date>(globalProtStartDate);
+        }
+		/* (!d): not global protection, protection coincides with coupon 
+			period. Not calling this method would set this to be the 
+			behaviour by default.
+			*/
         return *this;
     }
 
@@ -265,12 +267,12 @@ namespace QuantLib {
         Date lastPaymentDate = calendar.adjust(schedule_.date(n), 
             paymentAdjustment_);
 
+		if(globalProtectionStart_) protStart = globalProtectionStart_.get();
+
         for (Size i=0; i<n; ++i) {
             start = schedule_.date(i);
-            if(globalProtection_) 
-                protStart = schedule_.date(0);
-            else 
-                protStart = start;
+            if(!globalProtectionStart_) protStart = start;
+
             refStart = start;
             refEnd   = end = schedule_.date(i+1);
             Date paymentDate = calendar.adjust(end, paymentAdjustment_);
@@ -279,8 +281,6 @@ namespace QuantLib {
                 refEnd = schedule_.calendar().adjust( 
                     start + schedule_.tenor(), bdc);
             }
-
-            // Few things missing??? (caps..) check...  I am assuming here that the coupons are alll floaters
 
             protEnd = refEnd;
                 leg.push_back(boost::shared_ptr<CashFlow>(new CmCdsCoupon(
@@ -294,7 +294,6 @@ namespace QuantLib {
                         detail::get(spreads_, i, 0.0),
                         detail::get(caps_, i, Null<Rate>()),
                         paysAccrual_,
-                        accrdAtDefault_,
                         refStart,
                         refEnd,
                         paymentDayCounter_)));

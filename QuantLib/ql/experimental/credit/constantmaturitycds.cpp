@@ -34,13 +34,14 @@ namespace QuantLib {
         Real gearing,// rate , in [0,1]
         Rate cap, // only one 
         bool settlesAccrual,
+        bool settlesAtDefT,
         const Date& protectionStart,
         const boost::shared_ptr<Claim>& claim
         )
     : side_(side), notional_(notional), creditIndex_(creditIndex), 
       paymentConvention_(convention), dayCount_(dayCounter), 
       gearing_(gearing), settlesAccrual_(settlesAccrual), 
-      paysAtDefaultTime_(true), 
+      paysAtDefaultTime_(settlesAtDefT), 
       claim_(claim),
       protectionStart_(protectionStart == Null<Date>() ? schedule[0] :
                                                          protectionStart)
@@ -58,7 +59,7 @@ namespace QuantLib {
             .withGearings(gearing)
             .withCaps(cap)
             .withAccrualSettlement(settlesAccrual)
-            .withAccrualAtDefault(true);
+			.withGlobalProtectionDate(protectionStart_);
 
         if (!claim_)
             claim_ = boost::shared_ptr<Claim>(new FaceValueClaim);
@@ -99,6 +100,7 @@ namespace QuantLib {
         arguments->claim = claim_;
         arguments->gearing = gearing_;
         arguments->protectionStart = protectionStart_;
+        arguments->creditIndex = creditIndex_;
     }
 
     void ConstantMaturityCDS::arguments::validate() const {
@@ -107,10 +109,12 @@ namespace QuantLib {
         QL_REQUIRE(notional != 0.0, "null notional set");
         QL_REQUIRE(!leg.empty(), "coupons not set");
         QL_REQUIRE(claim, "claim not set");
+        QL_REQUIRE(creditIndex, "index not set");
         QL_REQUIRE(protectionStart != Null<Date>(),
                    "protection start date not set");
         QL_REQUIRE(gearing != Null<Real>(), "gearing not set");
     }
+
     void ConstantMaturityCDS::fetchResults(
                                       const PricingEngine::results* r) const {
         Instrument::fetchResults(r);

@@ -40,6 +40,9 @@ namespace QuantLib {
         class results;
         class engine;
 
+        /*  @param settlesAccrual Settles accrued coupon in default.
+            @param settlesAtDefT Settles default at default time.
+        */
         ConstantMaturityCDS(
             Protection::Side side,
             Real notional,
@@ -50,7 +53,8 @@ namespace QuantLib {
             Natural fixingDays,
             Real gearing,// rate , in [0,1]
             Rate cap, // only one 
-            bool settlesAccrual,
+            bool settlesAccrual = true,
+            bool settlesAtDefT = true,
             const Date& protectionStart = Date(),
             const boost::shared_ptr<Claim>& claim =
                 boost::shared_ptr<Claim>()
@@ -109,6 +113,7 @@ namespace QuantLib {
         bool paysAtDefaultTime;
         boost::shared_ptr<Claim> claim;
         Date protectionStart;
+        boost::shared_ptr<SingleNameCreditIndex> creditIndex;
         void validate() const;
     };
 

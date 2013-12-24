@@ -46,6 +46,10 @@ namespace QuantLib {
 
 namespace QuantLibAddin {
 
+	/*!
+		\todo Default term structures should be associated to their seniority 
+		        and recovery and passed as a vector of TS.
+	*/
     class Issuer
         : public ObjectHandler::LibraryObject<QuantLib::Issuer> {
     public:

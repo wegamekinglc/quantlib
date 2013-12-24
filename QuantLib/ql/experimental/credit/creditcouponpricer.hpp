@@ -60,6 +60,7 @@ namespace QuantLib {
     /*! Black fwd cds cm coupon pricer. Volatility is swaption volatility for 
         the convexity adjustment presented here.
 
+		Default events are priced including thus jump to default.
         The coupon does not knock out if defaults take place outside 
         the protection period. It does if they occur during protection. 
         The protection period does not necessarily coincides with the 
@@ -104,6 +105,7 @@ namespace QuantLib {
         Date fixingDate_;
         Date effectiveProtectStart_;
         Date refProtStart_;
+		// default prob within its own period
         Real defaultProb_;
         // fwd conditional survival
         Real survivalProb_;
@@ -118,9 +120,9 @@ namespace QuantLib {
         Handle<RecoveryRateQuote> recovery_;
     };
 
-    // \to do: coupon price setters
+    // \todo coupon price setters
 
-    // \to do: add forecast fixing coupon flag.
+    // \todo add forecast fixing coupon flag.
 
 }
 

@@ -31,6 +31,9 @@ namespace QuantLib {
     class Quote;
     class DefaultProbabilityTermStructure;
 
+    /* Prices npv and default past events within the instrument protection
+	 period, this embeds jump to default computation in the pricing.
+    */
     class BalckConstantMaturityCDSEngine : public ConstantMaturityCDS::engine {
     public:
         BalckConstantMaturityCDSEngine(

@@ -23,6 +23,8 @@
 #include <ql/termstructures/yieldtermstructure.hpp>
 #include <ql/experimental/credit/creditcouponpricer.hpp>
 #include <ql/experimental/credit/creditcmcoupon.hpp>
+#include <ql/experimental/credit/defaultevent.hpp>
+#include <ql/experimental/credit/creditindex.hpp>
 
 namespace QuantLib {
 
@@ -55,16 +57,68 @@ namespace QuantLib {
 
         results_.couponLegNPV = 0.;
         results_.defaultLegNPV = 0.;
+
+        // check for defaults and give a jump to default price if any
+        boost::shared_ptr<DefaultEvent> defEvent = 
+            arguments_.creditIndex->issuer().defaultedBetween(
+                arguments_.protectionStart, today, 
+                arguments_.creditIndex->defaultKey(), true);
+        if(defEvent) {
+            if(!defEvent->settlement().hasOccurred()
+                ||
+                !defEvent->hasSettled()) {
+                /* Arguably, since theres is no settlement date. Means the jump 
+                   to default value is set to the one with the largest default 
+                   leg possible:
+                */
+                results_.defaultLegNPV = arguments_.claim->amount(
+                    probability_->calendar().advance(today, 1, Days),
+                    arguments_.notional,
+                    recoveryRate_
+                    );
+            }
+            // current coupon in default:
+            for (Size i=0; i<arguments_.leg.size(); ++i) {
+                if (arguments_.leg[i]->hasOccurred(settlementDate,
+                                                   includeSettlementDateFlows_))
+                    break;
+                boost::shared_ptr<CmCdsCoupon> currentCoupon = 
+                    boost::dynamic_pointer_cast<CmCdsCoupon>(arguments_.leg[i]);
+
+				// duplicated code; same loop as below with no default test
+				couponPricer.initialize(*currentCoupon);
+                if(currentCoupon->isCapped()) {
+                    results_.couponLegNPV += 
+                        couponPricer.capletPrice(currentCoupon->cap());
+                }else{
+                    results_.couponLegNPV += couponPricer.swapletPrice();
+                }
+                //do not treat further coupons, only the (current) defaulted one
+                break;
+            }
+            // stop treatment, leave results with no fair gearing
+            results_.couponLegNPV *= arguments_.notional;
+            results_.value = results_.couponLegNPV - results_.defaultLegNPV;
+            if(arguments_.side == Protection::Buyer) {
+                results_.value *= -1.;
+                results_.couponLegNPV *= -1.;
+            }
+            return;
+        }
+
+        /* no defaults, npv: (this section duplicates the coupon leg code but 
+		it avoids going twice through the loop or writting spaghetti logic) */
         for (Size i=0; i<arguments_.leg.size(); ++i) {
             if (arguments_.leg[i]->hasOccurred(settlementDate,
                                                includeSettlementDateFlows_))
-                continue;
+                break;
             boost::shared_ptr<CmCdsCoupon> coupon = 
                 boost::dynamic_pointer_cast<CmCdsCoupon>(arguments_.leg[i]);
 
             couponPricer.initialize(*coupon);
             if(coupon->isCapped()) {
-                results_.couponLegNPV += couponPricer.capletPrice(coupon->cap());
+                results_.couponLegNPV += 
+                    couponPricer.capletPrice(coupon->cap());
             }else{
                 results_.couponLegNPV += couponPricer.swapletPrice();
             }
@@ -107,8 +161,9 @@ namespace QuantLib {
             results_.couponLegNPV *= -1.;
         }
 
-        results_.fairGearingFactor =  std::abs(results_.defaultLegNPV * arguments_.gearing 
-            / results_.couponLegNPV);
-    }
+        results_.fairGearingFactor =  std::abs(results_.defaultLegNPV * 
+            arguments_.gearing / results_.couponLegNPV);
+        
+        }
 
 }

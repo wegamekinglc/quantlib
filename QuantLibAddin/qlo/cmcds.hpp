@@ -116,6 +116,7 @@ namespace QuantLibAddin {
             QuantLib::Real gearing,
             QuantLib::Rate cap,
             bool settlesAccrual,
+            bool paysAtDefT,
             const QuantLib::Date& protectionStart,
             bool permanent);
 

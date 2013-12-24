@@ -123,6 +123,7 @@ namespace QuantLibAddin {
             QuantLib::Real gearing,
             QuantLib::Rate cap,
             bool settlesAccrual,
+            bool paysAtDefT,
             const QuantLib::Date& protectionStart,
             bool permanent)
    : Instrument(properties, permanent) {
@@ -138,6 +139,7 @@ namespace QuantLibAddin {
                 gearing,
                 cap,
                 settlesAccrual,
+                paysAtDefT,
                 protectionStart,
                 boost::shared_ptr<QuantLib::Claim>()));
     }

@@ -54,45 +54,41 @@ namespace QuantLib {
                 // Notice that if an accrual payment is to be generated now, 
                 // the default lies within the accrual period and thence the  
                 // coupon has fixed (thus no convexity adjustment)
-                if(coupon_->settlesAccrual() && !coupon_->settlesAtDefTime()
+                if(coupon_->settlesAccrual()
                     // event accrues only if in accrual period
                     && (coupon_->accrualStartDate() < defEvent->date()) ) {
-                    Time defaultAccrual =
-                        coupon_->dayCounter().yearFraction(refProtStart_, 
-                        defEvent->date());
-                    Real defaultAccrualDF = yTS->discount(paymentDate_);
                     return (gearing_ * effectiveRate_ + spread_) *
-                        defaultAccrual * defaultAccrualDF;
+                        coupon_->accruedPeriod(defEvent->date()) * 
+						yTS->discount(paymentDate_);
                 }else{// knocked out without value
                     return 0. ;
                 }
             }
         }
 
-        // no defaults, check for expected accruals
-        Real accrualTerm =0.;
+        // no defaults, compute expected accrual
+        Real defaultAccrualTerm =0.;
         if(coupon_->settlesAccrual()) {
             Date effectiveAccrualDate = 
                 coupon_->accrualStartDate() <= today ? 
                 today : coupon_->accrualStartDate();
             // protection might start sooner but there would be no 
             // payments then.
-            Date defaultDate = effectiveAccrualDate + 
+            Date midPointDefaultDate = effectiveAccrualDate + 
                 (coupon_->accrualEndDate() - effectiveAccrualDate) / 2 ;
-            Date accrualPayDate = coupon_->settlesAtDefTime() ? 
-                defaultDate : paymentDate_;
-            if(today < accrualPayDate) // check the coupon was not dead
-                accrualTerm = 
-                // in default within the subperiod leading to payments
-                    defTS->defaultProbability(effectiveAccrualDate, 
-                        coupon_->referencePeriodEnd())  *
+			if(!coupon_->hasOccurred())
+                defaultAccrualTerm = 
+                /* in default within the subperiod leading to payments. 
+				The coupon might be sensitive to former defaults but would 
+				not generate the accrual payment*/
+					defaultProb_ *
                 // and no previous knock out during the protection period
-                    defTS->survivalProbability(effectiveAccrualDate) * 
+                    defTS->survivalProbability(effectiveProtectStart_) * 
                     coupon_->dayCounter().yearFraction(
-                        coupon_->accrualStartDate(), defaultDate,
+                        coupon_->accrualStartDate(), midPointDefaultDate,
                         coupon_->referencePeriodStart(),
 	                    coupon_->referencePeriodEnd()) *
-                    yTS->discount(accrualPayDate);
+                    yTS->discount(paymentDate_);
         }
 
         Real convexAdjFactor = 1.;
@@ -105,8 +101,9 @@ namespace QuantLib {
                          defTS->dayCounter().yearFraction(today, fixingDate_));
         }
 
+		// expected value
         return 
-            (survivalProb_ * accrualPeriod_ * discount_ + accrualTerm)*
+            (survivalProb_ * accrualPeriod_ * discount_ + defaultAccrualTerm)*
             (gearing_ * effectiveRate_ * convexAdjFactor + spread_);
     }
 
@@ -116,21 +113,61 @@ namespace QuantLib {
 
         const Handle<DefaultProbabilityTermStructure>& defTS = 
             coupon_->creditIndex()->defaultProbTermStructure();
+        const Handle<YieldTermStructure>& yTS =
+            coupon_->creditIndex()->nominalTermStructure();
 
         Real capRate;
-        /*
-        Date defaultDate = effectiveProtectStart_ + 
-            (coupon_->accrualEndDate() - effectiveProtectStart_) / 2 ;
-        */
-        // check for defaults: (no accrual treatment yet)
+
+        // check for defaults:
         if(today >= refProtStart_) {
             boost::shared_ptr<DefaultEvent> defEvent = 
                 coupon_->creditIndex()->issuer().defaultedBetween(
                 refProtStart_, today, coupon_->creditIndex()->defaultKey());
-            if(defEvent) return 0.;
+            if(defEvent) {
+                // Notice that if an accrual payment is to be generated now,
+                // the default lies within the accrual period and thence the
+                // coupon has fixed (thus no convexity adjustment)
+                if(coupon_->settlesAccrual()
+                    // event accrues only if in accrual period
+                    && (coupon_->accrualStartDate() < defEvent->date()) ) {
+                    return gearing_ * 
+                        std::min(effectiveRate_ + spread_, effectiveCap)
+						* coupon_->accruedPeriod(defEvent->date())
+						* yTS->discount(paymentDate_);
+                }else{// knocked out without value
+                    return 0. ;
+                }
+            }
         }
 
-        // no accrual treatment yet
+        // no defaults, compute expected accrual
+        Real defaultAccrualTerm =0.;
+        if(coupon_->settlesAccrual()) {
+            Date effectiveAccrualDate = 
+                coupon_->accrualStartDate() <= today ? 
+                today : coupon_->accrualStartDate();
+
+            // protection might start sooner but there would be no 
+            // payments then.
+            Date midPointDefaultDate = effectiveAccrualDate + 
+                (coupon_->accrualEndDate() - effectiveAccrualDate) / 2 ;
+			if(!coupon_->hasOccurred())
+                defaultAccrualTerm = 
+                /* in default within the subperiod leading to payments. 
+				The coupon might be sensitive to former defaults but would 
+				not generate the accrual payment*/
+					defaultProb_ *
+                // and no previous knock out during the protection period
+                    defTS->survivalProbability(effectiveProtectStart_) * 
+                    coupon_->dayCounter().yearFraction(
+                        coupon_->accrualStartDate(), midPointDefaultDate,
+                        coupon_->referencePeriodStart(),
+	                    coupon_->referencePeriodEnd()) *
+                    yTS->discount(paymentDate_);
+        }
+
+
+
         if(today < fixingDate_ ) {
             // reinventing the wheel? check reducing this to Blacks formula
             const Rate fwdRate = effectiveRate_;
@@ -160,14 +197,12 @@ namespace QuantLib {
                 fwdRate * (1.-probsRatio) * std::exp(vola2 * t2fix) * phi2 +
                 effectiveCap * probsRatio * phi3 + 
                 effectiveCap * (1.-probsRatio) * phi4;
-            return (survivalProb_*discount_*coupon_->accrualPeriod()
-                /*+ accrualTerm         TO DO TO DO */
-                ) * gearing_ * capRate;
+            return (survivalProb_*discount_*coupon_->accrualPeriod() +
+				defaultAccrualTerm) * gearing_ * capRate;
         }else{ // rate is fixed:
             capRate = std::min(effectiveCap, effectiveRate_);
-            return (survivalProb_*discount_*coupon_->accrualPeriod()
-                /*+ accrualTerm         TO DO TO DO */
-                ) * gearing_ * capRate;
+            return (survivalProb_*discount_*coupon_->accrualPeriod() +
+				defaultAccrualTerm) * gearing_ * capRate;
         }
     }
 
@@ -193,7 +228,7 @@ namespace QuantLib {
         // seniority; issue a warning rather?
         QL_REQUIRE( (coupon_->creditIndex()->seniority() == 
             recovery_->seniority()) || 
-            recovery_->seniority() == Seniority::NoSeniority,
+            recovery_->seniority() == NoSeniority,
             "Incompatible recovery quote seniority");
         fixingDate_    = coupon.fixingDate();
         refMaturity_   = fixingDate_ + coupon.creditIndex()->tenor();
@@ -210,27 +245,35 @@ namespace QuantLib {
         else 
             discount_ = 1.;
 
+		/* below is:
+			effectiveProtectStart_ = 
+			 max(today, refProtStart_, coupon.accrualStartDate())
+		*/
         effectiveProtectStart_ = refProtStart_ <= today ? 
             today : refProtStart_;
+		effectiveProtectStart_ = 
+			coupon.accrualStartDate() <= effectiveProtectStart_ ? 
+            effectiveProtectStart_ : coupon.accrualStartDate();
 
-        if(today < coupon_->referencePeriodEnd()) {
+		if(!coupon_->hasOccurred()) {
             try{
-            defaultProb_  = defTS->defaultProbability(effectiveProtectStart_, 
-                coupon_->referencePeriodEnd());
+				defaultProb_ = 
+					defTS->defaultProbability(effectiveProtectStart_,
+					  coupon_->protectionEnd());
             }catch(std::exception& e){
                 std::string problemo(e.what());
             }
             survivalProb_ = 1. - defaultProb_;
-            //NOT!: defTS->survivalProbability(coupon_->referencePeriodEnd());
+            //butnot:defTS->survivalProbability(coupon_->referencePeriodEnd());
         }else{
             defaultProb_  = 0.;
             survivalProb_ = 1.;
         }
         // determine applicable rate
         if(today < fixingDate_ ) {
-            // Although this is a call to index forecastFixing one can not call 
+            // Although this is a call to index forecastFixing one can not call
             //   directly coupon_->creditIndex()->fixing; that would be at the 
-            //   risk of using the conventional recovery rather than the quoted 
+            //   risk of using the conventional recovery rather than the quoted
             //   one. 
             boost::shared_ptr<CreditDefaultSwap> cdsSwap = 
                 coupon_->creditIndex()->underlyingSwap(fixingDate_);
@@ -238,7 +281,7 @@ namespace QuantLib {
                 new MidPointCdsEngine(defTS, recovery_->value(), yTS)));
             effectiveRate_ = cdsSwap->fairSpread();
         }else{
-            // 'true' since most of the times I am calling this from a simulated
+            //'true' since most of the times I am calling this from a simulated
             //   scenario computation. Should it go into a constructor flag????
             effectiveRate_ = coupon_->creditIndex()->fixing(fixingDate_, true);
         }

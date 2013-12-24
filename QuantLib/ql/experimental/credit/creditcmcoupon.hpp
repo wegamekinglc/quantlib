@@ -80,6 +80,7 @@ namespace QuantLib {
         @param fixingDays      Relative to referencePeriod/protection start
         @param startProtection Defaults on this date apply.
         @param endProtection   Defaults on this date do not apply.
+		@paysAccruedOnDefault  The accrued up to default time is due.
         */
 		CmCdsCoupon(const Date& paymentDate,
                     Real nominal,
@@ -92,8 +93,7 @@ namespace QuantLib {
                     Real gearing = 1.0,
                     Spread spread = 0.0,
                     Rate cap = Null<Rate>(),
-                    bool paysAccruedOnDefault = false,
-                    bool settlesAtDefTime = false,
+                    bool paysAccruedOnDefault = true,
                     const Date& refPeriodStart = Date(),
                     const Date& refPeriodEnd = Date(),
                     const DayCounter& dayCounter = DayCounter()
@@ -122,7 +122,6 @@ namespace QuantLib {
             return index_;
         }
         const boost::shared_ptr<SingleNameCreditIndex>& index() const {
-        ////const boost::shared_ptr<Index>& index() const {
             return index_;
         }
         //! fixing days
@@ -134,7 +133,6 @@ namespace QuantLib {
         bool settlesAccrual() const { return paysAccruedOnDefault_; }
         //! If accrual is paid upon default knock-out it is done at default 
         //  time, if false accrual is paid at coupon pay date.
-        bool settlesAtDefTime() const { return settlesAtDefTime_; }
         //! index gearing, i.e. multiplicative coefficient for the index
         Real gearing() const { return gearing_; }
         //! spread paid over the fixing of the underlying credit index
@@ -175,7 +173,6 @@ namespace QuantLib {
         Rate cap_;
         boost::shared_ptr<CdsCmCouponPricer> pricer_;
         bool paysAccruedOnDefault_;
-        bool settlesAtDefTime_;
 	};
 
     // inlines
@@ -209,12 +206,11 @@ namespace QuantLib {
         CmCdsLeg& withCaps(const std::vector<Rate>& caps);
        
         CmCdsLeg& withAccrualSettlement(bool flag = true);
-        CmCdsLeg& withAccrualAtDefault(bool flag = true);
         /*! Establishes if protection start date (the date at which defaults 
            on this coupon are to be considered) is the reference start date,
            if false it will be the global schedule start date
         */
-        CmCdsLeg& withGlobalProtectionDate(bool flag = true);
+        CmCdsLeg& withGlobalProtectionDate(boost::optional<Date> d);
 
         operator Leg() const;
       private:
@@ -231,8 +227,7 @@ namespace QuantLib {
         std::vector<Rate> caps_;
 
         bool paysAccrual_;
-        bool accrdAtDefault_;
-        bool globalProtection_;
+		boost::optional<Date> globalProtectionStart_;
     };
 
 
