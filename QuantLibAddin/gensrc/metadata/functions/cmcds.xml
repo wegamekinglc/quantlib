@@ -7,9 +7,13 @@
     <include>ql/time/daycounter.hpp</include>
     <include>ql/termstructures/yieldtermstructure.hpp</include>
     <include>ql/experimental/credit/creditindex.hpp</include>
+    <include>ql/exercise.hpp</include>
+    
     
     <include>qlo/credit.hpp</include> <!--This is here just for the issuer, move the AddIn issuer to a separate file and avoid the cascaded depends-->
     <include>qlo/cmcds.hpp</include>
+    <include>qlo/cdsoption.hpp</include>
+    <include>qlo/exercise.hpp</include>
     <include>qlo/conversions/coercetermstructure.hpp</include>
     <include>qlo/conversions/coerceobject.hpp</include>
   </serializationIncludes>
@@ -18,10 +22,13 @@
     <include>ql/time/dategenerationrule.hpp</include>
     <include>ql/termstructures/yieldtermstructure.hpp</include>
     <include>ql/experimental/credit/constantmaturitycds.hpp</include>
-
+    <include>ql/exercise.hpp</include>
+    
     <include>qlo/conversions/coercequote.hpp</include>
     <include>qlo/credit.hpp</include> <!--This is here just for the issuer, move the AddIn issuer to a separate file and avoid the cascaded depends-->
     <include>qlo/cmcds.hpp</include>
+    <include>qlo/cdsoption.hpp</include>
+    <include>qlo/exercise.hpp</include>
   </addinIncludes>
   <copyright>
     Copyright (C) 2013 Jose Aparicio
@@ -247,7 +254,7 @@
             <tensorRank>scalar</tensorRank>
             <description>floating rate gearing.</description>
           </Parameter>
-          <Parameter name='Cap'>
+          <Parameter name='Cap' default='QuantLib::Null&lt;QuantLib::Real&gt;()'>
             <type>double</type>
             <tensorRank>scalar</tensorRank>
             <description>Cap rate.</description>
@@ -356,7 +363,62 @@
 
 
     
-    
+    <!--CDS Option-->
+    <Constructor name='qlSingleNameCDSOption'>
+      <libraryFunction>SingleNameCDSOption</libraryFunction>
+      <SupportedPlatforms>
+        <SupportedPlatform name='Excel' calcInWizard='false'/>
+      </SupportedPlatforms>
+      <ParameterList>
+        <Parameters>
+          <Parameter name='UnderlyingCDS'>
+            <type>QuantLib::CreditDefaultSwap</type>
+            <tensorRank>scalar</tensorRank>
+            <description>underlying cds object ID.</description>
+          </Parameter>
+          <Parameter name='Exercise'>
+            <type>QuantLib::EuropeanExercise</type>
+            <tensorRank>scalar</tensorRank>
+            <description>Exercise object ID.</description>
+          </Parameter>
+          
+        </Parameters>
+      </ParameterList>
+    </Constructor>
+
+    <Constructor name='qlBlackCdsOptionEngine'>
+      <libraryFunction>BlackCdsOptionEngine</libraryFunction>
+      <SupportedPlatforms>
+        <SupportedPlatform name='Excel' calcInWizard='false'/>
+      </SupportedPlatforms>
+      <ParameterList>
+        <Parameters>
+          <Parameter name='DefaultCurve'>
+            <type>QuantLib::DefaultProbabilityTermStructure</type>
+            <superType>libToHandle</superType>
+            <tensorRank>scalar</tensorRank>
+            <description>default term structure object ID.</description>
+          </Parameter>
+          <Parameter name='RecoveryRate'>
+            <type>QuantLib::Real</type>
+            <tensorRank>scalar</tensorRank>
+            <description>constant recovery rate</description>
+          </Parameter>
+          <Parameter name='YieldCurve'>
+            <type>QuantLib::YieldTermStructure</type>
+            <superType>libToHandle</superType>
+            <tensorRank>scalar</tensorRank>
+            <description>discounting yield term structure object ID.</description>
+          </Parameter>
+          <Parameter name='Vol'>
+            <type>QuantLib::Quote</type>
+            <superType>libToHandle</superType>
+            <tensorRank>scalar</tensorRank>
+            <description>Flat volatility.</description>
+          </Parameter>
+        </Parameters>
+      </ParameterList>
+    </Constructor>
 
   </Functions>
 

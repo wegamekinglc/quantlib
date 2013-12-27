@@ -336,6 +336,41 @@
       </ParameterList>
     </Constructor>
 
+    <Member name='qlCdsCouponLegNPV' type='QuantLib::CreditDefaultSwap'>
+      <description>Returns the CL NPV.</description>
+      <libraryFunction>couponLegNPV</libraryFunction>
+      <SupportedPlatforms>
+        <SupportedPlatform name='Excel'/>
+        <!--SupportedPlatform name='Cpp'/-->
+      </SupportedPlatforms>
+      <ParameterList>
+        <Parameters/>
+      </ParameterList>
+      <ReturnValue>
+        <type>QuantLib::Real</type>
+        <tensorRank>scalar</tensorRank>
+        <description>Coupon leg NPV</description>
+      </ReturnValue>
+    </Member>
+
+    <Member name='qlCdsDefaultLegNPV' type='QuantLib::CreditDefaultSwap'>
+      <description>Returns the DL NPV.</description>
+      <libraryFunction>defaultLegNPV</libraryFunction>
+      <SupportedPlatforms>
+        <SupportedPlatform name='Excel'/>
+        <!--SupportedPlatform name='Cpp'/-->
+      </SupportedPlatforms>
+      <ParameterList>
+        <Parameters/>
+      </ParameterList>
+      <ReturnValue>
+        <type>QuantLib::Real</type>
+        <tensorRank>scalar</tensorRank>
+        <description>Default leg NPV</description>
+      </ReturnValue>
+    </Member>
+
+
     <Member name='qlCdsFairSpread' type='QuantLib::CreditDefaultSwap'>
       <description>Returns the running spread that, given the quoted recovery rate, will make the running-only CDS have an NPV of 0.</description>
       <libraryFunction>fairSpread</libraryFunction>

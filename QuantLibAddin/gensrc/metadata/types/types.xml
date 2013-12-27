@@ -166,6 +166,7 @@
     <DataType defaultSuperType='libraryClass'>QuantLib::SingleNameCreditIndex</DataType>
     <DataType defaultSuperType='libraryClass'>QuantLib::RecoveryRateQuote</DataType>
     <DataType defaultSuperType='libraryClass'>QuantLib::ConstantMaturityCDS</DataType>
+    <DataType defaultSuperType='libraryClass'>QuantLib::CdsOption</DataType>
     
     <DataType defaultSuperType='libraryQuote'>QuantLib::FuturesConvAdjustmentQuote</DataType>
     <DataType defaultSuperType='libraryQuote'>QuantLib::Quote</DataType>

@@ -73,16 +73,12 @@ namespace QuantLibAddin {
             const std::vector<QuantLib::Natural>& fixingDays,
             bool isInArrears,
             const QuantLib::DayCounter& paymentDayCounter,
-            //const std::vector<QuantLib::Rate>& floors,
             const std::vector<QuantLib::Real>& gearings,
             const boost::shared_ptr<QuantLib::SingleNameCreditIndex>& index,
-            //const QuantLib::Handle<QuantLib::SingleNameCreditIndex>& index,
             const std::vector<QuantLib::Spread>& spreads,
-            //const std::vector<QuantLib::Rate>& caps,
             bool permanent)
     : Leg(properties, permanent)
     {
-        /* still needs testing...      */   
         libraryObject_ = boost::shared_ptr<QuantLib::Leg>(new
             QuantLib::Leg(QuantLib::CmCdsLeg(*schedule, index)
                 .withNotionals(nominals)
@@ -91,9 +87,6 @@ namespace QuantLibAddin {
                 .withFixingDays(fixingDays)
                 .withGearings(gearings)
                 .withSpreads(spreads)
-               // .withCaps(caps)
-               // .withFloors(floors)
-               // .inArrears(isInArrears)
                 ));
                 
     }

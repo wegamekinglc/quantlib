@@ -21,6 +21,7 @@ include_HEADERS = \
     btp.hpp \
     capfloor.hpp \
     capletvolstructure.hpp \
+	cdsoption.hpp \
     cliquetoption.hpp \
 	cmcds.hpp \
     cmsmarketcalibration.hpp \
@@ -104,6 +105,7 @@ libQuantLibAddin_la_SOURCES = \
     btp.cpp \
     capfloor.cpp \
     capletvolstructure.cpp \
+	cdsoption.cpp \
     cliquetoption.cpp \
 	cmcds.cpp \
     cmsmarketcalibration.cpp \

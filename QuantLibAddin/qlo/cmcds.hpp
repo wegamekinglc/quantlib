@@ -78,11 +78,9 @@ namespace QuantLibAddin {
             const std::vector<QuantLib::Natural>& fixingDays,
             bool isInArrears,
             const QuantLib::DayCounter& paymentDayCounter,
-            //const std::vector<QuantLib::Rate>& floors,
             const std::vector<QuantLib::Real>& gearings,
             const boost::shared_ptr<QuantLib::SingleNameCreditIndex>& index,
             const std::vector<QuantLib::Spread>& spreads,
-            //const std::vector<QuantLib::Rate>& caps,
             bool permanent);
     };
 

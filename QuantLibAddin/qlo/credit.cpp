@@ -73,8 +73,6 @@ namespace QuantLibAddin {
             bool permanent
         ) 
     : ObjectHandler::LibraryObject<QuantLib::DefaultEventSet>(properties, permanent) {
-        // change constructor policy (revise this in the future)
- //////--------       QuantLib::Date implSettlemt = (settlementDate == QuantLib::Null<QuantLib::Date>() ? eventDate : settlementDate);
         // if no match return empty set
         libraryObject_ = boost::shared_ptr<QuantLib::DefaultEventSet>(new QuantLib::DefaultEventSet());
 
@@ -86,12 +84,11 @@ namespace QuantLibAddin {
             libraryObject_->insert(boost::shared_ptr<QuantLib::FailureToPayEvent> (
                 new QuantLib::FailureToPayEvent(eventDate, cur, sen, 1.e7, 
                 //implSettlemt, 
-                settlementDate, ///////////////////// == QuantLib::Null<QuantLib::Date>() ? eventDate : settlementDate,
+                settlementDate,
                 rrs)));
         }else if(eventType==std::string("BankruptcyEvent")){
             libraryObject_->insert(boost::shared_ptr<QuantLib::BankruptcyEvent> (
                 new QuantLib::BankruptcyEvent(eventDate, cur, sen, 
-                //////////////////////////////////////////////////////////////////////////////////implSettlemt, 
                 settlementDate,
                 rrs)));
         }
@@ -128,21 +125,38 @@ namespace QuantLibAddin {
               bool rebatesAccrual,
               bool permanent)
         : Instrument(properties, permanent) {
-        libraryObject_ = boost::shared_ptr<QuantLib::CreditDefaultSwap>(
-                    new QuantLib::CreditDefaultSwap(side,
-                                                    notional,
-                                                    upfront,
-                                                    spread,
-                                                    *schedule,
-                                                    paymentConvention,
-                                                    dayCounter,
-                                                    settlesAccrual,
-                                                    paysAtDefaultTime,
-                                                    protectionStart,
-                                                    upfrontDate,
-                                                    boost::shared_ptr<QuantLib::Claim>(),
-                                                    QuantLib::Actual360(true),
-                                                    rebatesAccrual));
+			// dirty way to decide if this is constructed through a run only version
+			if(upfrontDate == QuantLib::Null<QuantLib::Date>() && upfront == 0.) {
+				libraryObject_ = boost::shared_ptr<QuantLib::CreditDefaultSwap>(
+							new QuantLib::CreditDefaultSwap(side,
+															notional,
+															spread,
+															*schedule,
+															paymentConvention,
+															dayCounter,
+															settlesAccrual,
+															paysAtDefaultTime,
+															protectionStart,
+															boost::shared_ptr<QuantLib::Claim>(),
+															QuantLib::Actual360(true),
+															rebatesAccrual));
+			}else{
+				libraryObject_ = boost::shared_ptr<QuantLib::CreditDefaultSwap>(
+							new QuantLib::CreditDefaultSwap(side,
+															notional,
+															upfront,
+															spread,
+															*schedule,
+															paymentConvention,
+															dayCounter,
+															settlesAccrual,
+															paysAtDefaultTime,
+															protectionStart,
+															upfrontDate,
+															boost::shared_ptr<QuantLib::Claim>(),
+															QuantLib::Actual360(true),
+															rebatesAccrual));
+			}
     }
     
     MidPointCdsEngine::MidPointCdsEngine(
