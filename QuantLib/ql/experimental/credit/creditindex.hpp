@@ -152,12 +152,11 @@ namespace QuantLib {
             DateGeneration::Rule dateRule, // CDS
             const Calendar& fixingCalendar,
             const DayCounter& dayCounter,
-            const Handle<YieldTermStructure>& yts/*,
-            Seniority indexSeniority*/
+            const Handle<YieldTermStructure>& yts
         ) : CreditIndex(familyName, tenor, fixingDays, 
                         dateRule, defKey.currency(), 
                         fixingCalendar, dayCounter, 
-                        defKey.seniority() ), /////////indexSeniority), 
+                        defKey.seniority() ),
             defKey_(defKey),
             creditCurve_(issuer.defaultProbability(defKey)),
             discountTermStructure_(yts),
@@ -198,6 +197,7 @@ namespace QuantLib {
         virtual Rate forecastFixing(const Date& fixingDate, 
             Real recovery) const;
         DefaultProbKey defKey_;
+		// Forecasting curves:
         Handle<DefaultProbabilityTermStructure> creditCurve_;
         Handle<YieldTermStructure> discountTermStructure_;
         Issuer issuer_;
