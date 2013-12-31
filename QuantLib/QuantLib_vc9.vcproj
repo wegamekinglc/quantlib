@@ -7906,22 +7906,6 @@
 					>
 				</File>
 				<File
-					RelativePath=".\ql\experimental\models\markovfunctionalcapfloorengine.cpp"
-					>
-				</File>
-				<File
-					RelativePath=".\ql\experimental\models\markovfunctionalcapfloorengine.hpp"
-					>
-				</File>
-				<File
-					RelativePath=".\ql\experimental\models\markovfunctionalswaptionengine.cpp"
-					>
-				</File>
-				<File
-					RelativePath=".\ql\experimental\models\markovfunctionalswaptionengine.hpp"
-					>
-				</File>
-				<File
 					RelativePath=".\ql\experimental\models\mfstateprocess.cpp"
 					>
 				</File>
