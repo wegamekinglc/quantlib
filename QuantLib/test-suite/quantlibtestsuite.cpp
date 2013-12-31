@@ -59,6 +59,7 @@
 #include "capfloor.hpp"
 #include "capflooredcoupon.hpp"
 #include "cashflows.hpp"
+#include "catbonds.hpp"
 #include "cdo.hpp"
 #include "cdsoption.hpp"
 #include "chooseroption.hpp"
@@ -89,6 +90,7 @@
 #include "gaussianquadratures.hpp"
 #include "garch.hpp"
 #include "gjrgarchmodel.hpp"
+#include "gsr.hpp"
 #include "hestonmodel.hpp"
 #include "himalayaoption.hpp"
 #include "hybridhestonhullwhiteprocess.hpp"
@@ -352,6 +354,7 @@ test_suite* init_unit_test_suite(int, char* []) {
     test->add(AsianOptionTest::experimental());
     test->add(BarrierOptionTest::experimental());
     test->add(BlackDeltaCalculatorTest::suite());
+    test->add(CatBondTest::suite());
     test->add(CdoTest::suite());
     test->add(CdsOptionTest::suite());
     test->add(ChooserOptionTest::suite());
@@ -362,6 +365,7 @@ test_suite* init_unit_test_suite(int, char* []) {
     test->add(EverestOptionTest::suite());
     test->add(ExtendedTreesTest::suite());
     test->add(FdHestonTest::experimental());
+    test->add(GsrTest::suite());
     test->add(HimalayaOptionTest::suite());
     test->add(InflationCPICapFloorTest::suite());
     test->add(InflationVolTest::suite());

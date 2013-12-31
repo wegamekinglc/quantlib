@@ -315,11 +315,13 @@ AC_CONFIG_FILES([
     ql/experimental/amortizingbonds/Makefile
     ql/experimental/barrieroption/Makefile
     ql/experimental/callablebonds/Makefile
+    ql/experimental/catbonds/Makefile
     ql/experimental/commodities/Makefile
     ql/experimental/compoundoption/Makefile
     ql/experimental/convertiblebonds/Makefile
     ql/experimental/coupons/Makefile
     ql/experimental/credit/Makefile
+    ql/experimental/exercise/Makefile
     ql/experimental/exoticoptions/Makefile
     ql/experimental/finitedifferences/Makefile
     ql/experimental/fx/Makefile
@@ -331,6 +333,7 @@ AC_CONFIG_FILES([
     ql/experimental/processes/Makefile
     ql/experimental/risk/Makefile
     ql/experimental/shortrate/Makefile
+    ql/experimental/swaptions/Makefile
     ql/experimental/variancegamma/Makefile
     ql/experimental/varianceoption/Makefile
     ql/experimental/volatility/Makefile
