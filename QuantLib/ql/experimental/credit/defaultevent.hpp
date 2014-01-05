@@ -58,6 +58,10 @@ namespace QuantLib {
                 sets of recoveries to be present. The way these
                 objects are constructed is a prerogative of the
                 particular event class.
+
+                \todo Consider overwritting the Event interface to hasOccurred;
+                it might be convenient for it to return false if the settlement
+                Date is Null, otherwise fallback to the base behaviour.
             */
             DefaultSettlement(const Date& date,
                               const std::map<Seniority, Real>& recoveryRates);

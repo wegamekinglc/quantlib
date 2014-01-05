@@ -153,13 +153,21 @@
     <DataType defaultSuperType='libraryClass'>QuantLib::OvernightIndexedSwap</DataType>
     <DataType defaultSuperType='libraryClass'>QuantLib::VanillaSwap</DataType>
     <DataType defaultSuperType='libraryClass'>QuantLib::VolatilityTermStructure</DataType>
+    <DataType defaultSuperType='libraryClass'>QuantLib::CreditDefaultSwap</DataType>
     <!--RL ADD 2010-07-22-->
     <DataType defaultSuperType='libraryClass'>QuantLib::DefaultProbabilityHelper</DataType>
     <!--RL ADD 2010-07-22-->
     <DataType defaultSuperType='libraryClass'>QuantLib::SpreadCdsHelper</DataType>
     <!--RL ADD 2010-07-22-->
     <DataType defaultSuperType='libraryClass'>QuantLib::UpfrontCdsHelper</DataType>
-
+    <DataType defaultSuperType='libraryClass'>QuantLib::Issuer</DataType>
+    <DataType defaultSuperType='libraryClass'>QuantLib::DefaultEventSet</DataType>
+    <DataType defaultSuperType='enumeration'>QuantLib::Seniority</DataType>
+    <DataType defaultSuperType='libraryClass'>QuantLib::SingleNameCreditIndex</DataType>
+    <DataType defaultSuperType='libraryClass'>QuantLib::RecoveryRateQuote</DataType>
+    <DataType defaultSuperType='libraryClass'>QuantLib::ConstantMaturityCDS</DataType>
+    <DataType defaultSuperType='libraryClass'>QuantLib::CdsOption</DataType>
+    
     <DataType defaultSuperType='libraryQuote'>QuantLib::FuturesConvAdjustmentQuote</DataType>
     <DataType defaultSuperType='libraryQuote'>QuantLib::Quote</DataType>
     <DataType defaultSuperType='libraryQuote'>QuantLib::SimpleQuote</DataType>
@@ -220,7 +228,7 @@
     <!--RL ADD 2010-07-22-->
     <DataType defaultSuperType='objectClass'>QuantLibAddin::PiecewiseFlatForwardCurve</DataType>
     <!--RL ADD 2010-07-22-->
-    <DataType defaultSuperType='objectClass'>QuantLibAddin::PiecewiseFlatHazardRateCurve</DataType>
+    <DataType defaultSuperType='objectClass'>QuantLibAddin::PiecewiseHazardRateCurve</DataType>
     <DataType defaultSuperType='objectClass'>QuantLibAddin::RandomSequenceGenerator</DataType>
     <DataType defaultSuperType='objectClass'>QuantLibAddin::RateHelper</DataType>
     <DataType defaultSuperType='objectClass'>QuantLibAddin::RelinkableHandle</DataType>

@@ -15,6 +15,7 @@ include_HEADERS = \
     create_btp.hpp \
     create_capfloor.hpp \
     create_capletvolstructure.hpp \
+	create_cmcds.hpp \
     create_cmsmarketcalibration.hpp \
     create_cmsmarket.hpp \
     create_correlation.hpp \
@@ -69,6 +70,7 @@ libCreate_la_SOURCES = \
     create_btp.cpp \
     create_capfloor.cpp \
     create_capletvolstructure.cpp \
+    create_cmcds.cpp \
     create_cmsmarketcalibration.cpp \
     create_cmsmarket.cpp \
     create_correlation.cpp \

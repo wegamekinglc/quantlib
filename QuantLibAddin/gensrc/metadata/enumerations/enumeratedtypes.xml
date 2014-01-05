@@ -59,6 +59,10 @@
           <string>OldCDS</string>
           <value>QuantLib::DateGeneration::OldCDS</value>
         </EnumeratedType>
+        <EnumeratedType>
+          <string>CDS</string>
+          <value>QuantLib::DateGeneration::CDS</value>
+        </EnumeratedType>
       </EnumeratedTypes>
     </EnumeratedTypeGroup>
 
@@ -1658,6 +1662,39 @@
       </EnumeratedTypes>
     </EnumeratedTypeGroup>
 
+    <!-- J.Aparicio 2013-->
+    <EnumeratedTypeGroup type='QuantLib::Seniority'>
+      <includeFile>oh/enumerations/typefactory.hpp</includeFile>
+      <constructor>true</constructor>
+      <EnumeratedTypes>
+        <EnumeratedType>
+          <string>SeniorSec</string>
+          <value>QuantLib::SeniorSec</value>
+        </EnumeratedType>
+        <EnumeratedType>
+          <string>SeniorUnSec</string>
+          <value>QuantLib::SeniorUnSec</value>
+        </EnumeratedType>
+        <EnumeratedType>
+          <string>SubTier1</string>
+          <value>QuantLib::SubTier1</value>
+        </EnumeratedType>
+        <EnumeratedType>
+          <string>SubUpperTier2</string>
+          <value>QuantLib::SubUpperTier2</value>
+        </EnumeratedType>
+        <EnumeratedType>
+          <string>SubLoweTier2</string>
+          <value>QuantLib::SubLoweTier2</value>
+        </EnumeratedType>
+        <EnumeratedType>
+          <string>NoSeniority</string>
+          <value>QuantLib::NoSeniority</value>
+        </EnumeratedType>
+      </EnumeratedTypes>
+    </EnumeratedTypeGroup>
+    
+    
   </EnumeratedTypeGroups>
 
 </root>

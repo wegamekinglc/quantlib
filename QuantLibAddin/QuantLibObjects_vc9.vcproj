@@ -507,6 +507,14 @@
 				>
 			</File>
 			<File
+				RelativePath=".\qlo\valueobjects\vo_cmcds.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\qlo\valueobjects\vo_cmcds.hpp"
+				>
+			</File>
+			<File
 				RelativePath="qlo\valueobjects\vo_cmsmarket.cpp"
 				>
 			</File>
@@ -1602,6 +1610,14 @@
 					>
 				</File>
 				<File
+					RelativePath=".\qlo\serialization\create\create_cmcds.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\qlo\serialization\create\create_cmcds.hpp"
+					>
+				</File>
+				<File
 					RelativePath="qlo\serialization\create\create_cmsmarket.cpp"
 					>
 				</File>
@@ -2023,6 +2039,14 @@
 				</File>
 				<File
 					RelativePath="qlo\serialization\register\serialization_capletvolstructure.hpp"
+					>
+				</File>
+				<File
+					RelativePath=".\qlo\serialization\register\serialization_cmcds.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\qlo\serialization\register\serialization_cmcds.hpp"
 					>
 				</File>
 				<File
@@ -2466,6 +2490,22 @@
 		<Filter
 			Name="credit"
 			>
+			<File
+				RelativePath=".\qlo\cdsoption.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\qlo\cdsoption.hpp"
+				>
+			</File>
+			<File
+				RelativePath=".\qlo\cmcds.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\qlo\cmcds.hpp"
+				>
+			</File>
 			<File
 				RelativePath=".\qlo\credit.cpp"
 				>

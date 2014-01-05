@@ -15,6 +15,7 @@ include_HEADERS = \
     vo_btp.hpp \
     vo_capfloor.hpp \
     vo_capletvolstructure.hpp \
+	vo_cmcds.hpp \
     vo_cmsmarketcalibration.hpp \
     vo_cmsmarket.hpp \
     vo_correlation.hpp \
@@ -71,6 +72,7 @@ libValueObjects_la_SOURCES = \
     vo_btp.cpp \
     vo_capfloor.cpp \
     vo_capletvolstructure.cpp \
+	vo_cmcds.cpp \
     vo_cmsmarketcalibration.cpp \
     vo_cmsmarket.cpp \
     vo_correlation.cpp \

@@ -6,8 +6,13 @@ this_include_HEADERS = \
     all.hpp \
     basket.hpp \
     blackcdsoptionengine.hpp \
+	blackcmcdsengine.hpp \
     cdo.hpp \
     cdsoption.hpp \
+	constantmaturitycds.hpp \
+	creditcmcoupon.hpp \
+	creditcouponpricer.hpp \
+	creditindex.hpp \
     defaultevent.hpp \
     defaultprobabilitykey.hpp \
     defaulttype.hpp \
@@ -35,8 +40,13 @@ this_include_HEADERS = \
 libCredit_la_SOURCES = \
     basket.cpp \
     blackcdsoptionengine.cpp \
+	blackcmcdsengine.cpp \
     cdo.cpp \
     cdsoption.cpp \
+    constantmaturitycds.cpp \
+	creditcmcoupon.cpp \
+	creditcouponpricer.cpp \
+	creditindex.cpp \
     defaultevent.cpp \
     defaultprobabilitykey.cpp \
     defaulttype.cpp \

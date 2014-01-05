@@ -59,6 +59,7 @@ namespace QuantLib {
         }
     }
 
+    /* FIX: This method could return an empty pointer. */
     const Handle<DefaultProbabilityTermStructure>&
         Issuer::defaultProbability(const DefaultProbKey& key) const {
         for(Size i=0; i<probabilities_.size(); i++)
