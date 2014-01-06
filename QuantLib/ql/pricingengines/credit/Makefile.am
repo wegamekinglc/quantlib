@@ -5,10 +5,12 @@ this_includedir=${includedir}/${subdir}
 this_include_HEADERS = \
     all.hpp \
     integralcdsengine.hpp \
+    isdacdsengine.hpp \
     midpointcdsengine.hpp
 
 libCreditEngines_la_SOURCES = \
     integralcdsengine.cpp \
+    isdacdsengine.cpp \
     midpointcdsengine.cpp
 
 noinst_LTLIBRARIES = libCreditEngines.la

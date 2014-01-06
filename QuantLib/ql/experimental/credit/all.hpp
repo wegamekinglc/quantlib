@@ -3,8 +3,13 @@
 
 #include <ql/experimental/credit/basket.hpp>
 #include <ql/experimental/credit/blackcdsoptionengine.hpp>
+#include <ql/experimental/credit/blackcmcdsengine.hpp>
 #include <ql/experimental/credit/cdo.hpp>
 #include <ql/experimental/credit/cdsoption.hpp>
+#include <ql/experimental/credit/constantmaturitycds.hpp>
+#include <ql/experimental/credit/creditcmcoupon.hpp>
+#include <ql/experimental/credit/creditcouponpricer.hpp>
+#include <ql/experimental/credit/creditindex.hpp>
 #include <ql/experimental/credit/defaultevent.hpp>
 #include <ql/experimental/credit/defaultprobabilitykey.hpp>
 #include <ql/experimental/credit/defaulttype.hpp>
