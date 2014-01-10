@@ -31,6 +31,7 @@
 #include <ql/math/interpolations/backwardflatinterpolation.hpp>
 #include <ql/math/interpolations/loginterpolation.hpp>
 #include <ql/pricingengines/credit/midpointcdsengine.hpp>
+#include <ql/pricingengines/credit/isdacdsengine.hpp>
 #include <ql/currencies/europe.hpp>
 
 #include <ql/experimental/credit/riskybond.hpp>
@@ -168,6 +169,18 @@ namespace QuantLibAddin {
         : PricingEngine(properties, permanent) {
         libraryObject_ = boost::shared_ptr<QuantLib::PricingEngine>(new
               QuantLib::MidPointCdsEngine(defaultTS, recoveryRate, yieldTS));
+    }
+
+	IsdaCdsEngine::IsdaCdsEngine(
+            const boost::shared_ptr<ObjectHandler::ValueObject>& properties,
+            const QuantLib::Handle<QuantLib::DefaultProbabilityTermStructure>& defaultTS,
+            QuantLib::Real recoveryRate,
+            const QuantLib::Handle<QuantLib::YieldTermStructure>& yieldTS,
+			bool includeSttlDateFlows,
+            bool permanent) 
+        : PricingEngine(properties, permanent) {
+        libraryObject_ = boost::shared_ptr<QuantLib::PricingEngine>(new
+              QuantLib::IsdaCdsEngine(defaultTS, recoveryRate, yieldTS, includeSttlDateFlows));
     }
 
 

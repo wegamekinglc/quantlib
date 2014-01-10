@@ -135,6 +135,44 @@
       </ParameterList>
     </Constructor>
 
+    <Constructor name='qlISDACdsEngine'>
+      <libraryFunction>IsdaCdsEngine</libraryFunction>
+      <SupportedPlatforms>
+        <!--SupportedPlatform name='Excel' calcInWizard='false'/-->
+        <SupportedPlatform name='Excel'/>
+        <SupportedPlatform name='Calc'/>
+        <SupportedPlatform name='Cpp'/>
+      </SupportedPlatforms>
+      <ParameterList>
+        <Parameters>
+          <Parameter name='DefaultCurve'>
+            <type>QuantLib::DefaultProbabilityTermStructure</type>
+            <superType>libToHandle</superType>
+            <tensorRank>scalar</tensorRank>
+            <description>default term structure object ID.</description>
+          </Parameter>
+          <Parameter name='RecoveryRate'>
+            <type>QuantLib::Real</type>
+            <tensorRank>scalar</tensorRank>
+            <description>constant recovery rate</description>
+          </Parameter>
+          <Parameter name='YieldCurve'>
+            <type>QuantLib::YieldTermStructure</type>
+            <superType>libToHandle</superType>
+            <tensorRank>scalar</tensorRank>
+            <description>discounting yield term structure object ID.</description>
+          </Parameter>
+          <Parameter name='InclSettlDateFlows' default='false'>
+            <type>bool</type>
+            <tensorRank>scalar</tensorRank>
+            <description>Include settlement date flows flag.</description>           
+          </Parameter>
+          
+          
+        </Parameters>
+      </ParameterList>
+    </Constructor>
+
     <Constructor name='qlHazardRateCurve'>
       <description>Creates a backward flat interpolated hazard rate curve.</description>
       <libraryFunction>HazardRateCurve</libraryFunction>
