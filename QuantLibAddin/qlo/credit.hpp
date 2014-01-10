@@ -117,6 +117,16 @@ namespace QuantLibAddin {
             bool permanent);
     };
 
+	class IsdaCdsEngine : public PricingEngine {
+      public:
+        IsdaCdsEngine(
+            const boost::shared_ptr<ObjectHandler::ValueObject>& properties,
+            const QuantLib::Handle<QuantLib::DefaultProbabilityTermStructure>&,
+            QuantLib::Real recoveryRate,
+            const QuantLib::Handle<QuantLib::YieldTermStructure>&,
+			bool includeSttlDateFlows,
+            bool permanent);
+    };
 
     class DefaultProbabilityHelper 
         : public ObjectHandler::LibraryObject<QuantLib::DefaultProbabilityHelper> {
