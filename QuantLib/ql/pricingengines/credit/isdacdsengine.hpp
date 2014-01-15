@@ -126,11 +126,9 @@ namespace QuantLib {
             const ForwardsInCouponPeriod forwardsInCouponPeriod = Piecewise);
 
         const Handle<YieldTermStructure> isdaRateCurve() const {
-            calculate();
             return discountCurve_;
         }
         const Handle<DefaultProbabilityTermStructure> isdaCreditCurve() const {
-            calculate();
             return probability_;
         }
 
@@ -147,7 +145,6 @@ namespace QuantLib {
         const NumericalFix numericalFix_;
         const AccrualBias accrualBias_;
         const ForwardsInCouponPeriod forwardsInCouponPeriod_;
-        const bool bootstrapCurves_;
     };
 }
 
