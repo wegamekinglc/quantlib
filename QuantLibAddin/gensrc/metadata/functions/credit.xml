@@ -279,7 +279,18 @@
             <type>bool</type>
             <tensorRank>scalar</tensorRank>
             <description>Includes last day in the last coupon calculation</description>
+          </Parameter> 
+          <Parameter name='RebatesAccr' const='False' default='true'>
+            <type>bool</type>
+            <tensorRank>scalar</tensorRank>
+            <description>Accrued coupon up to start date is due.</description>
           </Parameter>
+          <Parameter name='UseISDAEngine' const='False' default='false'>
+            <type>bool</type>
+            <tensorRank>scalar</tensorRank>
+            <description>Bootstrap using ISDA engine, if false uses MidPoint</description>
+          </Parameter>
+          
         </Parameters>
       </ParameterList>
     </Constructor>
@@ -350,12 +361,12 @@
             <tensorRank>scalar</tensorRank>
             <description>discounting YieldTermStructure object ID.</description>
           </Parameter>
-          <Parameter name='UpfrontSettlementDays'>
+          <Parameter name='UpfSettlDays'>
             <type>QuantLib::Natural</type>
             <tensorRank>scalar</tensorRank>
             <description>upfront settlement days</description>
           </Parameter>
-          <Parameter name='SettleAccrual' const='False' default='true'>
+          <Parameter name='SettlAccr' const='False' default='true'>
             <type>bool</type>
             <tensorRank>scalar</tensorRank>
             <description>TRUE ensures settlement of accural.</description>
@@ -369,6 +380,16 @@
             <type>bool</type>
             <tensorRank>scalar</tensorRank>
             <description>Includes last day in the last coupon calculation</description>
+          </Parameter>
+          <Parameter name='RebAccr' const='False' default='true'>
+            <type>bool</type>
+            <tensorRank>scalar</tensorRank>
+            <description>Accrued coupon up to start date is due.</description>
+          </Parameter>
+          <Parameter name='ISDAEng' const='False' default='false'>
+            <type>bool</type>
+            <tensorRank>scalar</tensorRank>
+            <description>Bootstrap using ISDA engine, if false uses MidPoint.</description>
           </Parameter>
         </Parameters>
       </ParameterList>

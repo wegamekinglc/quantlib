@@ -200,6 +200,8 @@ namespace QuantLibAddin {
             bool settlesAccrual,
             bool paysAtDefaultTime,
             bool includeLastDay,
+            bool rebatesAccrual,
+            bool useIsdaEngine,
             bool permanent) : DefaultProbabilityHelper(properties, permanent) {
 
         QuantLib::DayCounter lastPeriodDC;
@@ -219,7 +221,17 @@ namespace QuantLibAddin {
 						 yieldTS,
 						 settlesAccrual,
 						 paysAtDefaultTime,
-                         lastPeriodDC));
+                         lastPeriodDC,
+                         rebatesAccrual,
+                         useIsdaEngine));
+        // design improvement here? Use a proper factory with traits to initialize a template engine?, use a separate helper?
+        if(useIsdaEngine) {
+            boost::shared_ptr<QuantLib::CdsHelper> ptr2H = 
+                boost::dynamic_pointer_cast<QuantLib::CdsHelper>(libraryObject_);
+            ptr2H->setIsdaEngineParameters(QuantLib::IsdaCdsEngine::NumericalFix::Taylor,
+                QuantLib::IsdaCdsEngine::AccrualBias::NoBias, 
+                QuantLib::IsdaCdsEngine::ForwardsInCouponPeriod::Flat);
+        }
     }
 
     UpfrontCdsHelper::UpfrontCdsHelper(
@@ -239,6 +251,8 @@ namespace QuantLibAddin {
             bool settlesAccrual,
             bool paysAtDefaultTime,
             bool includeLastDay,
+            bool rebatesAccrual,
+            bool useIsdaEngine,
             bool permanent) : DefaultProbabilityHelper(properties, permanent) {
 
 
@@ -261,7 +275,9 @@ namespace QuantLibAddin {
                                           upfrontSettlementDays,
                                           settlesAccrual,
                                           paysAtDefaultTime,
-                                          lastPeriodDC));
+                                          lastPeriodDC,
+                                          rebatesAccrual,
+                                          useIsdaEngine));
     }
 
     HazardRateCurve::HazardRateCurve(

@@ -151,6 +151,8 @@ namespace QuantLibAddin {
             bool settlesAccrual,
             bool paysAtDefaultTime,
             bool includeLastDay,
+            bool rebatesAccrual,
+            bool useIsdaEngine,
             bool permanent);
     };
 
@@ -173,6 +175,8 @@ namespace QuantLibAddin {
             bool settlesAccrual,
             bool paysAtDefaultTime,
             bool includeLastDay,
+            bool rebatesAccrual,
+            bool useIsdaEngine,
             bool permanent);
     };
     
