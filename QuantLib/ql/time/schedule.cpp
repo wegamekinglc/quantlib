@@ -357,7 +357,7 @@ namespace QuantLib {
                 dates_.back() = calendar_.endOfMonth(dates_.back());
         } else {
             // first date not adjusted for CDS schedules
-            if (rule_ != DateGeneration::OldCDS)
+            if (rule_ != DateGeneration::OldCDS && rule_ != DateGeneration::CDS)
                 dates_[0] = calendar_.adjust(dates_[0], convention);
             for (Size i=1; i<dates_.size()-1; ++i)
                 dates_[i] = calendar_.adjust(dates_[i], convention);
