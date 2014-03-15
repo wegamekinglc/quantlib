@@ -382,6 +382,10 @@
           <string>UnitedStates::Settlement</string>
           <value>QuantLib::UnitedStates(QuantLib::UnitedStates::Settlement)</value>
         </EnumeratedType>
+        <EnumeratedType>
+          <string>WeekendsOnly</string>
+          <value>QuantLib::WeekendsOnly()</value>
+        </EnumeratedType>
       </EnumeratedTypes>
     </EnumeratedTypeGroup>
 
