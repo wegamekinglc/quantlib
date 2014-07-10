@@ -155,6 +155,16 @@ namespace QuantLib {
         Rate fixing(const Date& fixingDate,
                     bool forecastTodaysFixing = false) const;
         //@}
+
+        //! \name Index interface
+        //@{
+        /*! \warning the forecastTodaysFixing parameter (required by
+                     the Index interface) is currently ignored.
+        */
+        Rate fixing(const Date& fixingDate,
+                    const Date& referenceDate,
+                    bool forecastTodaysFixing = false) const;
+        //@}
         //! \name Other methods
         //@{
         Handle<ZeroInflationTermStructure> zeroInflationTermStructure() const;

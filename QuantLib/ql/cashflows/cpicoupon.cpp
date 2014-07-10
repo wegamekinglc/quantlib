@@ -81,17 +81,19 @@ namespace QuantLib {
         Rate I1;
         // what interpolation do we use? Index / flat / linear
         if (observationInterpolation() == CPI::AsIndex) {
-            I1 = cpiIndex()->fixing(d);
+            I1 = cpiIndex()->fixing(d, paymentDate_);
 
         } else {
             // work out what it should be
             std::pair<Date,Date> dd = inflationPeriod(d, cpiIndex()->frequency());
-            Real indexStart = cpiIndex()->fixing(dd.first);
+            Real indexStart = cpiIndex()->fixing(dd.first); //No reference date required when fixing date is on the first of a period
             if (observationInterpolation() == CPI::Linear) {
                 Real indexEnd = cpiIndex()->fixing(dd.second+Period(1,Days));
+
+                std::pair<Date,Date> dd2 = inflationPeriod(paymentDate_, cpiIndex()->frequency());
                 // linear interpolation
-                I1 = indexStart + (indexEnd - indexStart) * (d - dd.first)
-                / (Real)( (dd.second+Period(1,Days)) - dd.first); // can't get to next period's value within current period
+                I1 = indexStart + (indexEnd - indexStart) * (paymentDate_ - dd2.first)
+                / (Real)( (dd2.second+Period(1,Days)) - dd2.first); // can't get to next period's value within current period
             } else {
                 // no interpolation, i.e. flat = constant, so use start-of-period value
                 I1 = indexStart;
@@ -130,10 +132,12 @@ namespace QuantLib {
             Real indexStart = index()->fixing(dd.first);
             if (interpolation() == CPI::Linear) {
                 Real indexEnd = index()->fixing(dd.second+Period(1,Days));
+
+                std::pair<Date,Date> dd2 = inflationPeriod(date(), frequency());
                 // linear interpolation
                 //std::cout << indexStart << " and " << indexEnd << std::endl;
-                I1 = indexStart + (indexEnd - indexStart) * (fixingDate() - dd.first)
-                / ( (dd.second+Period(1,Days)) - dd.first); // can't get to next period's value within current period
+                I1 = indexStart + (indexEnd - indexStart) * (date() - dd2.first)
+                / ( (dd2.second+Period(1,Days)) - dd2.first); // can't get to next period's value within current period
             } else {
                 // no interpolation, i.e. flat = constant, so use start-of-period value
                 I1 = indexStart;

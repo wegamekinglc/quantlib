@@ -105,9 +105,9 @@ namespace QuantLib {
                         bool extrapolate) const;
         bool moving_;
         mutable bool updated_;
+        mutable Date referenceDate_;
         Calendar calendar_;
       private:
-        mutable Date referenceDate_;
         Natural settlementDays_;
         DayCounter dayCounter_;
     };

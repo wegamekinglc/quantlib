@@ -79,6 +79,12 @@ namespace QuantLib {
 
     Rate ZeroInflationIndex::fixing(const Date& aFixingDate,
                                     bool /*forecastTodaysFixing*/) const {
+        return fixing(aFixingDate, aFixingDate);
+    }
+
+    Rate ZeroInflationIndex::fixing(const Date& aFixingDate,
+                                    const Date& referenceDate,
+                                    bool /*forecastTodaysFixing*/) const {
         if (!needsForecast(aFixingDate)) {
             const TimeSeries<Real>& ts = timeSeries();
             Real pastFixing = ts[aFixingDate];
@@ -153,9 +159,10 @@ namespace QuantLib {
     Rate ZeroInflationIndex::forecastFixing(const Date& fixingDate) const {
         // the term structure is relative to the fixing value at the base date.
         Date baseDate = zeroInflation_->baseDate();
+        Date referenceDate = zeroInflation_->referenceDate();
         QL_REQUIRE(!needsForecast(baseDate),
                    name() << " index fixing at base date is not available");
-        Real baseFixing = fixing(baseDate);
+        Real baseFixing = fixing(baseDate, referenceDate);
         Date effectiveFixingDate;
         if (interpolated()) {
             effectiveFixingDate = fixingDate;
