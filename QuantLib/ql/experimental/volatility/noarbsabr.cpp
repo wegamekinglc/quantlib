@@ -34,12 +34,12 @@ namespace QuantLib {
 
 NoArbSabr::NoArbSabr(const Real expiryTime, const Real forward,
                      const Real alpha, const Real beta, const Real nu,
-                     const Real rho)
-    : expiryTime_(expiryTime), forward_(forward), alpha_(alpha), beta_(beta),
-      nu_(nu), rho_(rho) {
+                     const Real rho, const Real epsilon)
+    : expiryTime_(expiryTime), forward_(forward), alpha_(alpha/epsilon), beta_(beta),
+      nu_(nu/epsilon), rho_(rho), epsilon_(epsilon) {
     integrator_ = boost::make_shared<GaussLaguerreIntegration>(64);
     numericalIntegralOverP_ = integrator_->operator()(boost::lambda::bind(&NoArbSabr::p, this, boost::lambda::_1));
-    detail::D0Interpolator d0(forward_, expiryTime_, alpha_, beta_, nu_, rho_);
+    detail::D0Interpolator d0(forward_, expiryTime_, alpha_*epsilon, beta_, nu_*epsilon, rho_);
     absProb_ = d0();
     Real numericalForward = integrator_->operator()(boost::lambda::bind(&NoArbSabr::integrand, this, 0.0, boost::lambda::_1));
 
@@ -68,15 +68,15 @@ Real NoArbSabr::p(const Real f) const {
     Real fOmB = std::pow(f, 1.0 - beta_);
     Real FOmB = std::pow(forward_, 1.0 - beta_);
 
-    Real zf = fOmB / (alpha_ * (1.0 - beta_));
-    Real zF = FOmB / (alpha_ * (1.0 - beta_));
+    Real zf = fOmB / (epsilon_*alpha_ * (1.0 - beta_));
+    Real zF = FOmB / (epsilon_*alpha_ * (1.0 - beta_));
     Real z = zF - zf;
 
     //Real JzF = std::sqrt(1.0 - 2.0 * rho_ * nu_ * zF + nu_ * nu_ * zF * zF);
-    Real Jmzf = std::sqrt(1.0 + 2.0 * rho_ * nu_ * zf + nu_ * nu_ * zf * zf);
-    Real Jz = std::sqrt(1.0 - 2.0 * rho_ * nu_ * z + nu_ * nu_ * z * z);
+    Real Jmzf = std::sqrt(1.0 + 2.0 * epsilon_* rho_ * nu_ * zf + epsilon_ * epsilon_ * nu_ * nu_ * zf * zf);
+    Real Jz = std::sqrt(1.0 - 2.0 * epsilon_*rho_ * nu_ * z + epsilon_*epsilon_*nu_ * nu_ * z * z);
 
-    Real xz = std::log((Jz - rho_ + nu_ * z) / (1.0 - rho_)) / nu_;
+    Real xz = std::log((Jz - rho_ + epsilon_*nu_ * z) / (1.0 - rho_)) / (epsilon_*nu_);
     Real Bp_B = beta_ / FOmB;
     //Real Bpp_B = beta_ * (2.0 * beta_ - 1.0) / (FOmB * FOmB);
     Real kappa1 = 0.125 * nu_ * nu_ * (2.0 - 3.0 * rho_ * rho_) -
@@ -84,17 +84,17 @@ Real NoArbSabr::p(const Real f) const {
     //Real kappa2 = alpha_ * alpha_ * (0.25 * Bpp_B - 0.375 * Bp_B * Bp_B);
     Real gamma = 1.0 / (2.0 * (1.0 - beta_));
     Real sqrtOmR = std::sqrt(1.0 - rho_ * rho_);
-    Real h = 0.5 * beta_ * rho_ / ((1.0 - beta_) * Jmzf * Jmzf) *
-             (nu_ * zf * std::log(zf * Jz / zF) +
-              (1 + rho_ * nu_ * zf) / sqrtOmR *
-                  (std::atan((nu_ * z - rho_) / sqrtOmR) +
+    Real h = 0.5/(epsilon_*epsilon_) * beta_ * rho_ / ((1.0 - beta_) * Jmzf * Jmzf) *
+             (epsilon_*nu_ * zf * std::log(zf * Jz / zF) +
+              (1 + epsilon_*rho_ * nu_ * zf) / sqrtOmR *
+                  (std::atan((epsilon_*nu_ * z - rho_) / sqrtOmR) +
                    std::atan(rho_ / sqrtOmR)));
 
     Real res = std::pow(Jz, -1.5) /
-               (alpha_ * std::pow(f, beta_) * expiryTime_) *
+        (epsilon_*alpha_ * std::pow(f, beta_) * expiryTime_) *
                std::pow(zf, 1.0 - gamma) * std::pow(zF, gamma) *
                std::exp(-(xz * xz + 2.0 * zF * zf) / (2.0 * expiryTime_) +
-                        (h + kappa1)) *
+                        epsilon_*epsilon_*(h + kappa1*expiryTime_)) *
                boost::math::cyl_bessel_i(gamma, zF * zf / expiryTime_);
     return res;
 }

@@ -52,7 +52,8 @@ class NoArbSabr {
 
   public:
     NoArbSabr(const Real expiryTime, const Real forward, const Real alpha,
-              const Real beta, const Real nu, const Real rho);
+              const Real beta, const Real nu, const Real rho,
+              const Real epsilon);
 
     Real price(const Real strike) const;
 
@@ -68,6 +69,7 @@ class NoArbSabr {
     Real integrand(const Real strike, const Real f) const;
     const Real expiryTime_, forward_;
     const Real alpha_, beta_, nu_, rho_;
+    const Real epsilon_;
     boost::shared_ptr<GaussianQuadrature> integrator_;
     Real numericalIntegralOverP_, absProb_;
 };
