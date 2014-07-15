@@ -55,7 +55,7 @@ class NoArbSabr {
               const Real beta, const Real nu, const Real rho);
 
     Real optionPrice(const Real strike) const;
-    Real digitalOptionPrice(const Real strike) const; 
+    Real digitalOptionPrice(const Real strike) const;
     Real density(const Real strike) const { return p(strike,true) * (1-absProb_) / numericalIntegralOverP_; }
 
     Real forward() const { return forward_; }

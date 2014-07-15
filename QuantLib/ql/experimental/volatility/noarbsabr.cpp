@@ -113,8 +113,8 @@ Real NoArbSabr::optionPrice(const Real strike) const {
 }
 
 Real NoArbSabr::digitalOptionPrice(const Real strike) const {
-    
-    return strike < QL_EPSILON ? 1.0 : 
+
+    return strike < QL_EPSILON ? 1.0 :
         (1.0 - absProb_) *
            integrator_->operator()(boost::lambda::bind(&NoArbSabr::p,
                                                        this, boost::lambda::_1, true),
@@ -188,7 +188,7 @@ Real NoArbSabr::p(const Real f, const bool checkNumericalLimits) const {
 
 namespace detail {
 
-#include "noarbsabrabsprobs.dat"
+#include "noarbsabrabsprobs.cpp"
 
 using namespace boost::assign;
 
