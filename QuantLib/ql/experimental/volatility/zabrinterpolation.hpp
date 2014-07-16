@@ -26,7 +26,9 @@
 /*! \file zabrinterpolation.hpp
     \brief ZABR interpolation interpolation between discrete points
     (this is sabrinterpolation.hpp with some adjustments,
-    TODO refactor both interpolations into one more general one)
+    TODO refactor both interpolations into one more general one
+    TODO use something better than the default moneynessgrid of the helper
+         section (e.g. incorporate the strikes on which to interpolate ?)
 */
 
 #ifndef quantlib_zabr_interpolation_hpp
@@ -272,14 +274,17 @@ namespace QuantLib {
                     nu_ = bestParameters[2];
                     rho_ = bestParameters[3];
                     gamma_ = bestParameters[4];
+                    updateSection();
                     error_ = interpolationError();
                     maxError_ = interpolationMaxError();
-
-                    section_ = boost::make_shared<ZabrSmileSection>(
-                        t_, forward_, boost::assign::list_of(alpha_)(beta_)(
-                                          nu_)(rho_)(gamma_),
-                        evaluation_);
                 }
+            }
+
+            void updateSection() {
+                section_ = boost::make_shared<ZabrSmileSection>(
+                    t_, forward_,
+                    boost::assign::list_of(alpha_)(beta_)(nu_)(rho_)(gamma_),
+                    evaluation_);
             }
 
             Real value(Real x) const {
@@ -382,6 +387,7 @@ namespace QuantLib {
                     zabr_->nu_    = y[2];
                     zabr_->rho_   = y[3];
                     zabr_->gamma_ = y[4];
+                    zabr_->updateSection();
                     return zabr_->interpolationSquaredError();
                 }
 
@@ -392,6 +398,7 @@ namespace QuantLib {
                     zabr_->nu_    = y[2];
                     zabr_->rho_   = y[3];
                     zabr_->gamma_ = y[4];
+                    zabr_->updateSection();
                     return zabr_->interpolationErrors(x);
                 }
 
