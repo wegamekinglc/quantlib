@@ -21,10 +21,11 @@
 
 #include <ql/math/solvers1d/brent.hpp>
 #include <ql/math/solvers1d/finitedifferencenewtonsafe.hpp>
+#include <ql/math/modifiedbessel.hpp>
 
 #include <boost/make_shared.hpp>
 #include <boost/math/special_functions/gamma.hpp>
-#include <boost/math/special_functions/bessel.hpp>
+//#include <boost/math/special_functions/bessel.hpp>
 #include <boost/lambda/lambda.hpp>
 #include <boost/lambda/bind.hpp>
 #include <boost/assign/std/vector.hpp>
@@ -50,36 +51,20 @@ NoArbSabr::NoArbSabr(const Real expiryTime, const Real forward,
     : expiryTime_(expiryTime), externalForward_(forward), alpha_(alpha),
       beta_(beta), nu_(nu), rho_(rho), forward_(forward) {
 
-    // determine a region which is numerically valid or at least manageable
-
-    if( boost::math::isinf( p(forward_, true) ) )
-        QL_FAIL("p is infinite at forward, giving up");
+    // determine a region sufficient for integration
 
     fmin_ = fmax_ = forward_;
-    bool back = false;
-    for (Real tmp = p(fmax_, false);
-         (tmp > 1.0e-10 && !back) || boost::math::isnan(tmp); tmp=p(fmax_,false)) {
-        if (boost::math::isinf(tmp) || boost::math::isnan(tmp)) {
-            fmax_ *= 0.75;
-            back = true;
-        } else {
-            fmax_ *= 2.0;
-        }
+    // bool back = false;
+    for (Real tmp = p(fmax_, false); tmp > 1.0e-10; tmp = p(fmax_, false)) {
+        fmax_ *= 2.0;
     }
-    back = false;
+    // back = false;
     for (Real tmp = p(fmin_, false);
-         (tmp > 1.0e-10 && !back) || boost::math::isnan(tmp); tmp=p(fmin_,false)) {
-        if (boost::math::isinf(tmp) || boost::math::isnan(tmp)) {
-            fmin_ *= 1.5;
-            back = true;
-        } else {
-            fmin_ *= 0.5;
-            if (fmin_ < QL_NOARBSABR_MINSTRIKE) {
-                fmin_ = QL_NOARBSABR_MINSTRIKE;
-                back = true;
-            }
-        }
+         tmp > 1.0e-10 && fmin_ > QL_NOARBSABR_MINSTRIKE;
+         tmp = p(fmin_, false)) {
+        fmin_ *= 0.5;
     }
+    fmin_ = std::max(QL_NOARBSABR_MINSTRIKE, fmin_);
 
     std::cout << "fmin =" << fmin_ << " p =" << p(fmin_,false) << std::endl;
     std::cout << "fmax =" << fmax_ << " p =" << p(fmax_,false) << std::endl;
@@ -169,18 +154,19 @@ Real NoArbSabr::p(const Real f, const bool checkNumericalLimits) const {
                   (std::atan((nu_ * z - rho_) / sqrtOmR) +
                    std::atan(rho_ / sqrtOmR)));
 
-    Real bes = boost::math::cyl_bessel_i<Real, Real>(
-        gamma, zF * zf / expiryTime_,
-        boost::math::policies::make_policy(
-            boost::math::policies::overflow_error<
-            boost::math::policies::ignore_error>()/*, // this works, but may be very slow
-            boost::math::policies::evaluation_error<
-            boost::math::policies::ignore_error>()*/));
+    Real bes = modifiedBesselFunction_i_exponentiallyWeighted(gamma, zF*zf/expiryTime_);
+    // boost::math::cyl_bessel_i<Real, Real>(
+    //     gamma, zF * zf / expiryTime_,
+    //     boost::math::policies::make_policy(
+    //         boost::math::policies::overflow_error<
+    //         boost::math::policies::ignore_error>()/*, // this works, but may be very slow
+    //         boost::math::policies::evaluation_error<
+    //         boost::math::policies::ignore_error>()*/));
 
     Real res = std::pow(Jz, -1.5) /
                (alpha_ * std::pow(f, beta_) * expiryTime_) *
                std::pow(zf, 1.0 - gamma) * std::pow(zF, gamma) *
-               std::exp(-(xz * xz + 2.0 * zF * zf) / (2.0 * expiryTime_) +
+               std::exp(-(xz * xz) / (2.0 * expiryTime_) +
                         (h + kappa1 * expiryTime_)) *
                bes;
     return res;
