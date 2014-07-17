@@ -26,15 +26,15 @@
 
     The parameters are bounded as follows
 
-    beta [0.01, 0.99] // beta > 0.8 may be already a numerical problem ... to be clarified ...
+    beta [0.01, 0.99]
     expiryTime (0.0, 30.0]
     sigmaI = alpha*forward^(beta-1) [0.05, 1.0]
-    nu (0.0, 0.8] // bound nu away from zero  !! to make analytical formulas safe here ...
-    rho [-1.0, 1.0] // bound away from -1, 1 !!
+    nu [0.01, 0.8]
+    rho [-0.99, 0.99]
 
     As suggested in the paper, d0 is interpolated (linearly)
     in phi space. For beta > 0.9 phi is extrapolated to a
-    value corresponding to d0 = TINY_PROB = 1E-5 at beta = 1.
+    value corresponding to d0 = tiny_prob = 1E-5 at beta = 1.
     For tau < 0.25 phi is extrapolated flat.
     For rho outside [-0.75, 0.75] phi is extrapolated linearly.
 */
@@ -46,17 +46,59 @@
 #include <ql/types.hpp>
 #include <ql/math/integrals/gausslobattointegral.hpp>
 
+// for c++ before version 11
+#if !(defined(__GXX_EXPERIMENTAL_CXX0X__) || (__cplusplus >= 201103L) || (_MSC_VER >= 1600))
+#define constexpr const
+#endif
+
 namespace QuantLib {
 
 class NoArbSabr {
 
   public:
+    struct Constants {
+        // accuracy when inverting d0 to get phi
+        static constexpr Real phi_accuracy = 1E-6;
+        // parameter bounds
+        static constexpr Real beta_min = 0.01;
+        static constexpr Real beta_max = 0.99;
+        static constexpr Real expiryTime_max = 30.0;
+        static constexpr Real sigmaI_min = 0.05;
+        static constexpr Real sigmaI_max = 1.00;
+        static constexpr Real nu_min = 0.01;
+        static constexpr Real nu_max = 0.80;
+        static constexpr Real rho_min = -0.99;
+        static constexpr Real rho_max = 0.99;
+        // cutoff for phi(d0) / tau
+        static constexpr Real phiByTau_cutoff = 150.0;
+        // number of mc simulations in tabulated
+        // absorption probabilities
+        static constexpr Real nsim = 2500000.0;
+        // small probability used for extrapolation
+        // of beta towards 1
+        static constexpr Real tiny_prob = 1E-5;
+        // minimum strike allowed
+        static constexpr Real strike_min = 0.00001;
+        // accuracy and max iterations for
+        // gauss lobatto integral
+        static constexpr Real gl_accuracy = 1E-6;
+        static constexpr Size gl_max_iterations = 10000;
+        // accuracy when adjusting the model forward
+        // to match the given forward
+        static constexpr Real forward_accuracy = 0.00001;
+        // step for searching the model forward
+        // in newton algorithm
+        static constexpr Real forward_search_step = 0.0010;
+    };
+
     NoArbSabr(const Real expiryTime, const Real forward, const Real alpha,
               const Real beta, const Real nu, const Real rho);
 
     Real optionPrice(const Real strike) const;
     Real digitalOptionPrice(const Real strike) const;
-    Real density(const Real strike) const { return p(strike,true) * (1-absProb_) / numericalIntegralOverP_; }
+    Real density(const Real strike) const {
+        return p(strike, true) * (1 - absProb_) / numericalIntegralOverP_;
+    }
 
     Real forward() const { return forward_; }
     Real expiryTime() const { return expiryTime_; }
@@ -67,7 +109,7 @@ class NoArbSabr {
 
     Real absorptionProbability() const { return absProb_; }
 
-    //private:
+  private:
     Real p(const Real f, const bool checkNumericalLimits = true) const;
     Real forwardError(const Real forward) const;
     Real integrand(const Real strike, const Real f) const;
