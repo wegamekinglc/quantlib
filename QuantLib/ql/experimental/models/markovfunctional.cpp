@@ -20,6 +20,8 @@
 #include <ql/experimental/models/markovfunctional.hpp>
 #include <ql/experimental/models/smilesectionutils.hpp>
 
+//#include <iostream>
+
 namespace QuantLib {
 
     MarkovFunctional::MarkovFunctional(
@@ -370,11 +372,16 @@ namespace QuantLib {
 
                     // TODO should we fix beta to avoid numerical instabilities
                     // during calibration ?
-                    boost::shared_ptr<SabrInterpolatedSmileSection>
-                    sabrSection(new SabrInterpolatedSmileSection(
-                        i->first, i->second.atm_, k, false,
-                        i->second.rawSmileSection_->volatility(i->second.atm_),
-                        v, 0.03, 0.80, 0.50, 0.00, false, false, false, false));
+                    boost::shared_ptr<SabrInterpolatedSmileSection> sabrSection(
+                        new SabrInterpolatedSmileSection(
+                            i->first, i->second.atm_, k, false,
+                            i->second.rawSmileSection_->volatility(
+                                i->second.atm_),
+                            v, 0.03, 0.80, 0.50, 0.00, false, false, false,
+                            false, true, boost::shared_ptr<EndCriteria>(),
+                            boost::shared_ptr<OptimizationMethod>(),
+                            Actual365Fixed(),
+                                i->second.rawSmileSection_->shift()));
 
                     // we make the sabr section arbitrage free by superimposing
                     // a kahalesection
@@ -397,12 +404,16 @@ namespace QuantLib {
 
             i->second.minRateDigital_ =
                 i->second.smileSection_->digitalOptionPrice(
-                    modelSettings_.lowerRateBound_, Option::Call,
-                    i->second.annuity_, modelSettings_.digitalGap_);
+                    modelSettings_.lowerRateBound_ -
+                        i->second.smileSection_->shift(),
+                    Option::Call, i->second.annuity_,
+                    modelSettings_.digitalGap_);
             i->second.maxRateDigital_ =
                 i->second.smileSection_->digitalOptionPrice(
-                    modelSettings_.upperRateBound_, Option::Call,
-                    i->second.annuity_, modelSettings_.digitalGap_);
+                    modelSettings_.upperRateBound_ -
+                        i->second.smileSection_->shift(),
+                    Option::Call, i->second.annuity_,
+                    modelSettings_.digitalGap_);
 
             // output smile for testing
             // boost::shared_ptr<SmileSection> sec1 =
@@ -430,7 +441,7 @@ namespace QuantLib {
             // std::cout <<
             // "strike;rawVol;rawVar;rawCall;Call;rawDigial;Digital;"
             //     "rawDensity;Density;callDiff;Arb" << std::endl;
-            // Real strike = 0.00001;
+            // Real strike = 0.00001 - sec1->shift();
             // while (strike <= 0.20 + 1E-8) {
             //     std::cout << strike << ";" << sec1->volatility(strike) << ";"
             //               << sec1->variance(strike) << ";" <<
@@ -564,13 +575,15 @@ namespace QuantLib {
                     digital += integral * numeraire0 * digitalsCorrectionFactor;
 
                     if (digital >= i->second.minRateDigital_)
-                        swapRate = modelSettings_.lowerRateBound_;
+                        swapRate = modelSettings_.lowerRateBound_ -
+                                   i->second.rawSmileSection_->shift();
                     else {
                         if (digital <= i->second.maxRateDigital_)
                             swapRate = modelSettings_.upperRateBound_;
                         else {
-                            swapRate = marketSwapRate(i->first, i->second,
-                                                      digital, swapRate0);
+                            swapRate = marketSwapRate(
+                                i->first, i->second, digital, swapRate0,
+                                i->second.rawSmileSection_->shift());
                             if (j < (int)y_.size() - 1 &&
                                 swapRate > swapRate0) {
                                 QL_MFMESSAGE(
@@ -832,15 +845,16 @@ namespace QuantLib {
     const Real MarkovFunctional::marketSwapRate(const Date &expiry,
                                                 const CalibrationPoint &p,
                                                 const Real digitalPrice,
-                                                const Real guess) const {
+                                                const Real guess,
+                                                const Real shift) const {
 
         ZeroHelper z(this, expiry, p, digitalPrice);
         Brent b;
         Real solution = b.solve(
             z, modelSettings_.marketRateAccuracy_,
             std::max(std::min(guess, modelSettings_.upperRateBound_ - 0.00001),
-                     modelSettings_.lowerRateBound_ + 0.00001),
-            modelSettings_.lowerRateBound_, modelSettings_.upperRateBound_);
+                     modelSettings_.lowerRateBound_ - shift + 0.00001),
+            modelSettings_.lowerRateBound_ - shift, modelSettings_.upperRateBound_);
         return solution;
     }
 

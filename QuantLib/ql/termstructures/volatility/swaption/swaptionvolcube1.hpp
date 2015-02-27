@@ -36,7 +36,6 @@
 #include <ql/math/interpolations/flatextrapolation2d.hpp>
 #include <ql/math/interpolations/backwardflatlinearinterpolation.hpp>
 #include <ql/math/interpolations/bilinearinterpolation.hpp>
-#include <ql/experimental/volatility/noarbsabrinterpolation.hpp>
 #include <ql/quote.hpp>
 
 #include <boost/make_shared.hpp>
@@ -131,7 +130,9 @@ namespace QuantLib {
             const bool useMaxError = false,
             const Size maxGuesses = 50,
             const bool backwardFlat = false,
-            const Real cutoffStrike = 0.0001);
+            const Real cutoffStrike = 0.0001,
+            const bool dontCalibrate = false
+        );
         //! \name LazyObject interface
         //@{
         void performCalculations() const;
@@ -170,7 +171,8 @@ namespace QuantLib {
                                     Time optionTime,
                                     Time swapLength,
                                     const Cube& sabrParametersCube) const;
-        Cube sabrCalibration(const Cube& marketVolCube) const;
+        Cube sabrCalibration(const Cube &marketVolCube,
+                             const bool dontCalibrate = false) const;
         void fillVolatilityCube() const;
         void createSparseSmiles() const;
         std::vector<Real> spreadVolInterpolation(const Date& atmOptionDate,
@@ -194,6 +196,7 @@ namespace QuantLib {
         const Size maxGuesses_;
         const bool backwardFlat_;
         const Real cutoffStrike_;
+        const bool dontCalibrate_;
 
         class PrivateObserver : public Observer {
           public:
@@ -231,7 +234,8 @@ namespace QuantLib {
         const boost::shared_ptr<OptimizationMethod> &optMethod,
         const Real errorAccept, const bool useMaxError, const Size maxGuesses,
         const bool backwardFlat,
-        const Real cutoffStrike)
+        const Real cutoffStrike,
+        const bool dontCalibrate)
         : SwaptionVolatilityCube(atmVolStructure, optionTenors, swapTenors,
                                  strikeSpreads, volSpreads, swapIndexBase,
                                  shortSwapIndexBase, vegaWeightedSmileFit),
@@ -240,7 +244,8 @@ namespace QuantLib {
           isAtmCalibrated_(isAtmCalibrated), endCriteria_(endCriteria),
           optMethod_(optMethod),
           useMaxError_(useMaxError), maxGuesses_(maxGuesses),
-          backwardFlat_(backwardFlat), cutoffStrike_(cutoffStrike) {
+          backwardFlat_(backwardFlat), cutoffStrike_(cutoffStrike),
+          dontCalibrate_(dontCalibrate) {
 
         if (maxErrorTolerance != Null<Rate>()) {
             maxErrorTolerance_ = maxErrorTolerance;
@@ -306,7 +311,7 @@ namespace QuantLib {
         }
         marketVolCube_.updateInterpolators();
 
-        sparseParameters_ = sabrCalibration(marketVolCube_);
+        sparseParameters_ = sabrCalibration(marketVolCube_, dontCalibrate_);
         //parametersGuess_ = sparseParameters_;
         sparseParameters_.updateInterpolators();
         //parametersGuess_.updateInterpolators();
@@ -314,7 +319,7 @@ namespace QuantLib {
 
         if(isAtmCalibrated_){
             fillVolatilityCube();
-            denseParameters_ = sabrCalibration(volCubeAtmCalibrated_);
+            denseParameters_ = sabrCalibration(volCubeAtmCalibrated_, false);
             denseParameters_.updateInterpolators();
         }
     }
@@ -329,8 +334,10 @@ namespace QuantLib {
         notifyObservers();
     }
 
-    template<class Model> typename SwaptionVolCube1x<Model>::Cube
-    SwaptionVolCube1x<Model>::sabrCalibration(const Cube& marketVolCube) const {
+    template <class Model>
+    typename SwaptionVolCube1x<Model>::Cube
+    SwaptionVolCube1x<Model>::sabrCalibration(const Cube &marketVolCube,
+                                              const bool dontCalibrate) const {
 
         const std::vector<Time>& optionTimes = marketVolCube.optionTimes();
         const std::vector<Time>& swapLengths = marketVolCube.swapLengths();
@@ -353,11 +360,12 @@ namespace QuantLib {
         for (Size j=0; j<optionTimes.size(); j++) {
             for (Size k=0; k<swapLengths.size(); k++) {
                 Rate atmForward = atmStrike(optionDates[j], swapTenors[k]);
+                Real shiftTmp = atmVol_->shift(optionTimes[j], swapLengths[k]);
                 strikes.clear();
                 volatilities.clear();
                 for (Size i=0; i<nStrikes_; i++){
                     Real strike = atmForward+strikeSpreads_[i];
-                    if(strike>=cutoffStrike_) {
+                    if(strike + shiftTmp >=cutoffStrike_) {
                         strikes.push_back(strike);
                         volatilities.push_back(tmpMarketVolCube[i][j][k]);
                     }
@@ -373,16 +381,17 @@ namespace QuantLib {
                                           optionTimes[j], atmForward,
                                           guess[0], guess[1],
                                           guess[2], guess[3],
-                                          isParameterFixed_[0],
-                                          isParameterFixed_[1],
-                                          isParameterFixed_[2],
-                                          isParameterFixed_[3],
+                                          isParameterFixed_[0] | dontCalibrate,
+                                          isParameterFixed_[1] | dontCalibrate,
+                                          isParameterFixed_[2] | dontCalibrate,
+                                          isParameterFixed_[3] | dontCalibrate,
                                           vegaWeightedSmileFit_,
                                           endCriteria_,
                                           optMethod_,
                                           errorAccept_,
                                           useMaxError_,
-                                          maxGuesses_));
+                                          maxGuesses_,
+                                          shiftTmp));
                 sabrInterpolation->update();
 
                 Real rmsError = sabrInterpolation->rmsError();
@@ -415,7 +424,7 @@ namespace QuantLib {
                       ", swap tenor " << swapTenors[k] <<
                       (useMaxError_ ? ": max error " : ": error") <<
                       (useMaxError_ ? maxError : rmsError) <<
-                          "   alpha = " <<  alphas[j][k] << "n" <<
+                          "   alpha = " <<  alphas[j][k] << "\n" <<
                           "   beta = " <<  betas[j][k] << "\n" <<
                           "   nu = " <<  nus[j][k]   << "\n" <<
                           "   rho = " <<  rhos[j][k]  << "\n" <<
@@ -463,11 +472,12 @@ namespace QuantLib {
 
         for (Size j=0; j<optionTimes.size(); j++) {
             Rate atmForward = atmStrike(optionDates[j], swapTenors[k]);
+            Real shiftTmp = atmVol_->shift(optionTimes[j], swapLengths[k]);
             strikes.clear();
             volatilities.clear();
             for (Size i=0; i<nStrikes_; i++){
                 Real strike = atmForward+strikeSpreads_[i];
-                if(strike>=cutoffStrike_) {
+                if(strike+shiftTmp>=cutoffStrike_) {
                     strikes.push_back(strike);
                     volatilities.push_back(tmpMarketVolCube[i][j][k]);
                 }
@@ -476,9 +486,9 @@ namespace QuantLib {
             const std::vector<Real>& guess = parametersGuess_.operator()(
                 optionTimes[j], swapLengths[k]);
 
-            const boost::shared_ptr<SABRInterpolation> sabrInterpolation =
-                boost::shared_ptr<SABRInterpolation>(new
-                    SABRInterpolation(strikes.begin(), strikes.end(),
+                const boost::shared_ptr<typename Model::Interpolation> sabrInterpolation =
+                    boost::shared_ptr<typename Model::Interpolation>(new
+                                          (typename Model::Interpolation)(strikes.begin(), strikes.end(),
                                       volatilities.begin(),
                                       optionTimes[j], atmForward,
                                       guess[0], guess[1],
@@ -492,7 +502,8 @@ namespace QuantLib {
                                       optMethod_,
                                       errorAccept_,
                                       useMaxError_,
-                                      maxGuesses_));
+                                      maxGuesses_,
+                                      shiftTmp));
 
             sabrInterpolation->update();
             Real interpolationError = sabrInterpolation->rmsError();
@@ -704,13 +715,16 @@ namespace QuantLib {
         swapTenorNodes[1] = swapTenors[swapLengthsPreviousIndex+1];
 
         Rate atmForward = atmStrike(atmOptionDate, atmSwapTenor);
+        Real shift = atmVol_->shift(atmOptionTime, atmTimeLength);
 
         Matrix atmForwards(2, 2, 0.0);
+        Matrix atmShifts(2,2,0.0);
         Matrix atmVols(2, 2, 0.0);
         for (Size i=0; i<2; i++) {
             for (Size j=0; j<2; j++) {
                 atmForwards[i][j] = atmStrike(optionsDateNodes[i],
                                               swapTenorNodes[j]);
+                atmShifts[i][j] = atmVol_->shift(optionsNodes[i], swapLengthsNodes[j]);
                 // atmVols[i][j] = smiles[i][j]->volatility(atmForwards[i][j]);
                 atmVols[i][j] = atmVol_->volatility(
                     optionsDateNodes[i], swapTenorNodes[j], atmForwards[i][j]);
@@ -734,14 +748,14 @@ namespace QuantLib {
         }
 
         for (Size k=0; k<nStrikes_; k++){
-            const Real strike = std::max(atmForward + strikeSpreads_[k],cutoffStrike_);
-            const Real moneyness = atmForward/strike;
+            const Real strike = std::max(atmForward + strikeSpreads_[k],cutoffStrike_-shift);
+            const Real moneyness = (atmForward+shift)/(strike+shift);
 
             Matrix strikes(2,2,0.);
             Matrix spreadVols(2,2,0.);
             for (Size i=0; i<2; i++){
                 for (Size j=0; j<2; j++){
-                    strikes[i][j] = atmForwards[i][j]/moneyness;
+                    strikes[i][j] = (atmForwards[i][j]+atmShifts[i][j])/moneyness - atmShifts[i][j];
                     spreadVols[i][j] =
                         smiles[i][j]->volatility(strikes[i][j]) - atmVols[i][j];
                 }
@@ -763,8 +777,9 @@ namespace QuantLib {
         calculate();
         const std::vector<Real> sabrParameters =
             sabrParametersCube(optionTime, swapLength);
+        Real shiftTmp = atmVol_->shift(optionTime,swapLength);
         return boost::shared_ptr<SmileSection>(new (typename Model::SmileSection)(
-            optionTime, sabrParameters[4], sabrParameters));
+                          optionTime, sabrParameters[4], sabrParameters,shiftTmp));
     }
 
     template<class Model> boost::shared_ptr<SmileSection>
@@ -1151,17 +1166,6 @@ namespace QuantLib {
     };
 
     typedef SwaptionVolCube1x<SwaptionVolCubeSabrModel> SwaptionVolCube1;
-
-    //======================================================================//
-    //                      SwaptionVolCube1a (NoArbSabr)                    //
-    //======================================================================//
-
-    struct SwaptionVolCubeNoArbSabrModel {
-        typedef NoArbSabrInterpolation Interpolation;
-        typedef NoArbSabrSmileSection SmileSection;
-    };
-
-    typedef SwaptionVolCube1x<SwaptionVolCubeNoArbSabrModel> SwaptionVolCube1a;
 
 }
 

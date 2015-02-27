@@ -35,34 +35,39 @@ namespace QuantLib {
 class QuadraticLfm {
 
   public:
-    QuadraticLfm(const std::vector<Real> &rateTimes,
-                 const std::vector<Real> &initialForwards,
-                 const std::vector<Real> &)
-        : rateTimes_(rateTimes), initialForwards_(initialForwards) {
+    QuadraticLfm(std::vector<Real> &rateTimes,
+                 std::vector<Real> &initialForwards,
+                 std::vector<std::vector<std::vector<Real> > > &sigma,
+                 std::vector<std::vector<Real> > &b,
+                 std::vector<std::vector<Real> > &c);
 
-        N_ = rateTimes.size();
-        QL_REQUIRE(N_ - 1 == initialForwards_.size(),
-                   "rateTimes size ("
-                       << N_
-                       << ") minus 1 must be equal to number of forwards ("
-                       << initialForwards_.size() << ")");
-    }
-
-    /* markovian projection local volatility \eta(t,S) */
-    Real eta(const Real t, const Real S);
-
-    /* S_{n,m} */
-    Real S(const Size n, const Size m, const Size step = 1);
+    /* markovian projection local volatility \eta(t,s) */
+    /* uses cached values */
+    Real eta(const Size n, const Size m, const Size step, const Real t,
+             const Real s);
 
     /* dS_{n,m} / dL_i freezed at time zero */
-    Real dSdL(const Size n, const Size m, const Size step, const Size i);
+    Real dSdL(const Size n, const Size m, const Size step, const Size i,
+              const Real h = 1E-5);
+
+    /* S_{n,m}(0) */
+    Real S(const Size n, const Size m, const Size step = 1);
+
+    /* P(0,t_n,t_m) */
+    Real P(const Size n, const Size m);
 
     /* t_{q-1} <= t < t_q */
     int q(const Real t);
 
+    /* refresh cached values after changes in the parameters given
+       in the constructor */
+    void refreshCache();
+
   private:
-    std::vector<Real> rateTimes_, initialForwards_;
-    Size N_;
+    std::vector<Real> &rateTimes_, initialForwards_;
+    std::vector<std::vector<std::vector<Real> > > &sigma_;
+    std::vector<std::vector<Real> > &b_, &c_;
+    Size N_, K_;
 };
 }
 
