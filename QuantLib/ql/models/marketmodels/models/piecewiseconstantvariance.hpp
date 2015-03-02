@@ -28,7 +28,8 @@
 namespace QuantLib {
 
     class EvolutionDescription;
-    class Matrix;
+    template<class T> class Matrix_t;
+    typedef Matrix_t<Real> Matrix;
 
     class PiecewiseConstantVariance {
       public:

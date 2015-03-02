@@ -53,7 +53,7 @@ namespace QuantLib {
                 varianceValues_[iter.index()] = 0.0;
             }
         }
-        volatilityValues_ = Sqrt(2*varianceValues_);
+        volatilityValues_ = Sqrt(2.0*varianceValues_);
     }
 
     void FdmHestonEquityPart::setTime(Time t1, Time t2) {

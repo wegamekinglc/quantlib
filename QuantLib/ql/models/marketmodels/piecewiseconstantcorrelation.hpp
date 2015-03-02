@@ -26,7 +26,8 @@
 
 namespace QuantLib {
 
-    class Matrix;
+    template<class T> class Matrix_t;
+    typedef Matrix_t<Real> Matrix;
 
     // corrTimes must include all rateTimes but the last
     class PiecewiseConstantCorrelation {

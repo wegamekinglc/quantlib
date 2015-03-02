@@ -132,7 +132,7 @@ namespace QuantLib {
                        " required, " << std::distance(begin, end) <<
                        " provided");
 
-            quadraticSum_ += weight * outerProduct(begin, end,
+            quadraticSum_ += weight * outerProduct<Real>(begin, end,
                                                    begin, end);
 
             for (Size i=0; i<dimension_; ++begin, ++i)
@@ -258,7 +258,7 @@ namespace QuantLib {
         Real inv = 1.0/sampleWeight;
 
         Matrix result = inv*quadraticSum_;
-        result -= outerProduct(m.begin(), m.end(),
+        result -= outerProduct<Real>(m.begin(), m.end(),
                                m.begin(), m.end());
 
         result *= (sampleNumber/(sampleNumber-1.0));

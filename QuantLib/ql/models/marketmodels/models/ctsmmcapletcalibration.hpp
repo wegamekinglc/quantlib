@@ -30,7 +30,8 @@
 namespace QuantLib {
 
     class PiecewiseConstantVariance;
-    class Matrix;
+    template<class T> class Matrix_t;
+    typedef Matrix_t<Real> Matrix;
 
     class CTSMMCapletCalibration {
       public:
