@@ -3,6 +3,7 @@
 /*
  Copyright (C) 2006 Ferdinando Ametrano
  Copyright (C) 2006 François du Vignaud
+ Copyright (C) 2015 Peter Caspers
 
  This file is part of QuantLib, a free-software/open-source library
  for financial quantitative analysts and developers - http://quantlib.org/
@@ -33,182 +34,161 @@
 
 namespace QuantLib {
 
-    template<template<class> class Interpolator>
-    class InterpolatedSmileSection : public SmileSection,
-                                     public LazyObject {
-      public:
-        InterpolatedSmileSection(
-                           Time expiryTime,
-                           const std::vector<Rate>& strikes,
-                           const std::vector<Handle<Quote> >& stdDevHandles,
-                           const Handle<Quote>& atmLevel,
-                           const Interpolator<Real>& interpolator = Interpolator<Real>(),
-                           const DayCounter& dc = Actual365Fixed());
-        InterpolatedSmileSection(
-                           Time expiryTime,
-                           const std::vector<Rate>& strikes,
-                           const std::vector<Real>& stdDevs,
-                           Real atmLevel,
-                           const Interpolator<Real>& interpolator = Interpolator<Real>(),
-                           const DayCounter& dc = Actual365Fixed());
+template <template <class> class Interpolator, class T>
+class InterpolatedSmileSection_t : public SmileSection_t<T>, public LazyObject {
+  public:
+    InterpolatedSmileSection_t(
+        Time expiryTime, const std::vector<T> &strikes,
+        const std::vector<Handle<Quote_t<T> > > &stdDevHandles,
+        const Handle<Quote_t<T> > &atmLevel,
+        const Interpolator<T> &interpolator = Interpolator<T>(),
+        const DayCounter &dc = Actual365Fixed());
+    InterpolatedSmileSection_t(
+        Time expiryTime, const std::vector<T> &strikes,
+        const std::vector<T> &stdDevs, T atmLevel,
+        const Interpolator<T> &interpolator = Interpolator<T>(),
+        const DayCounter &dc = Actual365Fixed());
 
-        InterpolatedSmileSection(
-                           const Date& d,
-                           const std::vector<Rate>& strikes,
-                           const std::vector<Handle<Quote> >& stdDevHandles,
-                           const Handle<Quote>& atmLevel,
-                           const DayCounter& dc = Actual365Fixed(),
-                           const Interpolator<Real>& interpolator = Interpolator<Real>(),
-                           const Date& referenceDate = Date());
-        InterpolatedSmileSection(
-                           const Date& d,
-                           const std::vector<Rate>& strikes,
-                           const std::vector<Real>& stdDevs,
-                           Real atmLevel,
-                           const DayCounter& dc = Actual365Fixed(),
-                           const Interpolator<Real>& interpolator = Interpolator<Real>(),
-                           const Date& referenceDate = Date());
-        void performCalculations() const;
-        Real varianceImpl(Rate strike) const;
-        Volatility volatilityImpl(Rate strike) const;
-        Real minStrike () const { return strikes_.front(); }
-        Real maxStrike () const { return strikes_.back(); }
-        virtual Real atmLevel() const { return atmLevel_->value(); }
-        void update();
-      private:
-        Real exerciseTimeSquareRoot_;
-        std::vector<Rate> strikes_;
-        std::vector<Handle<Quote> > stdDevHandles_;
-        Handle<Quote> atmLevel_;
-        mutable std::vector<Volatility> vols_;
-        mutable Interpolation interpolation_;
-    };
+    InterpolatedSmileSection_t(
+        const Date &d, const std::vector<T> &strikes,
+        const std::vector<Handle<Quote_t<T> > > &stdDevHandles,
+        const Handle<Quote_t<T> > &atmLevel,
+        const DayCounter &dc = Actual365Fixed(),
+        const Interpolator<T> &interpolator = Interpolator<T>(),
+        const Date &referenceDate = Date());
+    InterpolatedSmileSection_t(
+        const Date &d, const std::vector<T> &strikes,
+        const std::vector<T> &stdDevs, T atmLevel,
+        const DayCounter &dc = Actual365Fixed(),
+        const Interpolator<T> &interpolator = Interpolator<T>(),
+        const Date &referenceDate = Date());
+    void performCalculations() const;
+    T varianceImpl(T strike) const;
+    T volatilityImpl(T strike) const;
+    T minStrike() const { return strikes_.front(); }
+    T maxStrike() const { return strikes_.back(); }
+    virtual T atmLevel() const { return atmLevel_->value(); }
+    void update();
 
+  private:
+    Real exerciseTimeSquareRoot_;
+    std::vector<T> strikes_;
+    std::vector<Handle<Quote_t<T> > > stdDevHandles_;
+    Handle<Quote_t<T> > atmLevel_;
+    mutable std::vector<T> vols_;
+    mutable Interpolation_t<T> interpolation_;
+};
 
-    template<template<class> class Interpolator>
-    InterpolatedSmileSection<Interpolator>::InterpolatedSmileSection(
-                               Time timeToExpiry,
-                               const std::vector<Rate>& strikes,
-                               const std::vector<Handle<Quote> >& stdDevHandles,
-                               const Handle<Quote>& atmLevel,
-                               const Interpolator<Real>& interpolator,
-                               const DayCounter& dc)
-    : SmileSection(timeToExpiry, dc),
-      exerciseTimeSquareRoot_(std::sqrt(exerciseTime())), strikes_(strikes),
+template <template <class> class Interpolator> struct InterpolatedSmileSection {
+    typedef InterpolatedSmileSection_t<Interpolator, Real> Type;
+};
+
+template <template <class> class Interpolator, class T>
+InterpolatedSmileSection_t<Interpolator, T>::InterpolatedSmileSection_t(
+    Time timeToExpiry, const std::vector<T> &strikes,
+    const std::vector<Handle<Quote_t<T> > > &stdDevHandles,
+    const Handle<Quote_t<T> > &atmLevel, const Interpolator<T> &interpolator,
+    const DayCounter &dc)
+    : SmileSection_t<T>(timeToExpiry, dc),
+      exerciseTimeSquareRoot_(std::sqrt(this->exerciseTime())), strikes_(strikes),
       stdDevHandles_(stdDevHandles), atmLevel_(atmLevel),
-      vols_(stdDevHandles.size())
-    {
-        for (Size i=0; i<stdDevHandles_.size(); ++i)
-            LazyObject::registerWith(stdDevHandles_[i]);
-        LazyObject::registerWith(atmLevel_);
-        // check strikes!!!!!!!!!!!!!!!!!!!!
-        interpolation_ = interpolator.interpolate(strikes_.begin(),
-                                                  strikes_.end(),
-                                                  vols_.begin());
-    }
-
-    template<template<class> class Interpolator>
-    InterpolatedSmileSection<Interpolator>::InterpolatedSmileSection(
-                                Time timeToExpiry,
-                                const std::vector<Rate>& strikes,
-                                const std::vector<Real>& stdDevs,
-                                Real atmLevel,
-                                const Interpolator<Real>& interpolator,
-                                const DayCounter& dc)
-    : SmileSection(timeToExpiry, dc),
-      exerciseTimeSquareRoot_(std::sqrt(exerciseTime())), strikes_(strikes),
-      stdDevHandles_(stdDevs.size()), vols_(stdDevs.size())
-    {
-        // fill dummy handles to allow generic handle-based
-        // computations later on
-        for (Size i=0; i<stdDevs.size(); ++i)
-            stdDevHandles_[i] = Handle<Quote>(boost::shared_ptr<Quote>(new
-                SimpleQuote(stdDevs[i])));
-        atmLevel_ = Handle<Quote>
-           (boost::shared_ptr<Quote>(new SimpleQuote(atmLevel)));
-        // check strikes!!!!!!!!!!!!!!!!!!!!
-        interpolation_ = interpolator.interpolate(strikes_.begin(),
-                                                  strikes_.end(),
-                                                  vols_.begin());
-    }
-
-    template <template<class> class Interpolator>
-    InterpolatedSmileSection<Interpolator>::InterpolatedSmileSection(
-                           const Date& d,
-                           const std::vector<Rate>& strikes,
-                           const std::vector<Handle<Quote> >& stdDevHandles,
-                           const Handle<Quote>& atmLevel,
-                           const DayCounter& dc,
-                           const Interpolator<Real>& interpolator,
-                           const Date& referenceDate)
-    : SmileSection(d, dc, referenceDate),
-      exerciseTimeSquareRoot_(std::sqrt(exerciseTime())), strikes_(strikes),
-      stdDevHandles_(stdDevHandles), atmLevel_(atmLevel), vols_(stdDevHandles.size())
-    {
-        for (Size i=0; i<stdDevHandles_.size(); ++i)
-            LazyObject::registerWith(stdDevHandles_[i]);
-        LazyObject::registerWith(atmLevel_);
-        // check strikes!!!!!!!!!!!!!!!!!!!!
-        interpolation_ = interpolator.interpolate(strikes_.begin(),
-                                                  strikes_.end(),
-                                                  vols_.begin());
-    }
-
-    template <template<class> class Interpolator>
-    InterpolatedSmileSection<Interpolator>::InterpolatedSmileSection(
-                           const Date& d,
-                           const std::vector<Rate>& strikes,
-                           const std::vector<Real>& stdDevs,
-                           Real atmLevel,
-                           const DayCounter& dc,
-                           const Interpolator<Real>& interpolator,
-                           const Date& referenceDate)
-    : SmileSection(d, dc, referenceDate),
-      exerciseTimeSquareRoot_(std::sqrt(exerciseTime())), strikes_(strikes),
-      stdDevHandles_(stdDevs.size()), vols_(stdDevs.size())
-    {
-        //fill dummy handles to allow generic handle-based
-        // computations later on
-        for (Size i=0; i<stdDevs.size(); ++i)
-            stdDevHandles_[i] = Handle<Quote>(boost::shared_ptr<Quote>(new
-                SimpleQuote(stdDevs[i])));
-        atmLevel_ = Handle<Quote>
-           (boost::shared_ptr<Quote>(new SimpleQuote(atmLevel)));
-        // check strikes!!!!!!!!!!!!!!!!!!!!
-        interpolation_ = interpolator.interpolate(strikes_.begin(),
-                                                  strikes_.end(),
-                                                  vols_.begin());
-    }
-
-    template <template<class> class Interpolator>
-    inline void InterpolatedSmileSection<Interpolator>::performCalculations()
-                                                                      const {
-        for (Size i=0; i<stdDevHandles_.size(); ++i)
-            vols_[i] = stdDevHandles_[i]->value()/exerciseTimeSquareRoot_;
-        interpolation_.update();
-    }
-
-    #ifndef __DOXYGEN__
-    template <template<class> class Interpolator>
-    Real InterpolatedSmileSection<Interpolator>::varianceImpl(Real strike) const {
-        calculate();
-        Real v = interpolation_(strike, true);
-        return v*v*exerciseTime();
-    }
-
-    template <template<class> class Interpolator>
-    Real InterpolatedSmileSection<Interpolator>::volatilityImpl(Real strike) const {
-        calculate();
-        return interpolation_(strike, true);
-    }
-
-    template <template<class> class Interpolator>
-    void InterpolatedSmileSection<Interpolator>::update() {
-        LazyObject::update();
-        SmileSection::update();
-    }
-    #endif
-
+      vols_(stdDevHandles.size()) {
+    for (Size i = 0; i < stdDevHandles_.size(); ++i)
+        LazyObject::registerWith(stdDevHandles_[i]);
+    LazyObject::registerWith(atmLevel_);
+    // check strikes!!!!!!!!!!!!!!!!!!!!
+    interpolation_ = interpolator.interpolate(strikes_.begin(), strikes_.end(),
+                                              vols_.begin());
 }
+
+template <template <class> class Interpolator, class T>
+InterpolatedSmileSection_t<Interpolator, T>::InterpolatedSmileSection_t(
+    Time timeToExpiry, const std::vector<T> &strikes,
+    const std::vector<T> &stdDevs, T atmLevel,
+    const Interpolator<T> &interpolator, const DayCounter &dc)
+    : SmileSection_t<T>(timeToExpiry, dc),
+      exerciseTimeSquareRoot_(std::sqrt(this->exerciseTime())), strikes_(strikes),
+      stdDevHandles_(stdDevs.size()), vols_(stdDevs.size()) {
+    // fill dummy handles to allow generic handle-based
+    // computations later on
+    for (Size i = 0; i < stdDevs.size(); ++i)
+        stdDevHandles_[i] = Handle<Quote_t<T> >(
+            boost::shared_ptr<Quote_t<T> >(new SimpleQuote_t<T>(stdDevs[i])));
+    atmLevel_ = Handle<Quote_t<T> >(
+        boost::shared_ptr<Quote_t<T> >(new SimpleQuote_t<T>(atmLevel)));
+    // check strikes!!!!!!!!!!!!!!!!!!!!
+    interpolation_ = interpolator.interpolate(strikes_.begin(), strikes_.end(),
+                                              vols_.begin());
+}
+
+template <template <class> class Interpolator, class T>
+InterpolatedSmileSection_t<Interpolator, T>::InterpolatedSmileSection_t(
+    const Date &d, const std::vector<T> &strikes,
+    const std::vector<Handle<Quote_t<T> > > &stdDevHandles,
+    const Handle<Quote_t<T> > &atmLevel, const DayCounter &dc,
+    const Interpolator<T> &interpolator, const Date &referenceDate)
+    : SmileSection(d, dc, referenceDate),
+      exerciseTimeSquareRoot_(std::sqrt(this->exerciseTime())), strikes_(strikes),
+      stdDevHandles_(stdDevHandles), atmLevel_(atmLevel),
+      vols_(stdDevHandles.size()) {
+    for (Size i = 0; i < stdDevHandles_.size(); ++i)
+        LazyObject::registerWith(stdDevHandles_[i]);
+    LazyObject::registerWith(atmLevel_);
+    // check strikes!!!!!!!!!!!!!!!!!!!!
+    interpolation_ = interpolator.interpolate(strikes_.begin(), strikes_.end(),
+                                              vols_.begin());
+}
+
+template <template <class> class Interpolator, class T>
+InterpolatedSmileSection_t<Interpolator, T>::InterpolatedSmileSection_t(
+    const Date &d, const std::vector<T> &strikes, const std::vector<T> &stdDevs,
+    T atmLevel, const DayCounter &dc, const Interpolator<T> &interpolator,
+    const Date &referenceDate)
+    : SmileSection_t<T>(d, dc, referenceDate),
+      exerciseTimeSquareRoot_(std::sqrt(this->exerciseTime())), strikes_(strikes),
+      stdDevHandles_(stdDevs.size()), vols_(stdDevs.size()) {
+    // fill dummy handles to allow generic handle-based
+    // computations later on
+    for (Size i = 0; i < stdDevs.size(); ++i)
+        stdDevHandles_[i] = Handle<Quote_t<T> >(
+            boost::shared_ptr<Quote_t<T> >(new SimpleQuote_t<T>(stdDevs[i])));
+    atmLevel_ = Handle<Quote_t<T> >(
+        boost::shared_ptr<Quote_t<T> >(new SimpleQuote_t<T>(atmLevel)));
+    // check strikes!!!!!!!!!!!!!!!!!!!!
+    interpolation_ = interpolator.interpolate(strikes_.begin(), strikes_.end(),
+                                              vols_.begin());
+}
+
+template <template <class> class Interpolator, class T>
+inline void
+InterpolatedSmileSection_t<Interpolator, T>::performCalculations() const {
+    for (Size i = 0; i < stdDevHandles_.size(); ++i)
+        vols_[i] = stdDevHandles_[i]->value() / exerciseTimeSquareRoot_;
+    interpolation_.update();
+}
+
+#ifndef __DOXYGEN__
+template <template <class> class Interpolator, class T>
+T InterpolatedSmileSection_t<Interpolator, T>::varianceImpl(T strike) const {
+    calculate();
+    T v = interpolation_(strike, true);
+    return v * v * this->exerciseTime();
+}
+
+template <template <class> class Interpolator, class T>
+T InterpolatedSmileSection_t<Interpolator, T>::volatilityImpl(
+    T strike) const {
+    calculate();
+    return interpolation_(strike, true);
+}
+
+template <template <class> class Interpolator, class T>
+void InterpolatedSmileSection_t<Interpolator, T>::update() {
+    LazyObject::update();
+    SmileSection::update();
+}
+#endif
+
+} // namespace QuantLib
 
 #endif

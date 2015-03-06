@@ -90,7 +90,7 @@ SwaptionVolCube2::smileSectionImpl(const Date &optionDate,
             (atmVol + volSpreadsInterpolator_[i](length, optionTime)));
     }
     return boost::shared_ptr<SmileSection>(
-        new InterpolatedSmileSection<Linear>(optionTime, strikes,
+        new InterpolatedSmileSection_t<Linear,Real>(optionTime, strikes,
                                                     stdDevs, atmForward));
 }
 }

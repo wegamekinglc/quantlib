@@ -175,7 +175,7 @@ void OdeTest::testMatrixExponential() {
                     << "\n tolerance           : " << 100*tol);
         }
 
-        const Matrix negativeTime = Expm((-1)*m, -t, tol);
+        const Matrix negativeTime = Expm((-1.0)*m, -t, tol);
         diff = negativeTime - expected;
         relDiffNorm = frobenuiusNorm(diff)/frobenuiusNorm(expected);
 

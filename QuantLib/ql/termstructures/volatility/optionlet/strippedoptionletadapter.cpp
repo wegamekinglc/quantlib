@@ -52,7 +52,7 @@ StrippedOptionletAdapter::smileSectionImpl(Time t) const {
     CubicInterpolation::BoundaryCondition bc =
         optionletStrikes.size() >= 4 ? CubicInterpolation::Lagrange
                                      : CubicInterpolation::SecondDerivative;
-    return boost::shared_ptr<SmileSection>(new InterpolatedSmileSection<Cubic>(
+    return boost::shared_ptr<SmileSection>(new InterpolatedSmileSection_t<Cubic,Real>(
         t, optionletStrikes, stddevs, Null<Real>(),
         Cubic<Real>(CubicInterpolation::Spline, false, bc, 0.0, bc, 0.0)));
 }

@@ -1396,12 +1396,10 @@ namespace {
             smilesOnExpiry.push_back(boost::shared_ptr<SmileSection>(
                 new FlatSmileSection(startDate, flatVol, rangeCouponDayCount)));
             Real dummyAtmLevel = 0;
-            smilesOnExpiry.push_back(boost::shared_ptr<SmileSection>(new
-                InterpolatedSmileSection<Linear>(startDate,
-                                                 strikes,
-                                                 stdDevsOnExpiry,
-                                                 dummyAtmLevel,
-                                                 rangeCouponDayCount)));
+            smilesOnExpiry.push_back(boost::shared_ptr<SmileSection>(
+                new InterpolatedSmileSection_t<Linear, Real>(
+                    startDate, strikes, stdDevsOnExpiry, dummyAtmLevel,
+                    rangeCouponDayCount)));
             //smilesOnExpiry.push_back(
             //    swaptionVolatilityStructures_[0]->smileSection(startDate,
             //                                                   Period(6, Months)));
@@ -1409,12 +1407,10 @@ namespace {
             smilesOnPayment = std::vector<boost::shared_ptr<SmileSection> >();
             smilesOnPayment.push_back(boost::shared_ptr<SmileSection>(
                 new FlatSmileSection(endDate, flatVol, rangeCouponDayCount)));
-            smilesOnPayment.push_back(boost::shared_ptr<SmileSection>(new
-                InterpolatedSmileSection<Linear>(endDate,
-                                                 strikes,
-                                                 stdDevsOnPayment,
-                                                 dummyAtmLevel,
-                                                 rangeCouponDayCount)));
+            smilesOnPayment.push_back(boost::shared_ptr<SmileSection>(
+                new InterpolatedSmileSection_t<Linear, Real>(
+                    endDate, strikes, stdDevsOnPayment, dummyAtmLevel,
+                    rangeCouponDayCount)));
             //vars.smilesOnPayment.push_back(
             //    swaptionVolatilityStructures_[0]->smileSection(vars.endDate,
             //                                                   Period(6, Months)));

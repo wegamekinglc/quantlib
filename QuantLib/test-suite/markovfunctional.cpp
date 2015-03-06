@@ -686,7 +686,7 @@ void MarkovFunctionalTest::testKahaleSmileSection() {
 
     std::vector<Real> stdDevs0 = impliedStdDevs(atm, strikes, calls0);
     boost::shared_ptr<SmileSection> sec1(
-        new InterpolatedSmileSection<Linear>(t, strikes, stdDevs0, atm));
+        new InterpolatedSmileSection_t<Linear, Real>(t, strikes, stdDevs0, atm));
 
     // test arbitrage free smile reproduction
 
@@ -779,7 +779,7 @@ void MarkovFunctionalTest::testKahaleSmileSection() {
                 0.0010; // introduce arbitrage by changing call price
     std::vector<Real> stdDevs1 = impliedStdDevs(atm, strikes, calls1);
     boost::shared_ptr<SmileSection> sec2(
-        new InterpolatedSmileSection<Linear>(t, strikes, stdDevs1, atm));
+        new InterpolatedSmileSection_t<Linear, Real>(t, strikes, stdDevs1, atm));
 
     boost::shared_ptr<KahaleSmileSection> ksec21(
         new KahaleSmileSection(sec2, atm, false, false, false, money));
@@ -823,7 +823,7 @@ void MarkovFunctionalTest::testKahaleSmileSection() {
                 0.1 * calls2[8]; // introduce arbitrage by changing call price
     std::vector<Real> stdDevs2 = impliedStdDevs(atm, strikes, calls2);
     boost::shared_ptr<SmileSection> sec3(
-        new InterpolatedSmileSection<Linear>(t, strikes, stdDevs2, atm));
+        new InterpolatedSmileSection_t<Linear, Real>(t, strikes, stdDevs2, atm));
 
     boost::shared_ptr<KahaleSmileSection> ksec31(
         new KahaleSmileSection(sec3, atm, false, false, false, money));
