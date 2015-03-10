@@ -20,7 +20,6 @@ libVolTermStructures_la_SOURCES = \
     abcd.cpp \
     abcdcalibration.cpp \
     flatsmilesection.cpp \
-    sabr.cpp \
     sabrinterpolatedsmilesection.cpp \
     sabrsmilesection.cpp \
     spreadedsmilesection.cpp

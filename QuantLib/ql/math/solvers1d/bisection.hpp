@@ -2,6 +2,7 @@
 
 /*
  Copyright (C) 2000, 2001, 2002, 2003 RiskMap srl
+ Copyright (C) 2015 Peter Caspers
 
  This file is part of QuantLib, a free-software/open-source library
  for financial quantitative analysts and developers - http://quantlib.org/
@@ -32,11 +33,12 @@ namespace QuantLib {
     /*! \test the correctness of the returned values is tested by
               checking them against known good results.
     */
-    class Bisection : public Solver1D<Bisection> {
+    template<class T>
+    class Bisection_t : public Solver1D<Bisection_t<T>,T> {
       public:
         template <class F>
-        Real solveImpl(const F& f,
-                       Real xAccuracy) const {
+        T solveImpl(const F& f,
+                       T xAccuracy) const {
 
             /* The implementation of the algorithm was inspired by
                Press, Teukolsky, Vetterling, and Flannery,
@@ -44,34 +46,36 @@ namespace QuantLib {
                University Press
             */
 
-            Real dx, xMid, fMid;
+            T dx, xMid, fMid;
 
             // Orient the search so that f>0 lies at root_+dx
-            if (fxMin_ < 0.0) {
-                dx = xMax_-xMin_;
-                root_ = xMin_;
+            if (this->fxMin_ < 0.0) {
+                dx = this->xMax_-this->xMin_;
+                this->root_ = this->xMin_;
             } else {
-                dx = xMin_-xMax_;
-                root_ = xMax_;
+                dx = this->xMin_-this->xMax_;
+                this->root_ = this->xMax_;
             }
 
-            while (evaluationNumber_<=maxEvaluations_) {
+            while (this->evaluationNumber_<=this->maxEvaluations_) {
                 dx /= 2.0;
-                xMid = root_+dx;
+                xMid = this->root_+dx;
                 fMid = f(xMid);
-                ++evaluationNumber_;
+                ++this->evaluationNumber_;
                 if (fMid <= 0.0)
-                    root_ = xMid;
-                if (std::fabs(dx) < xAccuracy || (close(fMid, 0.0))) {
-                    f(root_);
-                    ++evaluationNumber_;
-                    return root_;
+                    this->root_ = xMid;
+                if (QLFCT::abs(dx) < xAccuracy || (close(fMid, T(0.0)))) {
+                    f(this->root_);
+                    ++this->evaluationNumber_;
+                    return this->root_;
                 }
             }
             QL_FAIL("maximum number of function evaluations ("
-                    << maxEvaluations_ << ") exceeded");
+                    << this->maxEvaluations_ << ") exceeded");
         }
     };
+
+    typedef Bisection_t<Real> Bisection;
 
 }
 

@@ -41,7 +41,6 @@ libMath_la_SOURCES = \
 	bspline.cpp \
 	factorial.cpp \
 	incompletegamma.cpp \
-	matrix.cpp \
 	modifiedbessel.cpp \
 	primenumbers.cpp \
 	quadratic.cpp \
