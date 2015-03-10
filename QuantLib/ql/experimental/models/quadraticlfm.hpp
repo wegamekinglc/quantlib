@@ -26,8 +26,10 @@
 
 #include <ql/types.hpp>
 #include <ql/errors.hpp>
-#include <vector>
+#include <ql/utilities/disposable.hpp>
+#include <ql/math/array.hpp>
 
+#include <vector>
 #include <iostream>
 
 namespace QuantLib {
@@ -35,16 +37,30 @@ namespace QuantLib {
 class QuadraticLfm {
 
   public:
-    QuadraticLfm(std::vector<Real> &rateTimes,
-                 std::vector<Real> &initialForwards,
-                 std::vector<std::vector<std::vector<Real> > > &sigma,
-                 std::vector<std::vector<Real> > &b,
-                 std::vector<std::vector<Real> > &c);
+    /*! sigma, b and c are stored as references, i.e. if they change outside
+       this class,
+        the class reflects this change in computed values */
+    QuadraticLfm(const std::vector<Real> &rateTimes,
+                 const std::vector<Real> &initialForwards,
+                 const std::vector<std::vector<std::vector<Real> > > &sigma,
+                 const std::vector<std::vector<Real> > &b,
+                 const std::vector<std::vector<Real> > &c);
 
-    /* markovian projection local volatility \eta(t,s) */
-    /* uses cached values */
+    /* markovian projection local volatility \eta(t,s) for a swap rate */
+    Disposable<Array> eta(const Size n, const Size m, const Size step,
+                          const Real t, const Array &s);
     Real eta(const Size n, const Size m, const Size step, const Real t,
              const Real s);
+
+    // test
+    Real E1(const Size n, const Size m, const Size step, const Real t, const Size i);
+
+    /* smile slice for a european swaption based on \eta(t,s) and Dupire pricing
+       the call prices are non deflated, i.e. the annuity used for discounting
+       is one */
+    Disposable<std::vector<Real> > callPrices(const Size n, const Size m,
+                                              const Size step,
+                                              const std::vector<Real> &strikes);
 
     /* dS_{n,m} / dL_i freezed at time zero */
     Real dSdL(const Size n, const Size m, const Size step, const Size i,
@@ -57,16 +73,29 @@ class QuadraticLfm {
     Real P(const Size n, const Size m);
 
     /* t_{q-1} <= t < t_q */
+
     int q(const Real t);
 
-    /* refresh cached values after changes in the parameters given
-       in the constructor */
-    void refreshCache();
-
   private:
-    std::vector<Real> &rateTimes_, initialForwards_;
-    std::vector<std::vector<std::vector<Real> > > &sigma_;
-    std::vector<std::vector<Real> > &b_, &c_;
+    class LocalVolHelper {
+      public:
+        LocalVolHelper(QuadraticLfm *t, const Size n, const Size m,
+                       const Size step, const Array &k)
+            : t_(t), n_(n), m_(m), step_(step), k_(k) {}
+        Disposable<Array> operator()(Real t) const {
+            return t_->eta(n_, m_, step_, t, k_);
+        }
+
+      private:
+        QuadraticLfm *t_;
+        const Size &n_, &m_, &step_;
+        const Array &k_;
+    };
+    const void checkSwapParameters(const Size n, const Size m, const Size step);
+    const std::vector<Real> rateTimes_;
+    std::vector<Real> initialForwards_;
+    const std::vector<std::vector<std::vector<Real> > > &sigma_;
+    const std::vector<std::vector<Real> > &b_, &c_;
     Size N_, K_;
 };
 }
