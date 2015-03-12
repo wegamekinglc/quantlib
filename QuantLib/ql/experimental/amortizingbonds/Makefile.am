@@ -10,7 +10,6 @@ this_include_HEADERS = \
 
 libAmortizingBonds_la_SOURCES = \
     amortizingcmsratebond.cpp \
-    amortizingfixedratebond.cpp \
     amortizingfloatingratebond.cpp
 
 noinst_LTLIBRARIES = libAmortizingBonds.la
