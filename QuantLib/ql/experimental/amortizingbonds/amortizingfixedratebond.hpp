@@ -2,6 +2,7 @@
 
 /*
  Copyright (C) 2008 Simon Ibbotson
+ Copyright (C) 2015 Cheng Li
 
  This file is part of QuantLib, a free-software/open-source library
  for financial quantitative analysts and developers - http://quantlib.org/
@@ -156,7 +157,7 @@ namespace QuantLib {
                             DateGeneration::Backward, false);
             return retVal;
         }
-        
+
         template<class T>
         std::vector<T> sinkingNotionals(const Period& maturityTenor,
                                            const Frequency& sinkingFrequency,
