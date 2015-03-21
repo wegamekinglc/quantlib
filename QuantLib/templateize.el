@@ -16,7 +16,7 @@
 (query-replace-regexp (concat classname "\\([( ]\\)") (concat classname "_t\\1") nil (point-min) (point-max))
 
 ; replace frequent other class names
-(query-replace-regexp "\\(Interpolation\\|Quote\\|SimpleQuote\\|SmileSection\\|Array\\)\\([ (>]\\)" "\\1_t<T>\\2"
+(query-replace-regexp "\\(Array\\|Interpolation\\|Quote\\|SABRInterpolation\\|SimpleQuote\\|SmileSection\\)\\([ (>]\\)" "\\1_t<T>\\2"
                       nil (point-min) (point-max))
 
 ; replace std:: functions
