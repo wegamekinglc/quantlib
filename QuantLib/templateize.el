@@ -1,17 +1,26 @@
 (defun templateize (classname)
-"some standard query-replace commands to support teamplate'ization"
-(set-buffer (current-buffer))
+"some standard query-replace commands to support template'ization"
 (interactive "sClass name: \n")
+
+(set-buffer (current-buffer))
+
 ; replace standard types
-(query-replace-regexp "\\(double\\|Real\\|Spread\\|Volatility\\|Rate\\)\\([ >]\\)" 
+(query-replace-regexp "\\(double\\|Real\\|Spread\\|Volatility\\|Rate\\)\\([ >,]\\)"
                       "T\\2" nil (point-min) (point-max))
+
 ; replace class name
+(query-replace-regexp (concat classname " \\([a-zA-Z]\\)")
+                      (concat classname "_t<T> \\1") nil (point-min) (point-max))
+(query-replace-regexp (concat classname "::")
+                      (concat classname "_t<T>::") nil (point-min) (point-max))
 (query-replace-regexp (concat classname "\\([( ]\\)") (concat classname "_t\\1") nil (point-min) (point-max))
-(query-replace-regexp (concat classname "::") (concat classname "_t<T>::") nil (point-min) (point-max))
+
 ; replace frequent other class names
-(query-replace-regexp "\\(Interpolation\\|Quote\\|SimpleQuote\\|SmileSection\\)\\([ (]\\)" "\\1_t<T>\\2" 
+(query-replace-regexp "\\(Interpolation\\|Quote\\|SimpleQuote\\|SmileSection\\|Array\\)\\([ (>]\\)" "\\1_t<T>\\2"
                       nil (point-min) (point-max))
+
 ; replace std:: functions
-(query-replace-regexp "\\(std::\\)\*\\(max\\|min\\|pow\\|log\\|exp\\|abs\\|sqrt\\)(" 
+(query-replace-regexp "\\(std::\\)\*fabs(" "QLFCT::abs(")
+(query-replace-regexp "\\(std::\\)\*\\(max\\|min\\|pow\\|log\\|exp\\|sqrt\\)("
                       "QLFCT::\\2(" nil (point-min) (point-max))
 )
