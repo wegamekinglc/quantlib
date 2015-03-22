@@ -5,7 +5,7 @@
 (set-buffer (current-buffer))
 
 ; replace standard types
-(query-replace-regexp "\\(double\\|Real\\|Spread\\|Volatility\\|Rate\\)\\([ >,]\\)"
+(query-replace-regexp "\\(double\\|Real\\|Spread\\|Volatility\\|Rate\\)\\([ >,\n\r]\\)"
                       "T\\2" nil (point-min) (point-max))
 
 ; replace class name
@@ -16,7 +16,7 @@
 (query-replace-regexp (concat classname "\\([( ]\\)") (concat classname "_t\\1") nil (point-min) (point-max))
 
 ; replace frequent other class names
-(query-replace-regexp "\\(Array\\|Interpolation\\|Quote\\|SABRInterpolation\\|SimpleQuote\\|SmileSection\\)\\([ (>]\\)" "\\1_t<T>\\2"
+(query-replace-regexp "\\(Array\\|Interpolation\\|Quote\\|SABRInterpolation\\|SimpleQuote\\|SmileSection\\|VolatilityTermStructure\\)\\([ (>]\\)" "\\1_t<T>\\2"
                       nil (point-min) (point-max))
 
 ; replace std:: functions
