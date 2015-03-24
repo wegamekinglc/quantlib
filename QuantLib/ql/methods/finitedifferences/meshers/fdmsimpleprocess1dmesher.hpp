@@ -30,7 +30,8 @@
 
 namespace QuantLib {
 
-    class StochasticProcess1D;
+    template<class> class StochasticProcess1D_t;
+    typedef StochasticProcess1D_t<Real> StochasticProcess1D;
 
     class FdmSimpleProcess1dMesher : public Fdm1dMesher {
       public:

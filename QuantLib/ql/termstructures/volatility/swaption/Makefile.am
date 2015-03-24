@@ -17,14 +17,7 @@ this_include_HEADERS = \
 
 libSwaptionVol_la_SOURCES = \
     cmsmarket.cpp \
-    cmsmarketcalibration.cpp \
-    spreadedswaptionvol.cpp \
-    swaptionconstantvol.cpp \
-    swaptionvolcube.cpp \
-    swaptionvolcube2.cpp \
-    swaptionvoldiscrete.cpp \
-    swaptionvolmatrix.cpp \
-    swaptionvolstructure.cpp
+    cmsmarketcalibration.cpp
 
 noinst_LTLIBRARIES = libSwaptionVol.la
 

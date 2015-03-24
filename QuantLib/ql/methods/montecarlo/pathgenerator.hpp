@@ -30,8 +30,10 @@
 #include <ql/stochasticprocess.hpp>
 
 namespace QuantLib {
-    class StochasticProcess;
-    class StochasticProcess1D;
+    template<class> class StochasticProcess_t;
+    typedef StochasticProcess_t<Real> StochasticProcess;
+    template<class> class StochasticProcess1D_t;
+    typedef StochasticProcess1D_t<Real> StochasticProcess1D;
     //! Generates random paths using a sequence generator
     /*! Generates random paths with drift(S,t) and variance(S,t)
         using a gaussian sequence generator

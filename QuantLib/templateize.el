@@ -5,8 +5,8 @@
 (set-buffer (current-buffer))
 
 ; replace standard types
-(query-replace-regexp "\\(double\\|Real\\|Spread\\|Volatility\\|Rate\\)\\([ >,\n\r]\\)"
-                      "T\\2" nil (point-min) (point-max))
+(query-replace-regexp "\\([ ,<(\n\r]\\)\\(double\\|Real\\|Spread\\|Volatility\\|Rate\\)\\([ >),\n\r]\\)"
+                      "\\1T\\3" nil (point-min) (point-max))
 
 ; replace class name
 (query-replace-regexp (concat classname " \\([a-zA-Z]\\)")
@@ -16,11 +16,11 @@
 (query-replace-regexp (concat classname "\\([( ]\\)") (concat classname "_t\\1") nil (point-min) (point-max))
 
 ; replace frequent other class names
-(query-replace-regexp "\\(Array\\|Interpolation\\|Quote\\|SABRInterpolation\\|SimpleQuote\\|SmileSection\\|VolatilityTermStructure\\)\\([ (>]\\)" "\\1_t<T>\\2"
+(query-replace-regexp "\\([ ,<\n\r]\\)\\(Array\\|BilinearInterpolation\\|BackwardFlatLinearInterpolation\\|Interpolation\\|Interpolation2D\\|Matrix\\|Quote\\|SABRInterpolation\\|SimpleQuote\\|SmileSection\\|SwapIndex\\|VanillaSwap\\|VolatilityTermStructure\\)\\([ (>\n\r\]\\)" "\\1\\2_t<T>\\3"
                       nil (point-min) (point-max))
 
 ; replace std:: functions
 (query-replace-regexp "\\(std::\\)\*fabs(" "QLFCT::abs(")
-(query-replace-regexp "\\(std::\\)\*\\(max\\|min\\|pow\\|log\\|exp\\|sqrt\\)("
+(query-replace-regexp "\\(std::\\)\*\\(abs\\|max\\|min\\|pow\\|log\\|exp\\|sqrt\\)("
                       "QLFCT::\\2(" nil (point-min) (point-max))
 )

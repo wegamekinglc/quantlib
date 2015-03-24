@@ -29,8 +29,10 @@
 #include <ql/methods/lattices/lattice2d.hpp>
 
 namespace QuantLib {
-    class StochasticProcess1D;
-    class StochasticProcess;
+    template<class> class StochasticProcess1D_t;
+    typedef StochasticProcess1D_t<Real> StochasticProcess1D;
+    template<class> class StochasticProcess_t;
+    typedef StochasticProcess_t<Real> StochasticProcess;
     //! Abstract base-class for two-factor models
     /*! \ingroup shortrate */
     class TwoFactorModel : public ShortRateModel {

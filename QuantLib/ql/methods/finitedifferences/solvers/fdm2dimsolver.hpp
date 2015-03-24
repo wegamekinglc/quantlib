@@ -32,7 +32,8 @@
 
 namespace QuantLib {
 
-    class BicubicSpline;
+    template<class> class BicubicSpline_t;
+    typedef BicubicSpline_t<Real> BicubicSpline;
     class FdmSnapshotCondition;
 
     class Fdm2DimSolver : public LazyObject {

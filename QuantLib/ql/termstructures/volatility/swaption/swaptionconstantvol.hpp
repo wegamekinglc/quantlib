@@ -3,6 +3,7 @@
 /*
  Copyright (C) 2008 Ferdinando Ametrano
  Copyright (C) 2006, 2007 StatPro Italia srl
+ Copyright (C) 2015 Peter Caspers
 
  This file is part of QuantLib, a free-software/open-source library
  for financial quantitative analysts and developers - http://quantlib.org/
@@ -27,85 +28,147 @@
 
 #include <ql/termstructures/volatility/swaption/swaptionvolstructure.hpp>
 #include <ql/time/period.hpp>
-#include <ql/quote.hpp>
+#include <ql/termstructures/volatility/flatsmilesection.hpp>
+#include <ql/quotes/simplequote.hpp>
 
 namespace QuantLib {
 
-    //! Constant swaption volatility, no time-strike dependence
-    class ConstantSwaptionVolatility : public SwaptionVolatilityStructure {
-      public:
-        //! floating reference date, floating market data
-        ConstantSwaptionVolatility(Natural settlementDays,
-                                   const Calendar& cal,
-                                   BusinessDayConvention bdc,
-                                   const Handle<Quote>& volatility,
-                                   const DayCounter& dc);
-        //! fixed reference date, floating market data
-        ConstantSwaptionVolatility(const Date& referenceDate,
-                                   const Calendar& cal,
-                                   BusinessDayConvention bdc,
-                                   const Handle<Quote>& volatility,
-                                   const DayCounter& dc);
-        //! floating reference date, fixed market data
-        ConstantSwaptionVolatility(Natural settlementDays,
-                                   const Calendar& cal,
-                                   BusinessDayConvention bdc,
-                                   Volatility volatility,
-                                   const DayCounter& dc);
-        //! fixed reference date, fixed market data
-        ConstantSwaptionVolatility(const Date& referenceDate,
-                                   const Calendar& cal,
-                                   BusinessDayConvention bdc,
-                                   Volatility volatility,
-                                   const DayCounter& dc);
-        //! \name TermStructure interface
-        //@{
-        Date maxDate() const;
-        //@}
-        //! \name VolatilityTermStructure interface
-        //@{
-        Real minStrike() const;
-        Real maxStrike() const;
-        //@}
-        //! \name SwaptionVolatilityStructure interface
-        //@{
-        const Period& maxSwapTenor() const;
-        //@}
-      protected:
-        boost::shared_ptr<SmileSection> smileSectionImpl(const Date&,
-                                                         const Period&) const;
-        boost::shared_ptr<SmileSection> smileSectionImpl(Time,
-                                                         Time) const;
-        Volatility volatilityImpl(const Date&,
-                                  const Period&,
-                                  Rate) const;
-        Volatility volatilityImpl(Time,
-                                  Time,
-                                  Rate) const;
-      private:
-        Handle<Quote> volatility_;
-        Period maxSwapTenor_;
-    };
+//! Constant swaption volatility, no time-strike dependence
+template <class T>
+class ConstantSwaptionVolatility_t : public SwaptionVolatilityStructure {
+  public:
+    //! floating reference date, floating market data
+    ConstantSwaptionVolatility_t(Natural settlementDays, const Calendar &cal,
+                                 BusinessDayConvention bdc,
+                                 const Handle<Quote_t<T> > &volatility,
+                                 const DayCounter &dc);
+    //! fixed reference date, floating market data
+    ConstantSwaptionVolatility_t(const Date &referenceDate, const Calendar &cal,
+                                 BusinessDayConvention bdc,
+                                 const Handle<Quote_t<T> > &volatility,
+                                 const DayCounter &dc);
+    //! floating reference date, fixed market data
+    ConstantSwaptionVolatility_t(Natural settlementDays, const Calendar &cal,
+                                 BusinessDayConvention bdc, T volatility,
+                                 const DayCounter &dc);
+    //! fixed reference date, fixed market data
+    ConstantSwaptionVolatility_t(const Date &referenceDate, const Calendar &cal,
+                                 BusinessDayConvention bdc, T volatility,
+                                 const DayCounter &dc);
+    //! \name TermStructure interface
+    //@{
+    Date maxDate() const;
+    //@}
+    //! \name VolatilityTermStructure_t<T> interface
+    //@{
+    T minStrike() const;
+    T maxStrike() const;
+    //@}
+    //! \name SwaptionVolatilityStructure interface
+    //@{
+    const Period &maxSwapTenor() const;
+    //@}
+  protected:
+    boost::shared_ptr<SmileSection_t<T> >
+    smileSectionImpl(const Date &, const Period &) const;
+    boost::shared_ptr<SmileSection_t<T> > smileSectionImpl(Time, Time) const;
+    T volatilityImpl(const Date &, const Period &, Rate) const;
+    T volatilityImpl(Time, Time, Rate) const;
 
+  private:
+    Handle<Quote_t<T> > volatility_;
+    Period maxSwapTenor_;
+};
 
-    // inline definitions
+// inline definitions
 
-    inline Date ConstantSwaptionVolatility::maxDate() const {
-        return Date::maxDate();
-    }
+template <class T>
+inline Date ConstantSwaptionVolatility_t<T>::maxDate() const {
+    return Date::maxDate();
+}
 
-    inline Real ConstantSwaptionVolatility::minStrike() const {
-        return QL_MIN_REAL;
-    }
+template <class T> inline T ConstantSwaptionVolatility_t<T>::minStrike() const {
+    return QL_MIN_REAL;
+}
 
-    inline Real ConstantSwaptionVolatility::maxStrike() const {
-        return QL_MAX_REAL;
-    }
+template <class T> inline T ConstantSwaptionVolatility_t<T>::maxStrike() const {
+    return QL_MAX_REAL;
+}
 
-    inline const Period& ConstantSwaptionVolatility::maxSwapTenor() const {
-        return maxSwapTenor_;
-    }
+template <class T>
+inline const Period &ConstantSwaptionVolatility_t<T>::maxSwapTenor() const {
+    return maxSwapTenor_;
+}
 
+typedef ConstantSwaptionVolatility_t<Real> ConstantSwaptionVolatility;
+
+// implementation
+
+// floating reference date, floating market data
+template <class T>
+ConstantSwaptionVolatility_t<T>::ConstantSwaptionVolatility_t(
+    Natural settlementDays, const Calendar &cal, BusinessDayConvention bdc,
+    const Handle<Quote_t<T> > &vol, const DayCounter &dc)
+    : SwaptionVolatilityStructure(settlementDays, cal, bdc, dc),
+      volatility_(vol), maxSwapTenor_(100 * Years) {
+    registerWith(volatility_);
+}
+
+// fixed reference date, floating market data
+template <class T>
+ConstantSwaptionVolatility_t<T>::ConstantSwaptionVolatility_t(
+    const Date &referenceDate, const Calendar &cal, BusinessDayConvention bdc,
+    const Handle<Quote_t<T> > &vol, const DayCounter &dc)
+    : SwaptionVolatilityStructure(referenceDate, cal, bdc, dc),
+      volatility_(vol), maxSwapTenor_(100 * Years) {
+    registerWith(volatility_);
+}
+
+// floating reference date, fixed market data
+template <class T>
+ConstantSwaptionVolatility_t<T>::ConstantSwaptionVolatility_t(
+    Natural settlementDays, const Calendar &cal, BusinessDayConvention bdc,
+    T vol, const DayCounter &dc)
+    : SwaptionVolatilityStructure(settlementDays, cal, bdc, dc),
+      volatility_(boost::shared_ptr<Quote_t<T> >(new SimpleQuote_t<T>(vol))),
+      maxSwapTenor_(100 * Years) {}
+
+// fixed reference date, fixed market data
+template <class T>
+ConstantSwaptionVolatility_t<T>::ConstantSwaptionVolatility_t(
+    const Date &referenceDate, const Calendar &cal, BusinessDayConvention bdc,
+    T vol, const DayCounter &dc)
+    : SwaptionVolatilityStructure(referenceDate, cal, bdc, dc),
+      volatility_(boost::shared_ptr<Quote_t<T> >(new SimpleQuote_t<T>(vol))),
+      maxSwapTenor_(100 * Years) {}
+
+template <class T>
+boost::shared_ptr<SmileSection_t<T> >
+ConstantSwaptionVolatility_t<T>::smileSectionImpl(const Date &d,
+                                                  const Period &) const {
+    T atmVol = volatility_->value();
+    return boost::shared_ptr<SmileSection_t<T> >(
+        new FlatSmileSection(d, atmVol, dayCounter(), referenceDate()));
+}
+
+template <class T>
+boost::shared_ptr<SmileSection_t<T> >
+ConstantSwaptionVolatility_t<T>::smileSectionImpl(Time optionTime, Time) const {
+    T atmVol = volatility_->value();
+    return boost::shared_ptr<SmileSection_t<T> >(
+        new FlatSmileSection(optionTime, atmVol, dayCounter()));
+}
+
+template <class T>
+T ConstantSwaptionVolatility_t<T>::volatilityImpl(const Date &, const Period &,
+                                                  Rate) const {
+    return volatility_->value();
+}
+
+template <class T>
+T ConstantSwaptionVolatility_t<T>::volatilityImpl(Time, Time, Rate) const {
+    return volatility_->value();
+}
 }
 
 #endif

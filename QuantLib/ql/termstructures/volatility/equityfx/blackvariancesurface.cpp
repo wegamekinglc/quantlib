@@ -61,7 +61,7 @@ namespace QuantLib {
             }
         }
         // default: bilinear interpolation
-        setInterpolation<Bilinear>();
+        setInterpolation<Bilinear<> >();
     }
 
     Real BlackVarianceSurface::blackVarianceImpl(Time t, Real strike) const {
