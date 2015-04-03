@@ -80,6 +80,16 @@ namespace QuantLib {
         const boost::shared_ptr<SwapIndex> shortSwapIndexBase() const { return shortSwapIndexBase_; }
         const bool vegaWeightedSmileFit() const { return vegaWeightedSmileFit_; }
         //@}
+        //! \name LazyObject interface
+        //@{
+        void performCalculations() const {
+            QL_REQUIRE(nStrikes_ >= requiredNumberOfStrikes(),
+                       "too few strikes (" << nStrikes_
+                                           << ") required are at least "
+                                           << requiredNumberOfStrikes());
+            SwaptionVolatilityDiscrete::performCalculations();
+        }
+        //@}
       protected:
         void registerWithVolatilitySpread();
         virtual Size requiredNumberOfStrikes() const { return 2; }
