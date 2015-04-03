@@ -30,7 +30,6 @@ libModels_la_SOURCES = \
     basketgeneratingengine.cpp \
     floatfloatswap.cpp \
     floatfloatswaption.cpp \
-    gaussian1dmodel.cpp \
     gaussian1dcapfloorengine.cpp \
     gaussian1dfloatfloatswaptionengine.cpp \
     gaussian1djamshidianswaptionengine.cpp \

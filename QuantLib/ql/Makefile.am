@@ -68,7 +68,6 @@ libQuantLib_la_SOURCES = \
     position.cpp \
     prices.cpp \
     settings.cpp \
-	stochasticprocess.cpp \
 	termstructure.cpp \
 	timegrid.cpp
 

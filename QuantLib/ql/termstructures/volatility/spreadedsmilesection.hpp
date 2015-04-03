@@ -2,6 +2,7 @@
 
 /*
  Copyright (C) 2006 Mario Pucci
+ Copyright (C) 2015 Peter Caspers
 
  This file is part of QuantLib, a free-software/open-source library
  for financial quantitative analysts and developers - http://quantlib.org/
@@ -30,58 +31,79 @@
 
 namespace QuantLib {
 
-    class SpreadedSmileSection : public SmileSection {
-      public:
-        SpreadedSmileSection(const boost::shared_ptr<SmileSection>&,
-                             const Handle<Quote>& spread);
-        //! \name SmileSection interface
-        //@{
-        Real minStrike () const;
-        Real maxStrike () const;
-        Real atmLevel() const;
-        const Date& exerciseDate() const;
-        Time exerciseTime() const;
-        const DayCounter& dayCounter() const;
-        const Date& referenceDate() const;
-        //@}
-        //! \name LazyObject interface
-        //@{
-        void update() { notifyObservers(); }
-        //@}
-      protected:
-        Volatility volatilityImpl(Rate strike) const;
-      private:
-        const boost::shared_ptr<SmileSection> underlyingSection_;
-        const Handle<Quote> spread_;
-    };
+template <class T> class SpreadedSmileSection_t : public SmileSection_t<T> {
+  public:
+    SpreadedSmileSection_t(const boost::shared_ptr<SmileSection_t<T> > &,
+                           const Handle<Quote_t<T> > &spread);
+    //! \name SmileSection interface
+    //@{
+    T minStrike() const;
+    T maxStrike() const;
+    T atmLevel() const;
+    const Date &exerciseDate() const;
+    Time exerciseTime() const;
+    const DayCounter &dayCounter() const;
+    const Date &referenceDate() const;
+    //@}
+    //! \name LazyObject interface
+    //@{
+    void update() { this->notifyObservers(); }
+    //@}
+  protected:
+    T volatilityImpl(T strike) const;
 
-    inline Real SpreadedSmileSection::minStrike() const {
-        return underlyingSection_->minStrike();
-    }
+  private:
+    const boost::shared_ptr<SmileSection_t<T> > underlyingSection_;
+    const Handle<Quote_t<T> > spread_;
+};
 
-    inline Real SpreadedSmileSection::maxStrike() const {
-        return underlyingSection_->maxStrike();
-    }
+template <class T> inline T SpreadedSmileSection_t<T>::minStrike() const {
+    return underlyingSection_->minStrike();
+}
 
-    inline Real SpreadedSmileSection::atmLevel() const {
-        return underlyingSection_->atmLevel();
-    }
+template <class T> inline T SpreadedSmileSection_t<T>::maxStrike() const {
+    return underlyingSection_->maxStrike();
+}
 
-    inline const Date& SpreadedSmileSection::exerciseDate() const {
-        return underlyingSection_->exerciseDate();
-    }
+template <class T> inline T SpreadedSmileSection_t<T>::atmLevel() const {
+    return underlyingSection_->atmLevel();
+}
 
-    inline Time SpreadedSmileSection::exerciseTime() const {
-        return underlyingSection_->exerciseTime();
-    }
+template <class T>
+inline const Date &SpreadedSmileSection_t<T>::exerciseDate() const {
+    return underlyingSection_->exerciseDate();
+}
 
-    inline const DayCounter& SpreadedSmileSection::dayCounter() const {
-        return underlyingSection_->dayCounter();
-    }
+template <class T> inline Time SpreadedSmileSection_t<T>::exerciseTime() const {
+    return underlyingSection_->exerciseTime();
+}
 
-    inline const Date& SpreadedSmileSection::referenceDate() const {
-        return underlyingSection_->referenceDate();
-    }
+template <class T>
+inline const DayCounter &SpreadedSmileSection_t<T>::dayCounter() const {
+    return underlyingSection_->dayCounter();
+}
+
+template <class T>
+inline const Date &SpreadedSmileSection_t<T>::referenceDate() const {
+    return underlyingSection_->referenceDate();
+}
+
+typedef SpreadedSmileSection_t<Real> SpreadedSmileSection;
+
+// implementation
+
+template <class T>
+SpreadedSmileSection_t<T>::SpreadedSmileSection_t(
+    const boost::shared_ptr<SmileSection_t<T> > &underlyingSection,
+    const Handle<Quote_t<T> > &spread)
+    : underlyingSection_(underlyingSection), spread_(spread) {
+    this->registerWith(underlyingSection_);
+    this->registerWith(spread_);
+}
+
+template <class T> T SpreadedSmileSection_t<T>::volatilityImpl(T k) const {
+    return underlyingSection_->volatility(k) + spread_->value();
+}
 }
 
 #endif

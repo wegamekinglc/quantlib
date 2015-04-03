@@ -32,7 +32,8 @@
 
 namespace QuantLib {
 
-    class SwaptionVolatilityStructure;
+    template<class> class SwaptionVolatilityStructure_t;
+    typedef SwaptionVolatilityStructure_t<Real> SwaptionVolatilityStructure;
     class CmsMarket;
     class OptimizationMethod;
 

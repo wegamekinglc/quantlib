@@ -32,7 +32,8 @@
 
 namespace QuantLib {
 
-    class CubicInterpolation;
+    template<class> class CubicInterpolation_t;
+    typedef CubicInterpolation_t<Real> CubicInterpolation;
     class FdmSnapshotCondition;
 
     class Fdm1DimSolver : public LazyObject {

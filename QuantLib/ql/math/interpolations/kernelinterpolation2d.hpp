@@ -51,14 +51,14 @@ namespace QuantLib {
 
     namespace detail {
 
-        template <class I1, class I2, class M, class Kernel>
+        template <class I1, class I2, template<class> class M, class Kernel>
         class KernelInterpolation2DImpl
             : public Interpolation2D::templateImpl<I1,I2,M> {
 
           public:
             KernelInterpolation2DImpl(const I1& xBegin, const I1& xEnd,
                                       const I2& yBegin, const I2& yEnd,
-                                      const M& zData,
+                                      const M<Real>& zData,
                                       const Kernel& kernel)
             : Interpolation2D::templateImpl<I1,I2,M>(xBegin, xEnd,
                                                      yBegin, yEnd, zData),
@@ -202,11 +202,11 @@ namespace QuantLib {
         /*! \pre the \f$ x \f$ values must be sorted.
             \pre kernel needs a Real operator()(Real x) implementation
         */
-        template <class I1, class I2, class M, class Kernel>
+        template <class I1, class I2, template<class> class M, class Kernel>
         KernelInterpolation2D(const I1& xBegin, const I1& xEnd,
-                            const I2& yBegin, const I2& yEnd,
-                            const M& zData,
-                            const Kernel& kernel) {
+                              const I2& yBegin, const I2& yEnd,
+                              const M<Real>& zData,
+                              const Kernel& kernel) {
 
             impl_ = boost::shared_ptr<Interpolation2D::Impl>(new
                 detail::KernelInterpolation2DImpl<I1,I2,M,Kernel>(xBegin, xEnd,

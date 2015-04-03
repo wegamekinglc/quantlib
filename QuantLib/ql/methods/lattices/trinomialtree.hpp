@@ -29,7 +29,8 @@
 #include <ql/timegrid.hpp>
 
 namespace QuantLib {
-    class StochasticProcess1D;
+    template<class> class StochasticProcess1D_t;
+    typedef StochasticProcess1D_t<Real> StochasticProcess1D;
     //! Recombining trinomial tree class
     /*! This class defines a recombining trinomial tree approximating a
         1-D stochastic process.

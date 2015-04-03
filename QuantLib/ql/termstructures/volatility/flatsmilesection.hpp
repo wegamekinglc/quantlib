@@ -4,6 +4,7 @@
  Copyright (C) 2007 Ferdinando Ametrano
  Copyright (C) 2007 François du Vignaud
  Copyright (C) 2007 Giorgio Facchinetti
+ Copyright (C) 2015 Peter Caspers
 
  This file is part of QuantLib, a free-software/open-source library
  for financial quantitative analysts and developers - http://quantlib.org/
@@ -30,46 +31,57 @@
 
 namespace QuantLib {
 
-    class FlatSmileSection : public SmileSection {
-      public:
-        FlatSmileSection(const Date& d,
-                         Volatility vol,
-                         const DayCounter& dc,
-                         const Date& referenceDate = Date(),
-                         Real atmLevel = Null<Rate>());
-        FlatSmileSection(Time exerciseTime,
-                         Volatility vol,
-                         const DayCounter& dc,
-                         Real atmLevel = Null<Rate>());
-        //! \name SmileSection interface
-        //@{
-        Real minStrike () const;
-        Real maxStrike () const;
-        Real atmLevel() const;
-        //@}
-      protected:
-        Volatility volatilityImpl(Rate) const;
-      private:
-        Volatility vol_;
-        Real atmLevel_;
-    };
+template <class T> class FlatSmileSection_t : public SmileSection_t<T> {
+  public:
+    FlatSmileSection_t(const Date &d, T vol, const DayCounter &dc,
+                       const Date &referenceDate = Date(),
+                       T atmLevel = Null<T>());
+    FlatSmileSection_t(Time exerciseTime, T vol, const DayCounter &dc,
+                       T atmLevel = Null<T>());
+    //! \name SmileSection interface
+    //@{
+    T minStrike() const;
+    T maxStrike() const;
+    T atmLevel() const;
+    //@}
+  protected:
+    T volatilityImpl(T) const;
 
-    inline Real FlatSmileSection::minStrike () const {
-        return QL_MIN_REAL;
-    }
+  private:
+    T vol_;
+    T atmLevel_;
+};
 
-    inline Real FlatSmileSection::maxStrike () const {
-        return QL_MAX_REAL;
-    }
+typedef FlatSmileSection_t<Real> FlatSmileSection;
 
-    inline Real FlatSmileSection::atmLevel() const {
-        return atmLevel_;
-    }
+template <class T> inline T FlatSmileSection_t<T>::minStrike() const {
+    return T(QL_MIN_REAL);
+}
 
-    inline Volatility FlatSmileSection::volatilityImpl(Rate) const {
-        return vol_;
-    }
+template <class T> inline T FlatSmileSection_t<T>::maxStrike() const {
+    return T(QL_MAX_REAL);
+}
 
+template <class T> inline T FlatSmileSection_t<T>::atmLevel() const {
+    return this->atmLevel_;
+}
+
+template <class T> inline T FlatSmileSection_t<T>::volatilityImpl(T) const {
+    return this->vol_;
+}
+
+// implementation
+
+template <class T>
+FlatSmileSection_t<T>::FlatSmileSection_t(const Date &d, T vol,
+                                          const DayCounter &dc,
+                                          const Date &referenceDate, T atmLevel)
+    : SmileSection_t<T>(d, dc, referenceDate), vol_(vol), atmLevel_(atmLevel) {}
+
+template <class T>
+FlatSmileSection_t<T>::FlatSmileSection_t(Time exerciseTime, T vol,
+                                          const DayCounter &dc, T atmLevel)
+    : SmileSection_t<T>(exerciseTime, dc), vol_(vol), atmLevel_(atmLevel) {}
 }
 
 #endif

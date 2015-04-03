@@ -1929,10 +1929,10 @@ void InterpolationTest::testTransformations() {
             x[j] = 2.0 * size * s[j] - size;
 
         // sabr
-        y = detail::SABRSpecs().direct(x, fixed, params, forward);
+        y = detail::SABRSpecs_t<Real>().direct(x, fixed, params, forward);
         validateSabrParameters(y[0], y[1], y[2], y[3]);
-        z = detail::SABRSpecs().inverse(y, fixed, params, forward);
-        z = detail::SABRSpecs().direct(z, fixed, params, forward);
+        z = detail::SABRSpecs_t<Real>().inverse(y, fixed, params, forward);
+        z = detail::SABRSpecs_t<Real>().direct(z, fixed, params, forward);
         if (!close(z[0], y[0], N) || !close(z[1], y[1], N) || !close(z[2], y[2], N) ||
             !close(z[3], y[3], N))
             BOOST_ERROR("SabrInterpolation: direct(inverse("
@@ -1943,7 +1943,7 @@ void InterpolationTest::testTransformations() {
                         << z[3] - y[3] << ")");
 
         // noarb sabr
-        y = detail::NoArbSabrSpecs().direct(x, fixed, params, forward);
+        y = detail::NoArbSabrSpecs_t<Real>().direct(x, fixed, params, forward);
 
         // we can not invoke the constructor, this would be too slow, so
         // we copy the parameter check here ...
@@ -1967,8 +1967,8 @@ void InterpolationTest::testTransformations() {
                        rho <= detail::NoArbSabrModel::rho_max,
                    "rho (" << rho << ") out of bounds");
 
-        z = detail::NoArbSabrSpecs().inverse(y, fixed, params, forward);
-        z = detail::NoArbSabrSpecs().direct(z, fixed, params, forward);
+        z = detail::NoArbSabrSpecs_t<Real>().inverse(y, fixed, params, forward);
+        z = detail::NoArbSabrSpecs_t<Real>().direct(z, fixed, params, forward);
         if (!close(z[0], y[0], N) || !close(z[1], y[1], N) || !close(z[2], y[2], N) ||
             !close(z[3], y[3], N))
             BOOST_ERROR("NoArbSabrInterpolation: direct(inverse("

@@ -33,12 +33,12 @@ namespace QuantLib {
 
     namespace detail {
 
-        template <class I1, class I2, class M>
+        template <class I1, class I2, template<class> class M>
         class Polynomial2DSplineImpl
             : public Interpolation2D::templateImpl<I1,I2,M> {
           public:
             Polynomial2DSplineImpl(const I1& xBegin, const I1& xEnd,
-                                   const I2& yBegin, const I2& yEnd, const M& zData)
+                                   const I2& yBegin, const I2& yEnd, const M<Real>& zData)
             : Interpolation2D::templateImpl<I1,I2,M>(xBegin,xEnd,
                                                      yBegin,yEnd,
                                                      zData) {
@@ -81,10 +81,10 @@ namespace QuantLib {
     class Polynomial2DSpline : public Interpolation2D {
       public:
         /*! \pre the \f$ x \f$ and \f$ y \f$ values must be sorted. */
-        template <class I1, class I2, class M>
+        template <class I1, class I2, template<class> class M>
         Polynomial2DSpline(const I1& xBegin, const I1& xEnd,
                            const I2& yBegin, const I2& yEnd,
-                           const M& zData) {
+                           const M<Real>& zData) {
             impl_ = boost::shared_ptr<Interpolation2D::Impl>(
                   new detail::Polynomial2DSplineImpl<I1,I2,M>(xBegin, xEnd,
                                                               yBegin, yEnd, zData));
