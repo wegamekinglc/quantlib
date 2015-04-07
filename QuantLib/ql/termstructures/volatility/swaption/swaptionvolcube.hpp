@@ -41,13 +41,13 @@ template <class T>
 class SwaptionVolatilityCube_t : public SwaptionVolatilityDiscrete_t<T> {
   public:
     SwaptionVolatilityCube_t(
-        const Handle<SwaptionVolatilityStructure> &atmVolStructure,
+        const Handle<SwaptionVolatilityStructure_t<T> > &atmVolStructure,
         const std::vector<Period> &optionTenors,
         const std::vector<Period> &swapTenors,
         const std::vector<T> &strikeSpreads,
         const std::vector<std::vector<Handle<Quote_t<T> > > > &volSpreads,
-        const boost::shared_ptr<SwapIndex> &swapIndexBase,
-        const boost::shared_ptr<SwapIndex> &shortSwapIndexBase,
+        const boost::shared_ptr<SwapIndex_t<T> > &swapIndexBase,
+        const boost::shared_ptr<SwapIndex_t<T> > &shortSwapIndexBase,
         bool vegaWeightedSmileFit);
     //! \name TermStructure interface
     //@{
@@ -79,13 +79,13 @@ class SwaptionVolatilityCube_t : public SwaptionVolatilityDiscrete_t<T> {
     T volatilityImpl(Time optionTime, Time swapLength, T strike) const;
     T volatilityImpl(const Date &optionDate, const Period &swapTenor,
                      T strike) const;
-    Handle<SwaptionVolatilityStructure> atmVol_;
+    Handle<SwaptionVolatilityStructure_t<T> > atmVol_;
     Size nStrikes_;
     std::vector<T> strikeSpreads_;
     mutable std::vector<T> localStrikes_;
     mutable std::vector<T> localSmile_;
     std::vector<std::vector<Handle<Quote_t<T> > > > volSpreads_;
-    boost::shared_ptr<SwapIndex> swapIndexBase_, shortSwapIndexBase_;
+    boost::shared_ptr<SwapIndex_t<T> > swapIndexBase_, shortSwapIndexBase_;
     bool vegaWeightedSmileFit_;
 };
 
@@ -111,12 +111,12 @@ inline T SwaptionVolatilityCube_t<T>::volatilityImpl(const Date &optionDate,
 
 template <class T>
 SwaptionVolatilityCube_t<T>::SwaptionVolatilityCube_t(
-    const Handle<SwaptionVolatilityStructure> &atmVol,
+    const Handle<SwaptionVolatilityStructure_t<T> > &atmVol,
     const std::vector<Period> &optionTenors,
     const std::vector<Period> &swapTenors, const std::vector<T> &strikeSpreads,
     const std::vector<std::vector<Handle<Quote_t<T> > > > &volSpreads,
-    const boost::shared_ptr<SwapIndex> &swapIndexBase,
-    const boost::shared_ptr<SwapIndex> &shortSwapIndexBase,
+    const boost::shared_ptr<SwapIndex_t<T> > &swapIndexBase,
+    const boost::shared_ptr<SwapIndex_t<T> > &shortSwapIndexBase,
     bool vegaWeightedSmileFit)
     : SwaptionVolatilityDiscrete(
           optionTenors, swapTenors, 0, atmVol->calendar(),
