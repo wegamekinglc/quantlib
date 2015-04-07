@@ -30,9 +30,12 @@
 
 namespace QuantLib {
 
-    class Problem;
-    class Constraint;
-    class EndCriteria;
+    template<class T> class Problem_t;
+    typedef Problem_t<Real> Problem;
+    template<class T> class Constraint_t;
+    typedef Constraint_t<Real> Constraint;
+    template<class T> class EndCriteria_t;
+    typedef EndCriteria_t<Real> EndCriteria;
 
     //! Base class for line search
     class LineSearch {

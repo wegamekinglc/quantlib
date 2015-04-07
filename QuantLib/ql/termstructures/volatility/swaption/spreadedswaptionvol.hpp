@@ -72,6 +72,8 @@ class SpreadedSwaptionVolatility_t : public SwaptionVolatilityStructure {
     const Handle<Quote_t<T> > spread_;
 };
 
+typedef SpreadedSwaptionVolatility_t<Real> SpreadedSwaptionVolatility;
+
 template <class T>
 inline DayCounter SpreadedSwaptionVolatility_t<T>::dayCounter() const {
     return baseVol_->dayCounter();

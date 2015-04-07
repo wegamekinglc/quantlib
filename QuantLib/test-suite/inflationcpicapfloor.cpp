@@ -332,7 +332,7 @@ void InflationCPICapFloorTest::cpicapfloorpricesurface() {
 
     Real nominal = 1.0;
     InterpolatedCPICapFloorTermPriceSurface
-    <Bilinear> cpiSurf(nominal,
+     <Bilinear<Real> > cpiSurf(nominal,
                        common.baseZeroRate,
                        common.observationLag,
                        common.calendar,
@@ -385,20 +385,12 @@ void InflationCPICapFloorTest::cpicapfloorpricer() {
 
     CommonVars common;
     Real nominal = 1.0;
-    boost::shared_ptr<CPICapFloorTermPriceSurface> cpiCFpriceSurf(new InterpolatedCPICapFloorTermPriceSurface
-                                                    <Bilinear>(nominal,
-                                                               common.baseZeroRate,
-                                                               common.observationLag,
-                                                               common.calendar,
-                                                               common.convention,
-                                                               common.dcZCIIS,
-                                                               common.hii,
-                                                               common.nominalUK,
-                                                               common.cStrikesUK,
-                                                               common.fStrikesUK,
-                                                               common.cfMaturitiesUK,
-                                                               *(common.cPriceUK),
-                                                               *(common.fPriceUK)));
+    boost::shared_ptr<CPICapFloorTermPriceSurface> cpiCFpriceSurf(
+        new InterpolatedCPICapFloorTermPriceSurface<Bilinear<Real> >(
+            nominal, common.baseZeroRate, common.observationLag,
+            common.calendar, common.convention, common.dcZCIIS, common.hii,
+            common.nominalUK, common.cStrikesUK, common.fStrikesUK,
+            common.cfMaturitiesUK, *(common.cPriceUK), *(common.fPriceUK)));
 
     common.cpiCFsurfUK = cpiCFpriceSurf;
 

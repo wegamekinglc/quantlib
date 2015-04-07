@@ -98,7 +98,7 @@ namespace QuantLib {
         Real fup = h_->forwardRate(t+shift, t+shift, Continuous, NoFrequency);
         Real f_prime = (fup-f)/shift;
         alpha_drift += a_*f+f_prime;
-        return process_->drift(t, x) + alpha_drift - B(t, T_)*sigma_*sigma_;
+        return process_->drift(t, x) + alpha_drift - B(t, T0_)*sigma_*sigma_;
     }
 
     Real HullWhiteForwardProcess::diffusion(Time t, Real x) const{
@@ -109,7 +109,7 @@ namespace QuantLib {
                                               Time dt) const {
         return process_->expectation(t0, x0, dt)
              + alpha(t0 + dt) - alpha(t0)*std::exp(-a_*dt)
-             - M_T(t0, t0+dt, T_);
+             - M_T(t0, t0+dt, T0_);
     }
 
     Real HullWhiteForwardProcess::stdDeviation(Time t0, Real x0,

@@ -31,8 +31,10 @@
 
 namespace QuantLib {
 
-    class Constraint;
-    class OptimizationMethod;
+    template<class> class Constraint_t;
+    typedef Constraint_t<Real> Constraint;
+    template<class> class OptimizationMethod_t;
+    typedef OptimizationMethod_t<Real> OptimizationMethod;
 
     //! Base class for least square problem
     class LeastSquareProblem {

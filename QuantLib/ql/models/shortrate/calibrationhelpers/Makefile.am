@@ -7,9 +7,7 @@ this_include_HEADERS = \
     caphelper.hpp \
     swaptionhelper.hpp
 
-libCalibrationHelpers_la_SOURCES = \
-    caphelper.cpp \
-    swaptionhelper.cpp
+libCalibrationHelpers_la_SOURCES =
 
 noinst_LTLIBRARIES = libCalibrationHelpers.la
 

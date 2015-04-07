@@ -35,8 +35,10 @@
 
 namespace QuantLib {
 
-class OptimizationMethod;
-class ParametersTransformation;
+template <class> class OptimizationMethod_t;
+typedef OptimizationMethod_t<Real> OptimizationMethod;
+template <class> class ParametersTransformation_t;
+typedef ParametersTransformation_t<Real> ParametersTransformation;
 
 template <class T> class AbcdCalibration_t {
 

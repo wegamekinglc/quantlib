@@ -25,7 +25,7 @@
 #ifndef quantlib_mc_hull_white_cap_floor_engine_hpp
 #define quantlib_mc_hull_white_cap_floor_engine_hpp
 
-#include <ql/instruments/capfloor.hpp>
+#include <ql/instruments/capfloorbase.hpp>
 #include <ql/pricingengines/mcsimulation.hpp>
 #include <ql/processes/hullwhiteprocess.hpp>
 #include <ql/models/shortrate/onefactormodels/hullwhite.hpp>

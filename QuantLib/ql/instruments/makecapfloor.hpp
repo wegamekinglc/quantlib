@@ -25,7 +25,7 @@
 #ifndef quantlib_instruments_makecapfloor_hpp
 #define quantlib_instruments_makecapfloor_hpp
 
-#include <ql/instruments/capfloor.hpp>
+#include <ql/instruments/capfloorbase.hpp>
 #include <ql/instruments/makevanillaswap.hpp>
 
 namespace QuantLib {
@@ -42,8 +42,8 @@ namespace QuantLib {
                      Rate strike = Null<Rate>(),
                      const Period& forwardStart = 0*Days);
 
-        operator CapFloor() const;
-        operator boost::shared_ptr<CapFloor>() const;
+        operator CapFloor_t<Real>() const;
+        operator boost::shared_ptr<CapFloor_t<Real> >() const;
 
         MakeCapFloor& withNominal(Real n);
         MakeCapFloor& withEffectiveDate(const Date& effectiveDate,

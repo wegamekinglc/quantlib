@@ -12,7 +12,6 @@ this_include_HEADERS = \
 
 libCapFloorEngines_la_SOURCES = \
     analyticcapfloorengine.cpp \
-    blackcapfloorengine.cpp \
     discretizedcapfloor.cpp \
     mchullwhiteengine.cpp \
     treecapfloorengine.cpp

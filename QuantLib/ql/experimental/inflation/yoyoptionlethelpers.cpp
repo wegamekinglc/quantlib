@@ -22,11 +22,6 @@
 
 namespace QuantLib {
 
-    namespace {
-        void no_deletion(void*) {}
-    }
-
-
     YoYOptionletHelper::YoYOptionletHelper(
                   const Handle<Quote>& price,
                   Real notional,

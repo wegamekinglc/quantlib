@@ -324,10 +324,6 @@ inline const Period &SwapRateHelper_t<T>::forwardStart() const {
     return fwdStart_;
 }
 
-namespace {
-template <class T> void no_deletion(YieldTermStructure_t<T> *){};
-}
-
 // implementation
 
 template <class T>
@@ -545,7 +541,7 @@ template <class T>
 void DepositRateHelper_t<T>::setTermStructure(YieldTermStructure_t<T> *t) {
     // no need to register---the index is not lazy
     termStructureHandle_.linkTo(
-        shared_ptr<YieldTermStructure_t<T> >(t, no_deletion<T>), false);
+        shared_ptr<YieldTermStructure_t<T> >(t, no_deletion), false);
     RelativeDateRateHelper_t<T>::Type::setTermStructure(t);
 }
 
@@ -712,7 +708,7 @@ template <class T>
 void FraRateHelper_t<T>::setTermStructure(YieldTermStructure_t<T> *t) {
     // no need to register---the index is not lazy
     this->termStructureHandle_.linkTo(
-        shared_ptr<YieldTermStructure_t<T> >(t, no_deletion<T>), false);
+        shared_ptr<YieldTermStructure_t<T> >(t, no_deletion), false);
     RelativeDateRateHelper_t<T>::Type::setTermStructure(t);
 }
 
@@ -875,7 +871,7 @@ void SwapRateHelper_t<T>::setTermStructure(YieldTermStructure_t<T> *t) {
     // force recalculation when needed
     bool observer = false;
 
-    shared_ptr<YieldTermStructure_t<T> > temp(t, no_deletion<T>);
+    shared_ptr<YieldTermStructure_t<T> > temp(t, no_deletion);
     termStructureHandle_.linkTo(temp, observer);
 
     if (discountHandle_.empty())
@@ -974,7 +970,7 @@ void BMASwapRateHelper_t<T>::setTermStructure(YieldTermStructure_t<T> *t) {
     // do not set the relinkable handle as an observer -
     // force recalculation when needed
     termStructureHandle_.linkTo(
-        shared_ptr<YieldTermStructure_t<T> >(t, no_deletion<T>), false);
+        shared_ptr<YieldTermStructure_t<T> >(t, no_deletion), false);
     RelativeDateRateHelper_t<T>::Type::setTermStructure(t);
 }
 

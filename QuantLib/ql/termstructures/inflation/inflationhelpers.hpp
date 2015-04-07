@@ -94,10 +94,6 @@ typedef YearOnYearInflationSwapHelper_t<Real> YearOnYearInflationSwapHelper;
 
 // implementation
 
-namespace {
-void no_deletion(void *) {}
-}
-
 template <class T>
 ZeroCouponInflationSwapHelper_t<T>::ZeroCouponInflationSwapHelper_t(
     const Handle<Quote_t<T> > &quote,

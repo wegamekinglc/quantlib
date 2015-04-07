@@ -16,6 +16,7 @@ this_include_HEADERS = \
     bond.hpp \
     callabilityschedule.hpp \
     capfloor.hpp \
+    capfloorbase.hpp \
     claim.hpp \
     cliquetoption.hpp \
     compositeinstrument.hpp \
@@ -50,6 +51,7 @@ this_include_HEADERS = \
     stock.hpp \
     swap.hpp \
     swaption.hpp \
+    swaptionbase.hpp \
     vanillaoption.hpp \
 	vanillastorageoption.hpp \
 	vanillaswingoption.hpp \
@@ -66,7 +68,6 @@ libInstruments_la_SOURCES = \
     barriertype.cpp \
     basketoption.cpp \
     bmaswap.cpp \
-    capfloor.cpp \
     claim.cpp \
     cliquetoption.cpp \
     compositeinstrument.cpp \

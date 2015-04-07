@@ -24,7 +24,7 @@
 #ifndef quantlib_pricers_tree_cap_floor_hpp
 #define quantlib_pricers_tree_cap_floor_hpp
 
-#include <ql/instruments/capfloor.hpp>
+#include <ql/instruments/capfloorbase.hpp>
 #include <ql/pricingengines/latticeshortratemodelengine.hpp>
 
 namespace QuantLib {

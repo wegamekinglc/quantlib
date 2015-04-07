@@ -28,7 +28,8 @@
 
 namespace QuantLib {
 
-    class AffineModel;
+    template<class> class AffineModel_t;
+    typedef AffineModel_t<Real> AffineModel;
 
     class FdmAffineModelTermStructure : public YieldTermStructure {
       public:

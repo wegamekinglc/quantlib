@@ -26,10 +26,6 @@
 
 namespace QuantLib {
 
-    namespace {
-        void no_deletion(DefaultProbabilityTermStructure*) {}
-    }
-
     CdsHelper::CdsHelper(const Handle<Quote>& quote,
                          const Period& tenor,
                          Integer settlementDays,

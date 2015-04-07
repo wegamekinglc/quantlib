@@ -5,6 +5,7 @@
  Copyright (C) 2006, 2014 Ferdinando Ametrano
  Copyright (C) 2006 François du Vignaud
  Copyright (C) 2006, 2007 StatPro Italia srl
+ Copyright (C) 2015 Peter Caspers
 
  This file is part of QuantLib, a free-software/open-source library
  for financial quantitative analysts and developers - http://quantlib.org/
@@ -27,132 +28,52 @@
 #ifndef quantlib_instruments_capfloor_hpp
 #define quantlib_instruments_capfloor_hpp
 
-#include <ql/instrument.hpp>
-#include <ql/cashflows/iborcoupon.hpp>
-#include <ql/handle.hpp>
-#include <ql/termstructures/yieldtermstructure.hpp>
+#include <ql/instruments/capfloorbase.hpp>
+#include <ql/pricingengines/capfloor/blackcapfloorengine.hpp>
+#include <ql/math/solvers1d/newtonsafe.hpp>
 
 namespace QuantLib {
 
-    //! Base class for cap-like instruments
-    /*! \ingroup instruments
+namespace {
 
-        \test
-        - the correctness of the returned value is tested by checking
-          that the price of a cap (resp. floor) decreases
-          (resp. increases) with the strike rate.
-        - the relationship between the values of caps, floors and the
-          resulting collars is checked.
-        - the put-call parity between the values of caps, floors and
-          swaps is checked.
-        - the correctness of the returned implied volatility is tested
-          by using it for reproducing the target value.
-        - the correctness of the returned value is tested by checking
-          it against a known good value.
-    */
-    class CapFloor : public Instrument {
-      public:
-        enum Type { Cap, Floor, Collar };
-        class arguments;
-        class engine;
-        CapFloor(Type type,
-                 const Leg& floatingLeg,
-                 const std::vector<Rate>& capRates,
-                 const std::vector<Rate>& floorRates);
-        CapFloor(Type type,
-                 const Leg& floatingLeg,
-                 const std::vector<Rate>& strikes);
-        //! \name Instrument interface
-        //@{
-        bool isExpired() const;
-        void setupArguments(PricingEngine::arguments*) const;
-        //@}
-        //! \name Inspectors
-        //@{
-        Type type() const { return type_; }
-        const std::vector<Rate>& capRates() const { return capRates_; }
-        const std::vector<Rate>& floorRates() const { return floorRates_; }
-        const Leg& floatingLeg() const { return floatingLeg_; }
+template <class T>
+ImpliedVolHelperCapFloor<T>::ImpliedVolHelperCapFloor(
+    const CapFloor_t<T> &cap,
+    const Handle<YieldTermStructure_t<T> > &discountCurve, T targetValue,
+    T displacement)
+    : discountCurve_(discountCurve), targetValue_(targetValue) {
 
-        Date startDate() const;
-        Date maturityDate() const;
-        boost::shared_ptr<FloatingRateCoupon> lastFloatingRateCoupon() const;
-        //! Returns the n-th optionlet as a new CapFloor with only one cash flow.
-        boost::shared_ptr<CapFloor> optionlet(const Size n) const;
-        //@}
-        Rate atmRate(const YieldTermStructure& discountCurve) const;
-        //! implied term volatility
-        Volatility impliedVolatility(Real price,
-                                     const Handle<YieldTermStructure>& disc,
-                                     Volatility guess,
-                                     Real accuracy = 1.0e-4,
-                                     Natural maxEvaluations = 100,
-                                     Volatility minVol = 1.0e-7,
-                                     Volatility maxVol = 4.0,
-                                     Real displacement = 0.0) const;
-      private:
-        Type type_;
-        Leg floatingLeg_;
-        std::vector<Rate> capRates_;
-        std::vector<Rate> floorRates_;
-    };
+    // set an implausible value, so that calculation is forced
+    // at first ImpliedVolHelperCapFloor::operator()(T x) call
+    vol_ = boost::shared_ptr<SimpleQuote_t<T> >(new SimpleQuote_t<T>(-1));
+    Handle<Quote_t<T> > h(vol_);
+    engine_ = boost::shared_ptr<PricingEngine>(new BlackCapFloorEngine_t<T>(
+        discountCurve_, h, Actual365Fixed(), displacement));
+    cap.setupArguments(engine_->getArguments());
 
-    //! Concrete cap class
-    /*! \ingroup instruments */
-    class Cap : public CapFloor {
-      public:
-        Cap(const Leg& floatingLeg,
-            const std::vector<Rate>& exerciseRates)
-        : CapFloor(CapFloor::Cap, floatingLeg,
-                   exerciseRates, std::vector<Rate>()) {}
-    };
-
-    //! Concrete floor class
-    /*! \ingroup instruments */
-    class Floor : public CapFloor {
-      public:
-        Floor(const Leg& floatingLeg,
-              const std::vector<Rate>& exerciseRates)
-        : CapFloor(CapFloor::Floor, floatingLeg,
-                   std::vector<Rate>(), exerciseRates) {}
-    };
-
-    //! Concrete collar class
-    /*! \ingroup instruments */
-    class Collar : public CapFloor {
-      public:
-        Collar(const Leg& floatingLeg,
-               const std::vector<Rate>& capRates,
-               const std::vector<Rate>& floorRates)
-        : CapFloor(CapFloor::Collar, floatingLeg, capRates, floorRates) {}
-    };
-
-
-    //! %Arguments for cap/floor calculation
-    class CapFloor::arguments : public virtual PricingEngine::arguments {
-      public:
-        arguments() : type(CapFloor::Type(-1)) {}
-        CapFloor::Type type;
-        std::vector<Date> startDates;
-        std::vector<Date> fixingDates;
-        std::vector<Date> endDates;
-        std::vector<Time> accrualTimes;
-        std::vector<Rate> capRates;
-        std::vector<Rate> floorRates;
-        std::vector<Rate> forwards;
-        std::vector<Real> gearings;
-        std::vector<Real> spreads;
-        std::vector<Real> nominals;
-        std::vector<boost::shared_ptr<InterestRateIndex> > indexes;
-        void validate() const;
-    };
-
-    //! base class for cap/floor engines
-    class CapFloor::engine
-        : public GenericEngine<CapFloor::arguments, CapFloor::results> {};
-
-    std::ostream& operator<<(std::ostream&, CapFloor::Type);
-
+    results_ = dynamic_cast<const Instrument::results *>(engine_->getResults());
 }
+
+template <class T> T ImpliedVolHelperCapFloor<T>::operator()(T x) const {
+    if (x != vol_->value()) {
+        vol_->setValue(x);
+        engine_->calculate();
+    }
+    return results_->value - targetValue_;
+}
+
+template <class T> T ImpliedVolHelperCapFloor<T>::derivative(T x) const {
+    if (x != vol_->value()) {
+        vol_->setValue(x);
+        engine_->calculate();
+    }
+    std::map<std::string, boost::any>::const_iterator vega_ =
+        results_->additionalResults.find("vega");
+    QL_REQUIRE(vega_ != results_->additionalResults.end(), "vega not provided");
+    return boost::any_cast<T>(vega_->second);
+}
+} // empty namespace
+
+} // namespace QuantLib
 
 #endif

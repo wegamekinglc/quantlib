@@ -163,10 +163,6 @@ namespace QuantLib {
         registerWith(index);
     }
 
-    namespace {
-        void no_deletion(ConvertibleBond*) {}
-    }
-
     ConvertibleBond::option::option(
             const ConvertibleBond* bond,
             const boost::shared_ptr<Exercise>& exercise,

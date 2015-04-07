@@ -47,7 +47,7 @@ void BondHelper::setTermStructure(YieldTermStructure *t) {
     // do not set the relinkable handle as an observer -
     // force recalculation when needed
     termStructureHandle_.linkTo(
-        boost::shared_ptr<YieldTermStructure>(t, no_deletion<Real>), false);
+        boost::shared_ptr<YieldTermStructure>(t, no_deletion), false);
 
     BootstrapHelper<YieldTermStructure>::setTermStructure(t);
 }

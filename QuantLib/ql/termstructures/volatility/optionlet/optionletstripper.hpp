@@ -28,6 +28,7 @@
 #include <ql/termstructures/volatility/optionlet/strippedoptionletbase.hpp>
 #include <ql/termstructures/volatility/capfloor/capfloortermvolsurface.hpp>
 #include <ql/termstructures/yieldtermstructure.hpp>
+#include <ql/instruments/capfloor.hpp>
 
 namespace QuantLib {
 

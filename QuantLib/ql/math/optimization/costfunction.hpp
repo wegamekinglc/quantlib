@@ -2,6 +2,7 @@
 
 /*
  Copyright (C) 2001, 2002, 2003 Nicolas Di Césaré
+ Copyright (C) 2015 Peter Caspers
 
  This file is part of QuantLib, a free-software/open-source library
  for financial quantitative analysts and developers - http://quantlib.org/
@@ -28,48 +29,51 @@
 
 namespace QuantLib {
 
-    //!  Cost function abstract class for optimization problem
-    class CostFunction {
-      public:
-        virtual ~CostFunction() {}
-        //! method to overload to compute the cost function value in x
-        virtual Real value(const Array& x) const = 0;
-        //! method to overload to compute the cost function values in x
-        virtual Disposable<Array> values(const Array& x) const =0;
+//!  Cost function abstract class for optimization problem
+template <class T> class CostFunction_t {
+  public:
+    virtual ~CostFunction_t() {}
+    //! method to overload to compute the cost function value in x
+    virtual T value(const Array &x) const = 0;
+    //! method to overload to compute the cost function values in x
+    virtual Disposable<Array_t<T> > values(const Array &x) const = 0;
 
-        //! method to overload to compute grad_f, the first derivative of
-        //  the cost function with respect to x
-        virtual void gradient(Array& grad, const Array& x) const {
-            Real eps = finiteDifferenceEpsilon(), fp, fm;
-            Array xx(x);
-            for (Size i=0; i<x.size(); i++) {
-                xx[i] += eps;
-                fp = value(xx);
-                xx[i] -= 2.0*eps;
-                fm = value(xx);
-                grad[i] = 0.5*(fp - fm)/eps;
-                xx[i] = x[i];
-            }
+    //! method to overload to compute grad_f, the first derivative of
+    //  the cost function with respect to x
+    virtual void gradient(Array &grad, const Array &x) const {
+        T eps = finiteDifferenceEpsilon(), fp, fm;
+        Array_t<T> xx(x);
+        for (Size i = 0; i < x.size(); i++) {
+            xx[i] += eps;
+            fp = value(xx);
+            xx[i] -= 2.0 * eps;
+            fm = value(xx);
+            grad[i] = 0.5 * (fp - fm) / eps;
+            xx[i] = x[i];
         }
+    }
 
-        //! method to overload to compute grad_f, the first derivative of
-        //  the cost function with respect to x and also the cost function
-        virtual Real valueAndGradient(Array& grad,
-                                      const Array& x) const {
-            gradient(grad, x);
-            return value(x);
-        }
+    //! method to overload to compute grad_f, the first derivative of
+    //  the cost function with respect to x and also the cost function
+    virtual T valueAndGradient(Array &grad, const Array &x) const {
+        gradient(grad, x);
+        return value(x);
+    }
 
-        //! Default epsilon for finite difference method :
-        virtual Real finiteDifferenceEpsilon() const { return 1e-8; }
-    };
+    //! Default epsilon for finite difference method :
+    virtual T finiteDifferenceEpsilon() const { return 1e-8; }
+};
 
-    class ParametersTransformation {
-      public:
-        virtual ~ParametersTransformation() {}
-        virtual Array direct(const Array& x) const = 0;
-        virtual Array inverse(const Array& x) const = 0;
-    };
+typedef CostFunction_t<Real> CostFunction;
+
+template <class T> class ParametersTransformation_t {
+  public:
+    virtual ~ParametersTransformation_t() {}
+    virtual Array_t<T> direct(const Array &x) const = 0;
+    virtual Array_t<T> inverse(const Array &x) const = 0;
+};
+
+typedef ParametersTransformation_t<Real> ParametersTransformation;
 }
 
 #endif

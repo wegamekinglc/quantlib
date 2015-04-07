@@ -10,9 +10,7 @@ this_include_HEADERS = \
 	model.hpp \
 	parameter.hpp
 
-libModels_la_SOURCES = \
-	calibrationhelper.cpp \
-	model.cpp
+libModels_la_SOURCES =
 
 libModels_la_LIBADD = \
     equity/libEquityModels.la \

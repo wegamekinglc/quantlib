@@ -178,4 +178,8 @@ namespace QLFCT {
 }
 #endif
 
+namespace QuantLib {
+inline void no_deletion(void *) {}
+}
+
 #endif

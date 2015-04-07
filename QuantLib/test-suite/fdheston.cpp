@@ -1152,13 +1152,14 @@ namespace {
         const Size maxEvaluations = 1000;
 
         return TwoDimensionalIntegral(
-             boost::shared_ptr<Integrator>(
-                 new TrapezoidIntegral<Default>(tolerance, maxEvaluations)),
-             boost::shared_ptr<Integrator>(
-                 new TrapezoidIntegral<Default>(tolerance, maxEvaluations)))(
-             Bilinear().interpolate(x.begin(), x.end(), y.begin(), y.end(), m),
-             std::make_pair(x.front(), y.front()),
-             std::make_pair(x.back(), y.back()));
+            boost::shared_ptr<Integrator>(
+                new TrapezoidIntegral<Default>(tolerance, maxEvaluations)),
+            boost::shared_ptr<Integrator>(
+                new TrapezoidIntegral<Default>(tolerance, maxEvaluations)))(
+            Bilinear<Real>().interpolate(x.begin(), x.end(), y.begin(), y.end(),
+                                         m),
+            std::make_pair(x.front(), y.front()),
+            std::make_pair(x.back(), y.back()));
     }
 }
 

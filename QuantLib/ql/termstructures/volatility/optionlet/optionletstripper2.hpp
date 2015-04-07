@@ -33,7 +33,8 @@ namespace QuantLib {
 
     class CapFloorTermVolCurve;
     class OptionletStripper1;
-    class CapFloor;
+    // template<class> class CapFloor_t;
+    // typedef CapFloor_t<Real> CapFloor;
 
     /*! Helper class to extend an OptionletStripper1 object stripping
         additional optionlet (i.e. caplet/floorlet) volatilities (a.k.a.
