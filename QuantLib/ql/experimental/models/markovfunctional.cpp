@@ -146,7 +146,7 @@ namespace QuantLib {
         normalIntegralW_ = gaussHermite.weights();
         for (Size i = 0; i < normalIntegralX_.size(); i++) {
             normalIntegralW_[i] *=
-                exp(-normalIntegralX_[i] * normalIntegralX_[i]) * M_1_SQRTPI;
+                std::exp(-normalIntegralX_[i] * normalIntegralX_[i]) * M_1_SQRTPI;
             normalIntegralX_[i] *= M_SQRT2;
         }
 
@@ -846,9 +846,10 @@ namespace QuantLib {
                                termStructure()->discount(numeraireTime())));
     }
 
-    const Real MarkovFunctional::zerobondImpl(
-        const Time T, const Time t, const Real y,
-        const Handle<YieldTermStructure> &yts) const {
+    const Real
+    MarkovFunctional::zerobondImpl(const Time T, const Time t, const Real y,
+                                   const Handle<YieldTermStructure> &yts,
+                                   const bool adjusted) const {
 
         if (t == 0.0)
             return yts.empty() ? this->termStructure()->discount(T, true)

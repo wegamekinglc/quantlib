@@ -19,6 +19,8 @@
 
 #include <ql/experimental/models/kahalesmilesection.hpp>
 
+using std::sqrt;
+
 namespace QuantLib {
 
     KahaleSmileSection::KahaleSmileSection(
@@ -34,7 +36,7 @@ namespace QuantLib {
 
         // only shifted lognormal smile sections are supported
 
-        QL_REQUIRE(source->nature() == SmileSection::ShiftedLognormal,
+        QL_REQUIRE(source->nature() == ShiftedLognormal,
                    "KahaleSmileSection only supports shifted lognormal source "
                    "sections");
 

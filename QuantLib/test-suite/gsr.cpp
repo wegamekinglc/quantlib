@@ -44,6 +44,8 @@
 using namespace QuantLib;
 using boost::unit_test_framework::test_suite;
 
+using std::fabs;
+
 void GsrTest::testGsrProcess() {
 
     BOOST_MESSAGE("Testing GSR process...");
@@ -144,6 +146,7 @@ void GsrTest::testGsrProcess() {
     Array times(2);
     Array vols(3);
     Array reversions(3);
+    Array adjusters(3,1.0);
 
     times[0] = 1.0;
     times[1] = 2.0;
@@ -154,7 +157,7 @@ void GsrTest::testGsrProcess() {
     reversions[1] = 0.80;
     reversions[2] = 1.30;
 
-    GsrProcess p(times, vols, reversions);
+    GsrProcess p(times, vols, reversions, adjusters);
     p.setForwardMeasureTime(10.0);
 
     // add more test cases here ...

@@ -336,7 +336,8 @@ namespace QuantLib {
                                  const Handle<YieldTermStructure> &yts) const;
 
         const Real zerobondImpl(const Time T, const Time t, const Real y,
-                                const Handle<YieldTermStructure> &yts) const;
+                                const Handle<YieldTermStructure> &yts,
+                                const bool adjusted) const;
 
         void generateArguments() {
             // if calculate triggers performCalculations, updateNumeraireTabulations
@@ -442,7 +443,7 @@ namespace QuantLib {
                        const CalibrationPoint &p, const Real marketPrice)
                 : model_(model), marketPrice_(marketPrice), expiry_(expiry),
                   p_(p) {}
-            double operator()(double strike) const {
+            Real operator()(Real strike) const {
                 Real modelPrice = model_->marketDigitalPrice(
                     expiry_, p_, Option::Call, strike);
                 return modelPrice - marketPrice_;
