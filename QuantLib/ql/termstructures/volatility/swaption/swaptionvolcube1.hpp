@@ -92,7 +92,7 @@ class SwaptionVolCube1x_t : public SwaptionVolatilityCube {
         std::vector<Period> swapTenors_;
         Size nLayers_;
         std::vector<Matrix_t<T> > points_;
-        mutable std::vector<Disposable<Matrix_t<T> > > transposedPoints_;
+        mutable std::vector<Matrix_t<T> > transposedPoints_;
         bool extrapolation_;
         bool backwardFlat_;
         mutable std::vector<boost::shared_ptr<Interpolation2D_t<T> > >
@@ -875,11 +875,11 @@ SwaptionVolCube1x_t<Model, T>::Cube::Cube(const std::vector<Date> &optionDates,
                 boost::make_shared<BackwardflatLinearInterpolation_t<T> >(
                     optionTimes_.begin(), optionTimes_.end(),
                     swapLengths_.begin(), swapLengths_.end(),
-                    (Matrix_t<T>)transposedPoints_[k]);
+                    transposedPoints_[k]);
         else
             interpolation = boost::make_shared<BilinearInterpolation_t<T> >(
                 optionTimes_.begin(), optionTimes_.end(), swapLengths_.begin(),
-                swapLengths_.end(), (Matrix_t<T>)transposedPoints_[k]);
+                swapLengths_.end(), transposedPoints_[k]);
         interpolators_.push_back(boost::shared_ptr<Interpolation2D_t<T> >(
                                      new FlatExtrapolator2D_t<T>(interpolation)));
         interpolators_[k]->enableExtrapolation();
@@ -902,11 +902,11 @@ SwaptionVolCube1x_t<Model, T>::Cube::Cube(const Cube &o) {
         if (k <= 4 && backwardFlat_)
             interpolation = boost::make_shared<BackwardflatLinearInterpolation_t<T>>(
                 optionTimes_.begin(), optionTimes_.end(), swapLengths_.begin(),
-                swapLengths_.end(), (Matrix_t<T>)transposedPoints_[k]);
+                swapLengths_.end(), transposedPoints_[k]);
         else
             interpolation = boost::make_shared<BilinearInterpolation_t<T>>(
                 optionTimes_.begin(), optionTimes_.end(), swapLengths_.begin(),
-                swapLengths_.end(), (Matrix_t<T>)transposedPoints_[k]);
+                swapLengths_.end(), transposedPoints_[k]);
         interpolators_.push_back(boost::shared_ptr<Interpolation2D_t<T> >(
                                      new FlatExtrapolator2D_t<T>(interpolation)));
         interpolators_[k]->enableExtrapolation();
@@ -933,11 +933,11 @@ typename SwaptionVolCube1x_t<Model, T>::Cube &
                 boost::make_shared<BackwardflatLinearInterpolation_t<T> >(
                     optionTimes_.begin(), optionTimes_.end(),
                     swapLengths_.begin(), swapLengths_.end(),
-                    (Matrix_t<T>)transposedPoints_[k]);
+                    transposedPoints_[k]);
         else
             interpolation = boost::make_shared<BilinearInterpolation_t<T>>(
                 optionTimes_.begin(), optionTimes_.end(), swapLengths_.begin(),
-                swapLengths_.end(), (Matrix_t<T>)transposedPoints_[k]);
+                swapLengths_.end(), transposedPoints_[k]);
         interpolators_.push_back(boost::shared_ptr<Interpolation2D_t<T> >(
                                      new FlatExtrapolator2D_t<T>(interpolation)));
         interpolators_[k]->enableExtrapolation();
@@ -1090,11 +1090,11 @@ void SwaptionVolCube1x_t<Model, T>::Cube::updateInterpolators() const {
         if (k <= 4 && backwardFlat_)
             interpolation = boost::make_shared<BackwardflatLinearInterpolation>(
                 optionTimes_.begin(), optionTimes_.end(), swapLengths_.begin(),
-                swapLengths_.end(), (Matrix_t<T>)transposedPoints_[k]);
+                swapLengths_.end(), transposedPoints_[k]);
         else
             interpolation = boost::make_shared<BilinearInterpolation_t<T>>(
                 optionTimes_.begin(), optionTimes_.end(), swapLengths_.begin(),
-                swapLengths_.end(), (Matrix_t<T>)transposedPoints_[k]);
+                swapLengths_.end(), transposedPoints_[k]);
         interpolators_[k] = boost::shared_ptr<Interpolation2D_t<T> >(
             new FlatExtrapolator2D_t<T>(interpolation));
         interpolators_[k]->enableExtrapolation();
