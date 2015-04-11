@@ -97,8 +97,9 @@ template <template <class> class Model, class T> class XABRCoeffHolder_t {
 };
 
 template <class I1, class I2, template <class> class Model, class T>
-class XABRInterpolationImpl_t : public Interpolation_t<T>::template templateImpl<I1, I2>,
-                              public XABRCoeffHolder_t<Model,T> {
+class XABRInterpolationImpl_t
+    : public Interpolation_t<T>::template templateImpl<I1, I2>,
+      public XABRCoeffHolder_t<Model, T> {
   public:
     XABRInterpolationImpl_t(
         const I1 &xBegin, const I1 &xEnd, const I2 &yBegin, Time t,
@@ -107,19 +108,19 @@ class XABRInterpolationImpl_t : public Interpolation_t<T>::template templateImpl
         const boost::shared_ptr<OptimizationMethod> &optMethod,
         const T errorAccept, const bool useMaxError, const Size maxGuesses)
         : Interpolation::templateImpl<I1, I2>(xBegin, xEnd, yBegin),
-          XABRCoeffHolder_t<Model,T>(t, forward, params, paramIsFixed),
+          XABRCoeffHolder_t<Model, T>(t, forward, params, paramIsFixed),
           endCriteria_(endCriteria), optMethod_(optMethod),
           errorAccept_(errorAccept), useMaxError_(useMaxError),
           maxGuesses_(maxGuesses), forward_(forward),
           vegaWeighted_(vegaWeighted) {
         // if no optimization method or endCriteria is provided, we provide one
         if (!optMethod_)
-            optMethod_ = boost::shared_ptr<OptimizationMethod>(
-                new LevenbergMarquardt(1e-8, 1e-8, 1e-8));
+            optMethod_ = boost::shared_ptr<OptimizationMethod_t<T> >(
+                new LevenbergMarquardt_t<T>(1e-8, 1e-8, 1e-8));
         // optMethod_ = boost::shared_ptr<OptimizationMethod>(new
         //    Simplex(0.01));
         if (!endCriteria_) {
-            endCriteria_ = boost::shared_ptr<EndCriteria>(
+            endCriteria_ = boost::shared_ptr<EndCriteria_t<T> >(
                 new EndCriteria(60000, 100, 1e-8, 1e-8, 1e-8));
         }
         this->weights_ = std::vector<T>(xEnd - xBegin, 1.0 / (xEnd - xBegin));
@@ -181,7 +182,7 @@ class XABRInterpolationImpl_t : public Interpolation_t<T>::template templateImpl
                 if (iterations > 0) {
                     HaltonRsg::sample_type s = halton.nextSequence();
                     Model<T>().guess(guess, this->paramIsFixed_, forward_,
-                                  this->t_, s.value);
+                                     this->t_, s.value);
                     for (Size i = 0; i < this->paramIsFixed_.size(); ++i)
                         if (this->paramIsFixed_[i])
                             guess[i] = this->params_[i];
@@ -205,8 +206,8 @@ class XABRInterpolationImpl_t : public Interpolation_t<T>::template templateImpl
                 Array_t<T> transfResult(
                     constrainedXABRError.include(projectedResult));
 
-                Array_t<T> result = Model<T>().direct(transfResult, this->paramIsFixed_,
-                                              this->params_, forward_);
+                Array_t<T> result = Model<T>().direct(
+                    transfResult, this->paramIsFixed_, this->params_, forward_);
                 tmpInterpolationError = useMaxError_ ? interpolationMaxError()
                                                      : interpolationError();
 
@@ -253,7 +254,7 @@ class XABRInterpolationImpl_t : public Interpolation_t<T>::template templateImpl
     }
 
     // calculate weighted differences
-    Disposable<Array_t<T>> interpolationErrors(const Array_t<T> &) const {
+    Disposable<Array_t<T> > interpolationErrors(const Array_t<T> &) const {
         Array_t<T> results(this->xEnd_ - this->xBegin_);
         typename std::vector<T>::const_iterator x = this->xBegin_;
         Array::iterator r = results.begin();
@@ -285,20 +286,21 @@ class XABRInterpolationImpl_t : public Interpolation_t<T>::template templateImpl
   private:
     class XABRError : public CostFunction {
       public:
-        XABRError(XABRInterpolationImpl_t<I1, I2, Model, T> *xabr) : xabr_(xabr) {}
+        XABRError(XABRInterpolationImpl_t<I1, I2, Model, T> *xabr)
+            : xabr_(xabr) {}
 
         T value(const Array_t<T> &x) const {
-            const Array_t<T> y = Model<T>().direct(x, xabr_->paramIsFixed_,
-                                           xabr_->params_, xabr_->forward_);
+            const Array_t<T> y = Model<T>().direct(
+                x, xabr_->paramIsFixed_, xabr_->params_, xabr_->forward_);
             for (Size i = 0; i < xabr_->params_.size(); ++i)
                 xabr_->params_[i] = y[i];
             xabr_->updateModelInstance();
             return xabr_->interpolationSquaredError();
         }
 
-        Disposable<Array_t<T>> values(const Array_t<T> &x) const {
-            const Array_t<T> y = Model<T>().direct(x, xabr_->paramIsFixed_,
-                                           xabr_->params_, xabr_->forward_);
+        Disposable<Array_t<T> > values(const Array_t<T> &x) const {
+            const Array_t<T> y = Model<T>().direct(
+                x, xabr_->paramIsFixed_, xabr_->params_, xabr_->forward_);
             for (Size i = 0; i < xabr_->params_.size(); ++i)
                 xabr_->params_[i] = y[i];
             xabr_->updateModelInstance();

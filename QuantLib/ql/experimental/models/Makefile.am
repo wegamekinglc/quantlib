@@ -34,7 +34,6 @@ libModels_la_SOURCES = \
     gaussian1dfloatfloatswaptionengine.cpp \
     gaussian1djamshidianswaptionengine.cpp \
     gaussian1dnonstandardswaptionengine.cpp \
-    gaussian1dswaptionengine.cpp \
     kahalesmilesection.cpp \
     markovfunctional.cpp \
     mfstateprocess.cpp \
