@@ -513,8 +513,9 @@ void SwaptionVolCube1x_t<Model, T>::sabrCalibrationSection(
 template <template <class> class Model, class T>
 void SwaptionVolCube1x_t<Model, T>::fillVolatilityCube() const {
 
-    const boost::shared_ptr<SwaptionVolatilityDiscrete> atmVolStructure =
-        boost::dynamic_pointer_cast<SwaptionVolatilityDiscrete>(*this->atmVol_);
+    const boost::shared_ptr<SwaptionVolatilityDiscrete_t<T> > atmVolStructure =
+        boost::dynamic_pointer_cast<SwaptionVolatilityDiscrete_t<T> >(
+            *this->atmVol_);
 
     std::vector<Time> atmOptionTimes(atmVolStructure->optionTimes());
     std::vector<Time> optionTimes(volCubeAtmCalibrated_.optionTimes());
