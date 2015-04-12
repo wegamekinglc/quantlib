@@ -68,7 +68,7 @@ SabrSmileSection_t<T>::SabrSmileSection_t(Time timeToExpiry, T forward,
 
     QL_REQUIRE(forward_ > 0.0, "at the money forward rate must be "
                                "positive: "
-                                   << io::rate(forward_) << " not allowed");
+                                   << forward_ << " not allowed");
     validateSabrParameters(alpha_, beta_, nu_, rho_);
 }
 
@@ -90,14 +90,14 @@ SabrSmileSection_t<T>::SabrSmileSection_t(const Date &d, T forward,
 }
 
 template <class T> T SabrSmileSection_t<T>::varianceImpl(T strike) const {
-    strike = QLFCT::max(0.00001, strike);
+    strike = QLFCT::max(T(0.00001), strike);
     T vol = unsafeSabrVolatility(strike, forward_, this->exerciseTime(), alpha_,
                                  beta_, nu_, rho_);
     return vol * vol * this->exerciseTime();
 }
 
 template <class T> T SabrSmileSection_t<T>::volatilityImpl(T strike) const {
-    strike = QLFCT::max(0.00001, strike);
+    strike = QLFCT::max(T(0.00001), strike);
     return unsafeSabrVolatility(strike, forward_, this->exerciseTime(), alpha_, beta_,
                                 nu_, rho_);
 }

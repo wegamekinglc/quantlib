@@ -153,7 +153,7 @@ T SmileSection_t<T>::optionPrice(T strike, Option::Type type,
 template <class T>
 T SmileSection_t<T>::digitalOptionPrice(T strike, Option::Type type, T discount,
                                         T gap) const {
-    T kl = std::max(strike - gap / 2.0, 0.0);
+    T kl = QLFCT::max(strike - gap / 2.0, T(0.0));
     T kr = kl + gap;
     return (type == Option::Call ? 1.0 : -1.0) *
            (optionPrice(kl, type, discount) - optionPrice(kr, type, discount)) /
@@ -162,7 +162,7 @@ T SmileSection_t<T>::digitalOptionPrice(T strike, Option::Type type, T discount,
 
 template <class T>
 T SmileSection_t<T>::density(T strike, T discount, T gap) const {
-    T kl = std::max(strike - gap / 2.0, 0.0);
+    T kl = QLFCT::max(strike - gap / 2.0, T(0.0));
     T kr = kl + gap;
     return (digitalOptionPrice(kl, Option::Call, discount, gap) -
             digitalOptionPrice(kr, Option::Call, discount, gap)) /

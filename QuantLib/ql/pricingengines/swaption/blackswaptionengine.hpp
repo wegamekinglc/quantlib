@@ -57,16 +57,16 @@ template <class T> class BlackSwaptionEngine_t : public Swaption_t<T>::engine {
                           const DayCounter &dc = Actual365Fixed(),
                           T displacement = 0.0);
     BlackSwaptionEngine_t(const Handle<YieldTermStructure_t<T> > &discountCurve,
-                          const Handle<SwaptionVolatilityStructure_t<T>> &vol,
+                          const Handle<SwaptionVolatilityStructure_t<T> > &vol,
                           T displacement = 0.0);
     void calculate() const;
     Handle<YieldTermStructure_t<T> > termStructure() { return discountCurve_; }
-    Handle<SwaptionVolatilityStructure_t<T>> volatility() { return vol_; }
+    Handle<SwaptionVolatilityStructure_t<T> > volatility() { return vol_; }
     T displacement() { return displacement_; }
 
   private:
     Handle<YieldTermStructure_t<T> > discountCurve_;
-    Handle<SwaptionVolatilityStructure_t<T>> vol_;
+    Handle<SwaptionVolatilityStructure_t<T> > vol_;
     T displacement_;
 };
 
@@ -79,9 +79,9 @@ BlackSwaptionEngine_t<T>::BlackSwaptionEngine_t(
     const Handle<YieldTermStructure_t<T> > &discountCurve, T vol,
     const DayCounter &dc, T displacement)
     : discountCurve_(discountCurve),
-      vol_(boost::shared_ptr<SwaptionVolatilityStructure_t<T>>(
-          new ConstantSwaptionVolatility(0, NullCalendar(), Following, vol,
-                                         dc))),
+      vol_(boost::shared_ptr<SwaptionVolatilityStructure_t<T> >(
+          new ConstantSwaptionVolatility_t<T>(0, NullCalendar(), Following, vol,
+                                              dc))),
       displacement_(displacement) {
     this->registerWith(discountCurve_);
 }
@@ -91,9 +91,9 @@ BlackSwaptionEngine_t<T>::BlackSwaptionEngine_t(
     const Handle<YieldTermStructure_t<T> > &discountCurve,
     const Handle<Quote_t<T> > &vol, const DayCounter &dc, T displacement)
     : discountCurve_(discountCurve),
-      vol_(boost::shared_ptr<SwaptionVolatilityStructure_t<T>>(
-          new ConstantSwaptionVolatility(0, NullCalendar(), Following, vol,
-                                         dc))),
+      vol_(boost::shared_ptr<SwaptionVolatilityStructure_t<T> >(
+          new ConstantSwaptionVolatility_t<T>(0, NullCalendar(), Following, vol,
+                                              dc))),
       displacement_(displacement) {
     this->registerWith(discountCurve_);
     this->registerWith(vol_);
@@ -102,7 +102,7 @@ BlackSwaptionEngine_t<T>::BlackSwaptionEngine_t(
 template <class T>
 BlackSwaptionEngine_t<T>::BlackSwaptionEngine_t(
     const Handle<YieldTermStructure_t<T> > &discountCurve,
-    const Handle<SwaptionVolatilityStructure_t<T>> &volatility, T displacement)
+    const Handle<SwaptionVolatilityStructure_t<T> > &volatility, T displacement)
     : discountCurve_(discountCurve), vol_(volatility),
       displacement_(displacement) {
     this->registerWith(discountCurve_);
@@ -123,7 +123,7 @@ template <class T> void BlackSwaptionEngine_t<T>::calculate() const {
     // using the discounting curve
     // swap.iborIndex() might be using a different forwarding curve
     swap.setPricingEngine(boost::shared_ptr<PricingEngine>(
-        new DiscountingSwapEngine(discountCurve_, false)));
+        new DiscountingSwapEngine_t<T>(discountCurve_, false)));
     T atmForward = swap.fairRate();
 
     // Volatilities are quoted for zero-spreaded swaps.
@@ -143,7 +143,7 @@ template <class T> void BlackSwaptionEngine_t<T>::calculate() const {
 
     // using the discounting curve
     swap.setPricingEngine(boost::shared_ptr<PricingEngine>(
-        new DiscountingSwapEngine(discountCurve_, false)));
+        new DiscountingSwapEngine_t<T>(discountCurve_, false)));
     T annuity;
     switch (this->arguments_.settlementType) {
     case Settlement::Physical: {
@@ -151,12 +151,12 @@ template <class T> void BlackSwaptionEngine_t<T>::calculate() const {
         break;
     }
     case Settlement::Cash: {
-        const Leg &fixedLeg = swap.fixedLeg();
-        boost::shared_ptr<FixedRateCoupon> firstCoupon =
-            boost::dynamic_pointer_cast<FixedRateCoupon>(fixedLeg[0]);
+        const typename Leg_t<T>::Type &fixedLeg = swap.fixedLeg();
+        boost::shared_ptr<FixedRateCoupon_t<T>> firstCoupon =
+            boost::dynamic_pointer_cast<FixedRateCoupon_t<T>>(fixedLeg[0]);
         DayCounter dayCount = firstCoupon->dayCounter();
         T fixedLegCashBPS = CashFlows::bps(
-            fixedLeg, InterestRate(atmForward, dayCount, Compounded, Annual),
+            fixedLeg, InterestRate_t<T>(atmForward, dayCount, Compounded, Annual),
             false, discountCurve_->referenceDate());
         annuity = QLFCT::abs(fixedLegCashBPS / basisPoint);
         break;
@@ -168,15 +168,16 @@ template <class T> void BlackSwaptionEngine_t<T>::calculate() const {
 
     // the swap length calculation might be improved using the value date
     // of the exercise date
-    Time swapLength =
-        vol_->swapLength(exerciseDate, this->arguments_.floatingPayDates.back());
+    Time swapLength = vol_->swapLength(
+        exerciseDate, this->arguments_.floatingPayDates.back());
     this->results_.additionalResults["swapLength"] = swapLength;
 
     T variance = vol_->blackVariance(exerciseDate, swapLength, strike);
     T stdDev = QLFCT::sqrt(variance);
     this->results_.additionalResults["stdDev"] = stdDev;
-    Option::Type w = (this->arguments_.type == VanillaSwap_t<T>::Payer) ? Option::Call
-                                                                  : Option::Put;
+    Option::Type w = (this->arguments_.type == VanillaSwap_t<T>::Payer)
+                         ? Option::Call
+                         : Option::Put;
     this->results_.value =
         blackFormula(w, strike, atmForward, stdDev, annuity, displacement_);
 

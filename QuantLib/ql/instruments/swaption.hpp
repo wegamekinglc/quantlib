@@ -41,9 +41,10 @@ namespace {
 
 template <class T> class ImpliedVolHelperSwaption {
   public:
-    ImpliedVolHelperSwaption(const Swaption_t<T> &,
-                     const Handle<YieldTermStructure_t<T> > &discountCurve,
-                     T targetValue, T displacement);
+    ImpliedVolHelperSwaption(
+        const Swaption_t<T> &,
+        const Handle<YieldTermStructure_t<T> > &discountCurve, T targetValue,
+        T displacement);
     T operator()(T x) const;
     T derivative(T x) const;
 
@@ -52,7 +53,7 @@ template <class T> class ImpliedVolHelperSwaption {
     Handle<YieldTermStructure_t<T> > discountCurve_;
     T targetValue_;
     boost::shared_ptr<SimpleQuote_t<T> > vol_;
-    const Instrument::results *results_;
+    const typename Instrument_t<T>::results *results_;
 };
 
 template <class T>
@@ -70,7 +71,8 @@ ImpliedVolHelperSwaption<T>::ImpliedVolHelperSwaption(
         discountCurve_, h, Actual365Fixed(), displacement));
     swaption.setupArguments(engine_->getArguments());
 
-    results_ = dynamic_cast<const Instrument::results *>(engine_->getResults());
+    this->results_ =
+        dynamic_cast<const Instrument::results *>(engine_->getResults());
 }
 
 template <class T> T ImpliedVolHelperSwaption<T>::operator()(T x) const {
@@ -78,7 +80,7 @@ template <class T> T ImpliedVolHelperSwaption<T>::operator()(T x) const {
         vol_->setValue(x);
         engine_->calculate();
     }
-    return results_->value - targetValue_;
+    return this->results_->value - targetValue_;
 }
 
 template <class T> T ImpliedVolHelperSwaption<T>::derivative(T x) const {
@@ -87,7 +89,7 @@ template <class T> T ImpliedVolHelperSwaption<T>::derivative(T x) const {
         engine_->calculate();
     }
     std::map<std::string, boost::any>::const_iterator vega_ =
-        results_->additionalResults.find("vega");
+        this->results_->additionalResults.find("vega");
     QL_REQUIRE(vega_ != results_->additionalResults.end(), "vega not provided");
     return boost::any_cast<T>(vega_->second);
 }
@@ -97,13 +99,13 @@ template <class T>
 Swaption_t<T>::Swaption_t(const boost::shared_ptr<VanillaSwap_t<T> > &swap,
                           const boost::shared_ptr<Exercise> &exercise,
                           Settlement::Type delivery)
-    : Option(boost::shared_ptr<Payoff>(), exercise), swap_(swap),
+    : Option_t<T>(boost::shared_ptr<Payoff>(), exercise), swap_(swap),
       settlementType_(delivery) {
-    registerWith(swap_);
+    this->registerWith(swap_);
 }
 
 template <class T> bool Swaption_t<T>::isExpired() const {
-    return detail::simple_event(exercise_->dates().back()).hasOccurred();
+    return detail::simple_event(this->exercise_->dates().back()).hasOccurred();
 }
 
 template <class T>
@@ -118,13 +120,13 @@ void Swaption_t<T>::setupArguments(PricingEngine::arguments *args) const {
 
     arguments->swap = swap_;
     arguments->settlementType = settlementType_;
-    arguments->exercise = exercise_;
+    arguments->exercise = this->exercise_;
 }
 
 template <class T> void Swaption_t<T>::arguments::validate() const {
     VanillaSwap_t<T>::arguments::validate();
     QL_REQUIRE(swap, "vanilla swap not set");
-    QL_REQUIRE(exercise, "exercise not set");
+    QL_REQUIRE(this->exercise, "exercise not set");
 }
 
 template <class T>

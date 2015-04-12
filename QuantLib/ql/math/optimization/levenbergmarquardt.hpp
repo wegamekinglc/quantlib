@@ -81,30 +81,30 @@ template <class T>
 typename EndCriteria_t<T>::Type
 LevenbergMarquardt_t<T>::minimize(Problem_t<T> &P,
                                   const EndCriteria_t<T> &endCriteria) {
-    EndCriteria::Type ecType = EndCriteria::None;
+    typename EndCriteria_t<T>::Type ecType = EndCriteria_t<T>::None;
     P.reset();
     Array_t<T> x_ = P.currentValue();
     currentProblem_ = &P;
     initCostValues_ = P.costFunction().values(x_);
     int m = initCostValues_.size();
     int n = x_.size();
-    boost::scoped_array<T> xx(new double[n]);
+    boost::scoped_array<T> xx(new T[n]);
     std::copy(x_.begin(), x_.end(), xx.get());
-    boost::scoped_array<T> fvec(new double[m]);
-    boost::scoped_array<T> diag(new double[n]);
+    boost::scoped_array<T> fvec(new T[m]);
+    boost::scoped_array<T> diag(new T[n]);
     int mode = 1;
     T factor = 1;
     int nprint = 0;
     int info = 0;
     int nfev = 0;
-    boost::scoped_array<T> fjac(new double[m * n]);
+    boost::scoped_array<T> fjac(new T[m * n]);
     int ldfjac = m;
     boost::scoped_array<int> ipvt(new int[n]);
-    boost::scoped_array<T> qtf(new double[n]);
-    boost::scoped_array<T> wa1(new double[n]);
-    boost::scoped_array<T> wa2(new double[n]);
-    boost::scoped_array<T> wa3(new double[n]);
-    boost::scoped_array<T> wa4(new double[m]);
+    boost::scoped_array<T> qtf(new T[n]);
+    boost::scoped_array<T> wa1(new T[n]);
+    boost::scoped_array<T> wa2(new T[n]);
+    boost::scoped_array<T> wa3(new T[n]);
+    boost::scoped_array<T> wa4(new T[m]);
     // requirements; check here to get more detailed error messages.
     QL_REQUIRE(n > 0, "no variables given");
     QL_REQUIRE(m >= n, "less functions (" << m << ") than available variables ("
@@ -132,7 +132,7 @@ LevenbergMarquardt_t<T>::minimize(Problem_t<T> &P,
     //                               "reduction in the sum of squares "
     //                               "is possible.");
     if (info != 6)
-        ecType = QuantLib::EndCriteria::StationaryFunctionValue;
+        ecType = QuantLib::EndCriteria_t<T>::StationaryFunctionValue;
     // QL_REQUIRE(info != 5, "MINPACK: number of calls to fcn has "
     //                               "reached or exceeded maxfev.");
     endCriteria.checkMaxIterations(nfev, ecType);

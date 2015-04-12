@@ -55,7 +55,7 @@ namespace QuantLib {
       to the <tt>i</tt>-th option and <tt>j</tt>-th tenor.
 */
 template <class T>
-class SwaptionVolatilityMatrix_t : public SwaptionVolatilityDiscrete,
+class SwaptionVolatilityMatrix_t : public SwaptionVolatilityDiscrete_t<T>,
                                    private boost::noncopyable {
   public:
     //! floating reference date, floating market data
@@ -115,7 +115,8 @@ class SwaptionVolatilityMatrix_t : public SwaptionVolatilityDiscrete,
     //! returns the lower indexes of surrounding volatility matrix corners
     std::pair<Size, Size> locate(const Date &optionDate,
                                  const Period &swapTenor) const {
-        return locate(timeFromReference(optionDate), swapLength(swapTenor));
+        return locate(this->timeFromReference(optionDate),
+                      this->swapLength(swapTenor));
     }
     //! returns the lower indexes of surrounding volatility matrix corners
     std::pair<Size, Size> locate(Time optionTime, Time swapLength) const {
@@ -142,27 +143,27 @@ class SwaptionVolatilityMatrix_t : public SwaptionVolatilityDiscrete,
 // inline definitions
 
 template <class T> inline Date SwaptionVolatilityMatrix_t<T>::maxDate() const {
-    return optionDates_.back();
+    return this->optionDates_.back();
 }
 
 template <class T> inline T SwaptionVolatilityMatrix_t<T>::minStrike() const {
-    return QL_MIN_REAL;
+    return T(QL_MIN_REAL);
 }
 
 template <class T> inline T SwaptionVolatilityMatrix_t<T>::maxStrike() const {
-    return QL_MAX_REAL;
+    return T(QL_MAX_REAL);
 }
 
 template <class T>
 inline const Period &SwaptionVolatilityMatrix_t<T>::maxSwapTenor() const {
-    return swapTenors_.back();
+    return this->swapTenors_.back();
 }
 
 template <class T>
 inline T SwaptionVolatilityMatrix_t<T>::volatilityImpl(Time optionTime,
                                                        Time swapLength,
                                                        T) const {
-    calculate();
+    this->calculate();
     return interpolation_(swapLength, optionTime, true);
 }
 
@@ -177,13 +178,13 @@ SwaptionVolatilityMatrix_t<T>::SwaptionVolatilityMatrix_t(
     const std::vector<Period> &optionT, const std::vector<Period> &swapT,
     const std::vector<std::vector<Handle<Quote_t<T> > > > &vols,
     const DayCounter &dc)
-    : SwaptionVolatilityDiscrete(optionT, swapT, 0, cal, bdc, dc),
+    : SwaptionVolatilityDiscrete_t<T>(optionT, swapT, 0, cal, bdc, dc),
       volHandles_(vols), volatilities_(vols.size(), vols.front().size()) {
     checkInputs(volatilities_.rows(), volatilities_.columns());
     registerWithMarketData();
     interpolation_ = BilinearInterpolation_t<T>(
-        swapLengths_.begin(), swapLengths_.end(), optionTimes_.begin(),
-        optionTimes_.end(), volatilities_);
+        this->swapLengths_.begin(), this->swapLengths_.end(),
+        this->optionTimes_.begin(), this->optionTimes_.end(), volatilities_);
 }
 
 // fixed reference date, floating market data
@@ -193,13 +194,13 @@ SwaptionVolatilityMatrix_t<T>::SwaptionVolatilityMatrix_t(
     const std::vector<Period> &optionT, const std::vector<Period> &swapT,
     const std::vector<std::vector<Handle<Quote_t<T> > > > &vols,
     const DayCounter &dc)
-    : SwaptionVolatilityDiscrete(optionT, swapT, refDate, cal, bdc, dc),
+    : SwaptionVolatilityDiscrete_t<T>(optionT, swapT, refDate, cal, bdc, dc),
       volHandles_(vols), volatilities_(vols.size(), vols.front().size()) {
     checkInputs(volatilities_.rows(), volatilities_.columns());
     registerWithMarketData();
     interpolation_ = BilinearInterpolation_t<T>(
-        swapLengths_.begin(), swapLengths_.end(), optionTimes_.begin(),
-        optionTimes_.end(), volatilities_);
+        this->swapLengths_.begin(), this->swapLengths_.end(),
+        this->optionTimes_.begin(), this->optionTimes_.end(), volatilities_);
 }
 
 // floating reference date, fixed market data
@@ -208,7 +209,7 @@ SwaptionVolatilityMatrix_t<T>::SwaptionVolatilityMatrix_t(
     const Calendar &cal, BusinessDayConvention bdc,
     const std::vector<Period> &optionT, const std::vector<Period> &swapT,
     const Matrix_t<T> &vols, const DayCounter &dc)
-    : SwaptionVolatilityDiscrete(optionT, swapT, 0, cal, bdc, dc),
+    : SwaptionVolatilityDiscrete_t<T>(optionT, swapT, 0, cal, bdc, dc),
       volHandles_(vols.rows()), volatilities_(vols.rows(), vols.columns()) {
 
     checkInputs(vols.rows(), vols.columns());
@@ -223,8 +224,8 @@ SwaptionVolatilityMatrix_t<T>::SwaptionVolatilityMatrix_t(
                     new SimpleQuote_t<T>(vols[i][j])));
     }
     interpolation_ = BilinearInterpolation_t<T>(
-        swapLengths_.begin(), swapLengths_.end(), optionTimes_.begin(),
-        optionTimes_.end(), volatilities_);
+        this->swapLengths_.begin(), this->swapLengths_.end(),
+        this->optionTimes_.begin(), this->optionTimes_.end(), volatilities_);
 }
 
 // fixed reference date, fixed market data
@@ -233,7 +234,7 @@ SwaptionVolatilityMatrix_t<T>::SwaptionVolatilityMatrix_t(
     const Date &refDate, const Calendar &cal, BusinessDayConvention bdc,
     const std::vector<Period> &optionT, const std::vector<Period> &swapT,
     const Matrix_t<T> &vols, const DayCounter &dc)
-    : SwaptionVolatilityDiscrete(optionT, swapT, refDate, cal, bdc, dc),
+    : SwaptionVolatilityDiscrete_t<T>(optionT, swapT, refDate, cal, bdc, dc),
       volHandles_(vols.rows()), volatilities_(vols.rows(), vols.columns()) {
 
     checkInputs(vols.rows(), vols.columns());
@@ -248,8 +249,8 @@ SwaptionVolatilityMatrix_t<T>::SwaptionVolatilityMatrix_t(
                     new SimpleQuote_t<T>(vols[i][j])));
     }
     interpolation_ = BilinearInterpolation_t<T>(
-        swapLengths_.begin(), swapLengths_.end(), optionTimes_.begin(),
-        optionTimes_.end(), volatilities_);
+        this->swapLengths_.begin(), this->swapLengths_.end(),
+        this->optionTimes_.begin(), this->optionTimes_.end(), volatilities_);
 }
 
 // fixed reference date and fixed market data, option dates
@@ -258,7 +259,7 @@ SwaptionVolatilityMatrix_t<T>::SwaptionVolatilityMatrix_t(
     const Date &today, const std::vector<Date> &optionDates,
     const std::vector<Period> &swapT, const Matrix_t<T> &vols,
     const DayCounter &dc)
-    : SwaptionVolatilityDiscrete(optionDates, swapT, today, Calendar(),
+    : SwaptionVolatilityDiscrete_t<T>(optionDates, swapT, today, Calendar(),
                                  Following, dc),
       volHandles_(vols.rows()), volatilities_(vols.rows(), vols.columns()) {
 
@@ -274,21 +275,21 @@ SwaptionVolatilityMatrix_t<T>::SwaptionVolatilityMatrix_t(
                     new SimpleQuote_t<T>(vols[i][j])));
     }
     interpolation_ = BilinearInterpolation_t<T>(
-        swapLengths_.begin(), swapLengths_.end(), optionTimes_.begin(),
-        optionTimes_.end(), volatilities_);
+        this->swapLengths_.begin(), this->swapLengths_.end(),
+        this->optionTimes_.begin(), this->optionTimes_.end(), volatilities_);
 }
 
 template <class T>
 void SwaptionVolatilityMatrix_t<T>::checkInputs(Size volRows,
                                                 Size volsColumns) const {
-    QL_REQUIRE(nOptionTenors_ == volRows,
+    QL_REQUIRE(this->nOptionTenors_ == volRows,
                "mismatch between number of option dates ("
-                   << nOptionTenors_ << ") and number of rows (" << volRows
-                   << ") in the vol matrix");
-    QL_REQUIRE(nSwapTenors_ == volsColumns,
+                   << this->nOptionTenors_ << ") and number of rows ("
+                   << volRows << ") in the vol matrix");
+    QL_REQUIRE(this->nSwapTenors_ == volsColumns,
                "mismatch between number of swap tenors ("
-                   << nSwapTenors_ << ") and number of rows (" << volsColumns
-                   << ") in the vol matrix");
+                   << this->nSwapTenors_ << ") and number of rows ("
+                   << volsColumns << ") in the vol matrix");
 }
 
 template <class T>
@@ -301,7 +302,7 @@ void SwaptionVolatilityMatrix_t<T>::registerWithMarketData() {
 template <class T>
 void SwaptionVolatilityMatrix_t<T>::performCalculations() const {
 
-    SwaptionVolatilityDiscrete::performCalculations();
+    SwaptionVolatilityDiscrete_t<T>::performCalculations();
 
     // we might use iterators here...
     for (Size i = 0; i < volatilities_.rows(); ++i)
@@ -327,7 +328,7 @@ SwaptionVolatilityMatrix_t<T>::smileSectionImpl(Time optionTime,
     // dummy strike
     T atmVol = volatilityImpl(optionTime, swapLength, 0.05);
     return boost::shared_ptr<SmileSection_t<T> >(
-        new FlatSmileSection_t<T>(optionTime, atmVol, dayCounter()));
+        new FlatSmileSection_t<T>(optionTime, atmVol, this->dayCounter()));
 }
 }
 

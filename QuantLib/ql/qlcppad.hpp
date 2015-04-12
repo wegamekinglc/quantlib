@@ -24,6 +24,9 @@
 #ifndef ql_cppad_hpp
 #define ql_cppad_hpp
 
+// cppad does not go together with ublas
+#define QL_NO_UBLAS_SUPPORT  
+
 #include <cppad/cppad.hpp>
 
 namespace CppAD {
@@ -44,6 +47,10 @@ namespace QLFCT {
 
 using CppAD::max; using CppAD::min; using CppAD::pow; using CppAD::log;
 using CppAD::exp; using CppAD::abs; using CppAD::sqrt;
+using CppAD::sin; using CppAD::cos; using CppAD::tan;
+using CppAD::sinh; using CppAD::cosh; using CppAD::tanh;
+using CppAD::asin; using CppAD::acos; using CppAD::atan;
+// using CppAD::asinh; using CppAD::acosh; using CppAD::atanh; // not yet in cppad
 using CppAD::CondExpLt; using CppAD::CondExpLe;
 using CppAD::CondExpGt; using CppAD::CondExpGe;
 using CppAD::CondExpEq;

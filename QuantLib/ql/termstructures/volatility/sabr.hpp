@@ -97,11 +97,11 @@ template <class T> void validateSabrParameters(T alpha, T beta, T nu, T rho) {
 template <class T>
 T sabrVolatility(T strike, T forward, Time expiryTime, T alpha, T beta, T nu,
                  T rho) {
-    QL_REQUIRE(strike > 0.0, "strike must be positive: " << io::rate(strike)
+    QL_REQUIRE(strike > 0.0, "strike must be positive: " << strike
                                                          << " not allowed");
     QL_REQUIRE(forward > 0.0, "at the money forward rate must be "
                               "positive: "
-                                  << io::rate(forward) << " not allowed");
+                                  << forward << " not allowed");
     QL_REQUIRE(expiryTime >= 0.0, "expiry time must be non-negative: "
                                       << expiryTime << " not allowed");
     validateSabrParameters(alpha, beta, nu, rho);

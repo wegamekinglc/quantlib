@@ -77,7 +77,8 @@ template <class T> class SwapIndex_t : public InterestRateIndex_t<T> {
     /*! \warning Relinking the term structure underlying the index will
                  not have effect on the returned swap.
     */
-    boost::shared_ptr<VanillaSwap> underlyingSwap(const Date &fixingDate) const;
+    boost::shared_ptr<VanillaSwap_t<T> >
+    underlyingSwap(const Date &fixingDate) const;
     //@}
     //! \name Other methods
     //@{
@@ -101,7 +102,7 @@ template <class T> class SwapIndex_t : public InterestRateIndex_t<T> {
     Handle<YieldTermStructure_t<T> > discount_;
     // cache data to avoid swap recreation when the same fixing date
     // is used multiple time to forecast changing fixing
-    mutable boost::shared_ptr<VanillaSwap> lastSwap_;
+    mutable boost::shared_ptr<VanillaSwap_t<T> > lastSwap_;
     mutable Date lastFixingDate_;
 };
 
@@ -157,11 +158,11 @@ SwapIndex_t<T>::SwapIndex_t(const std::string &familyName, const Period &tenor,
                             BusinessDayConvention fixedLegConvention,
                             const DayCounter &fixedLegDayCounter,
                             const shared_ptr<IborIndex_t<T> > &iborIndex)
-    : InterestRateIndex(familyName, tenor, settlementDays, currency,
-                        fixingCalendar, fixedLegDayCounter),
+    : InterestRateIndex_t<T>(familyName, tenor, settlementDays, currency,
+                             fixingCalendar, fixedLegDayCounter),
       tenor_(tenor), iborIndex_(iborIndex), fixedLegTenor_(fixedLegTenor),
       fixedLegConvention_(fixedLegConvention), exogenousDiscount_(false),
-      discount_(Handle<YieldTermStructure>()) {
+      discount_(Handle<YieldTermStructure_t<T> >()) {
     this->registerWith(iborIndex_);
 }
 
@@ -174,8 +175,8 @@ SwapIndex_t<T>::SwapIndex_t(const std::string &familyName, const Period &tenor,
                             const DayCounter &fixedLegDayCounter,
                             const shared_ptr<IborIndex_t<T> > &iborIndex,
                             const Handle<YieldTermStructure_t<T> > &discount)
-    : InterestRateIndex(familyName, tenor, settlementDays, currency,
-                        fixingCalendar, fixedLegDayCounter),
+    : InterestRateIndex_t<T>(familyName, tenor, settlementDays, currency,
+                             fixingCalendar, fixedLegDayCounter),
       tenor_(tenor), iborIndex_(iborIndex), fixedLegTenor_(fixedLegTenor),
       fixedLegConvention_(fixedLegConvention), exogenousDiscount_(true),
       discount_(discount) {
@@ -200,7 +201,7 @@ T SwapIndex_t<T>::forecastFixing(const Date &fixingDate) const {
 }
 
 template <class T>
-shared_ptr<VanillaSwap>
+shared_ptr<VanillaSwap_t<T> >
 SwapIndex_t<T>::underlyingSwap(const Date &fixingDate) const {
 
     QL_REQUIRE(fixingDate != Date(), "null fixing date");
@@ -210,7 +211,7 @@ SwapIndex_t<T>::underlyingSwap(const Date &fixingDate) const {
         Rate fixedRate = 0.0;
         if (exogenousDiscount_)
             lastSwap_ =
-                MakeVanillaSwap(tenor_, iborIndex_, fixedRate)
+                MakeVanillaSwap_t<T>(tenor_, iborIndex_, fixedRate)
                     .withEffectiveDate(this->valueDate(fixingDate))
                     .withFixedLegCalendar(this->fixingCalendar())
                     .withFixedLegDayCount(this->dayCounter_)
@@ -220,7 +221,7 @@ SwapIndex_t<T>::underlyingSwap(const Date &fixingDate) const {
                     .withDiscountingTermStructure(discount_);
         else
             lastSwap_ =
-                MakeVanillaSwap(tenor_, iborIndex_, fixedRate)
+                MakeVanillaSwap_t<T>(tenor_, iborIndex_, fixedRate)
                     .withEffectiveDate(this->valueDate(fixingDate))
                     .withFixedLegCalendar(this->fixingCalendar())
                     .withFixedLegDayCount(this->dayCounter_)

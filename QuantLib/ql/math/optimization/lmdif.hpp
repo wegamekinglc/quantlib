@@ -170,10 +170,10 @@ template <class T> T enorm(int n, T *x) {
     int i;
     T agiant, floatn, s1, s2, s3, xabs, x1max, x3max;
     T ans, temp;
-    static double rdwarf = 3.834e-20;
-    static double rgiant = 1.304e19;
-    static double zero = 0.0;
-    static double one = 1.0;
+    static T rdwarf = 3.834e-20;
+    static T rgiant = 1.304e19;
+    static T zero = 0.0;
+    static T one = 1.0;
 
     s1 = zero;
     s2 = zero;
@@ -272,7 +272,7 @@ inline int mod(int k, int m) { return (k % m); }
 
 template <class T>
 void fdjac2(int m, int n, T *x, T *fvec, T *fjac, int, int *iflag, T epsfcn,
-            T *wa, const QuantLib::MINPACK::LmdifCostFunction &fcn) {
+            T *wa, const typename QuantLib::MINPACK::LmdifCostFunction_t<T>::Type &fcn) {
     /*
     *     **********
     *
@@ -352,9 +352,9 @@ void fdjac2(int m, int n, T *x, T *fvec, T *fjac, int, int *iflag, T epsfcn,
     */
     int i, j, ij;
     T eps, h, temp;
-    static double zero = 0.0;
+    static T zero = 0.0;
 
-    temp = dmax1(epsfcn, MACHEP);
+    temp = dmax1(epsfcn, T(MACHEP));
     eps = QLFCT::sqrt(temp);
     ij = 0;
     for (j = 0; j < n; j++) {
@@ -460,9 +460,9 @@ void qrfac(int m, int n, T *a, int, int pivot, int *ipvt, int, T *rdiag,
     */
     int i, ij, jj, j, jp1, k, kmax, minmn;
     T ajnorm, sum, temp;
-    static double zero = 0.0;
-    static double one = 1.0;
-    static double p05 = 0.05;
+    static T zero = 0.0;
+    static T one = 1.0;
+    static T p05 = 0.05;
 
     /*
     *     compute the initial column norms and initialize several arrays.
@@ -554,7 +554,7 @@ void qrfac(int m, int n, T *a, int, int pivot, int *ipvt, int, T *rdiag,
                     temp = dmax1(zero, one - temp * temp);
                     rdiag[k] *= QLFCT::sqrt(temp);
                     temp = rdiag[k] / wa[k];
-                    if ((p05 * temp * temp) <= MACHEP) {
+                    if ((p05 * temp * temp) <= T(MACHEP)) {
                         rdiag[k] = enorm(m - j - 1, &a[jp1 + m * k]);
                         wa[k] = rdiag[k];
                     }
@@ -656,9 +656,9 @@ void qrsolv(int n, T *r, int ldr, int *ipvt, T *diag, T *qtb, T *x, T *sdiag,
     */
     int i, ij, ik, kk, j, jp1, k, kp1, l, nsing;
     T cos, cotan, qtbpj, sin, sum, tan, temp;
-    static double zero = 0.0;
-    static double p25 = 0.25;
-    static double p5 = 0.5;
+    static T zero = 0.0;
+    static T p25 = 0.25;
+    static T p5 = 0.5;
 
     /*
     *     copy r and (q transpose)*b to preserve input and initialize s.
@@ -888,9 +888,9 @@ void lmpar(int n, T *r, int ldr, int *ipvt, T *diag, T *qtb, T delta, T *par,
     int i, iter, ij, jj, j, jm1, jp1, k, l, nsing;
     T dxnorm, fp, gnorm, parc, parl, paru;
     T sum, temp;
-    static double zero = 0.0;
-    static double p1 = 0.1;
-    static double p001 = 0.001;
+    static T zero = 0.0;
+    static T p1 = 0.1;
+    static T p001 = 0.001;
 
     /*
     *     compute and store in x the gauss-newton direction. if the
@@ -985,7 +985,7 @@ void lmpar(int n, T *r, int ldr, int *ipvt, T *diag, T *qtb, T delta, T *par,
     gnorm = enorm(n, wa1);
     paru = gnorm / delta;
     if (paru == zero)
-        paru = DWARF / dmin1(delta, p1);
+        paru = T(DWARF) / dmin1(delta, p1);
     /*
     *     if the input par lies outside of the interval (parl,paru),
     *     set par to the closer endpoint.
@@ -1003,7 +1003,7 @@ L150:
     *    evaluate the function at the current value of par.
     */
     if (*par == zero)
-        *par = dmax1(DWARF, p001 * paru);
+        *par = dmax1(T(DWARF), p001 * paru);
     temp = QLFCT::sqrt(*par);
     for (j = 0; j < n; j++)
         wa1[j] = temp * diag[j];
@@ -1265,13 +1265,13 @@ void lmdif(
     T actred, delta = 0, dirder, fnorm, fnorm1, gnorm;
     T par, pnorm, prered, ratio;
     T sum, temp, temp1, temp2, temp3, xnorm = 0;
-    static double one = 1.0;
-    static double p1 = 0.1;
-    static double p5 = 0.5;
-    static double p25 = 0.25;
-    static double p75 = 0.75;
-    static double p0001 = 1.0e-4;
-    static double zero = 0.0;
+    static T one = 1.0;
+    static T p1 = 0.1;
+    static T p5 = 0.5;
+    static T p25 = 0.25;
+    static T p75 = 0.75;
+    static T p0001 = 1.0e-4;
+    static T zero = 0.0;
 
     *info = 0;
     iflag = 0;
@@ -1541,12 +1541,12 @@ L200:
     */
     if (*nfev >= maxfev)
         *info = 5;
-    if ((QLFCT::abs(actred) <= MACHEP) && (prered <= MACHEP) &&
+    if ((QLFCT::abs(actred) <= T(MACHEP)) && (prered <= T(MACHEP)) &&
         (p5 * ratio <= one))
         *info = 6;
-    if (delta <= MACHEP * xnorm)
+    if (delta <= T(MACHEP) * xnorm)
         *info = 7;
-    if (gnorm <= MACHEP)
+    if (gnorm <= T(MACHEP))
         *info = 8;
     if (*info != 0)
         goto L300;

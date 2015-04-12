@@ -40,12 +40,12 @@ template <class T>
 class ProjectedCostFunction_t : public CostFunction_t<T>,
                                 public Projection_t<T> {
   public:
-    ProjectedCostFunction_t(const CostFunction &costFunction,
+    ProjectedCostFunction_t(const CostFunction_t<T> &costFunction,
                             const Array_t<T> &parameterValues,
                             const std::vector<bool> &fixParameters);
 
-    ProjectedCostFunction_t(const CostFunction &costFunction,
-                            const Projection &projection);
+    ProjectedCostFunction_t(const CostFunction_t<T> &costFunction,
+                            const Projection_t<T> &projection);
 
     //! \name CostFunction interface
     //@{
@@ -64,14 +64,14 @@ typedef ProjectedCostFunction_t<Real> ProjectedCostFunction;
 
 template <class T>
 ProjectedCostFunction_t<T>::ProjectedCostFunction_t(
-    const CostFunction &costFunction, const Array_t<T> &parameterValues,
+    const CostFunction_t<T> &costFunction, const Array_t<T> &parameterValues,
     const std::vector<bool> &fixParameters)
-    : Projection(parameterValues, fixParameters), costFunction_(costFunction) {}
+    : Projection_t<T>(parameterValues, fixParameters), costFunction_(costFunction) {}
 
 template <class T>
 ProjectedCostFunction_t<T>::ProjectedCostFunction_t(
-    const CostFunction &costFunction, const Projection &projection)
-    : Projection(projection), costFunction_(costFunction) {}
+    const CostFunction_t<T> &costFunction, const Projection_t<T> &projection)
+    : Projection_t<T>(projection), costFunction_(costFunction) {}
 
 template <class T>
 T ProjectedCostFunction_t<T>::value(const Array_t<T> &freeParameters) const {

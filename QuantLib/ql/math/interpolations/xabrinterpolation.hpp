@@ -54,7 +54,7 @@ template <template <class> class Model, class T> class XABRCoeffHolder_t {
         : t_(t), forward_(forward), params_(params),
           paramIsFixed_(paramIsFixed.size(), false), weights_(std::vector<T>()),
           error_(Null<T>()), maxError_(Null<T>()),
-          XABREndCriteria_(EndCriteria::None) {
+          XABREndCriteria_(EndCriteria_t<T>::None) {
         QL_REQUIRE(t > 0.0, "expiry time must be positive: " << t
                                                              << " not allowed");
         QL_REQUIRE(params.size() == Model<T>().dimension(),
@@ -83,7 +83,7 @@ template <template <class> class Model, class T> class XABRCoeffHolder_t {
     }
 
     /*! Expiry, Forward */
-    T t_;
+    Time t_;
     const T &forward_;
     /*! Parameters */
     std::vector<T> params_;
@@ -91,7 +91,7 @@ template <template <class> class Model, class T> class XABRCoeffHolder_t {
     std::vector<T> weights_;
     /*! Interpolation results */
     T error_, maxError_;
-    EndCriteria::Type XABREndCriteria_;
+    typename EndCriteria_t<T>::Type XABREndCriteria_;
     /*! Model instance (if required) */
     boost::shared_ptr<typename Model<T>::type> modelInstance_;
 };
@@ -104,10 +104,11 @@ class XABRInterpolationImpl_t
     XABRInterpolationImpl_t(
         const I1 &xBegin, const I1 &xEnd, const I2 &yBegin, Time t,
         const T &forward, std::vector<T> params, std::vector<bool> paramIsFixed,
-        bool vegaWeighted, const boost::shared_ptr<EndCriteria> &endCriteria,
-        const boost::shared_ptr<OptimizationMethod> &optMethod,
+        bool vegaWeighted, const boost::shared_ptr<EndCriteria_t<T>> &endCriteria,
+        const boost::shared_ptr<OptimizationMethod_t<T>> &optMethod,
         const T errorAccept, const bool useMaxError, const Size maxGuesses)
-        : Interpolation::templateImpl<I1, I2>(xBegin, xEnd, yBegin),
+        : Interpolation_t<T>::template templateImpl<I1, I2>(xBegin, xEnd,
+                                                            yBegin),
           XABRCoeffHolder_t<Model, T>(t, forward, params, paramIsFixed),
           endCriteria_(endCriteria), optMethod_(optMethod),
           errorAccept_(errorAccept), useMaxError_(useMaxError),
@@ -117,11 +118,11 @@ class XABRInterpolationImpl_t
         if (!optMethod_)
             optMethod_ = boost::shared_ptr<OptimizationMethod_t<T> >(
                 new LevenbergMarquardt_t<T>(1e-8, 1e-8, 1e-8));
-        // optMethod_ = boost::shared_ptr<OptimizationMethod>(new
+        // optMethod_ = boost::shared_ptr<OptimizationMethod_t<T>>(new
         //    Simplex(0.01));
         if (!endCriteria_) {
             endCriteria_ = boost::shared_ptr<EndCriteria_t<T> >(
-                new EndCriteria(60000, 100, 1e-8, 1e-8, 1e-8));
+                new EndCriteria_t<T>(60000, 100, 1e-8, 1e-8, 1e-8));
         }
         this->weights_ = std::vector<T>(xEnd - xBegin, 1.0 / (xEnd - xBegin));
     }
@@ -142,7 +143,7 @@ class XABRInterpolationImpl_t
             for (; x != this->xEnd_; ++x, ++y) {
                 T stdDev = QLFCT::sqrt((*y) * (*y) * this->t_);
                 this->weights_.push_back(
-                    blackFormulaStdDevDerivative(*x, forward_, stdDev));
+                    blackFormulaStdDevDerivative<T>(*x, forward_, stdDev));
                 weightsSum += this->weights_.back();
             }
             // weight normalization
@@ -157,7 +158,7 @@ class XABRInterpolationImpl_t
                             std::logical_and<bool>())) {
             this->error_ = interpolationError();
             this->maxError_ = interpolationMaxError();
-            this->XABREndCriteria_ = EndCriteria::None;
+            this->XABREndCriteria_ = EndCriteria_t<T>::None;
             return;
         } else {
             XABRError costFunction(this);
@@ -174,15 +175,16 @@ class XABRInterpolationImpl_t
                 if (!this->paramIsFixed_[i])
                     ++freeParameters;
             HaltonRsg halton(freeParameters, 42);
-            EndCriteria::Type tmpEndCriteria;
+            typename EndCriteria_t<T>::Type tmpEndCriteria;
             T tmpInterpolationError;
 
             do {
 
                 if (iterations > 0) {
                     HaltonRsg::sample_type s = halton.nextSequence();
+                    std::vector<T> sTmp(s.value.begin(), s.value.end());
                     Model<T>().guess(guess, this->paramIsFixed_, forward_,
-                                     this->t_, s.value);
+                                     this->t_, sTmp);
                     for (Size i = 0; i < this->paramIsFixed_.size(); ++i)
                         if (this->paramIsFixed_[i])
                             guess[i] = this->params_[i];
@@ -191,15 +193,15 @@ class XABRInterpolationImpl_t
                 Array_t<T> inversedTransformatedGuess(Model<T>().inverse(
                     guess, this->paramIsFixed_, this->params_, forward_));
 
-                ProjectedCostFunction constrainedXABRError(
+                ProjectedCostFunction_t<T> constrainedXABRError(
                     costFunction, inversedTransformatedGuess,
                     this->paramIsFixed_);
 
                 Array_t<T> projectedGuess(
                     constrainedXABRError.project(inversedTransformatedGuess));
 
-                NoConstraint constraint;
-                Problem problem(constrainedXABRError, constraint,
+                NoConstraint_t<T> constraint;
+                Problem_t<T> problem(constrainedXABRError, constraint,
                                 projectedGuess);
                 tmpEndCriteria = optMethod_->minimize(problem, *endCriteria_);
                 Array_t<T> projectedResult(problem.currentValue());
@@ -229,14 +231,15 @@ class XABRInterpolationImpl_t
     }
 
     T value(T x) const {
-        QL_REQUIRE(x > 0.0, "strike must be positive: " << io::rate(x)
-                                                        << " not allowed");
+        // see master
+        // QL_REQUIRE(x > 0.0, "strike must be positive: " << x
+        //                                                 << " not allowed");
         return this->modelInstance_->volatility(x);
     }
 
-    T primitive(Real) const { QL_FAIL("XABR primitive not implemented"); }
-    T derivative(Real) const { QL_FAIL("XABR derivative not implemented"); }
-    T secondDerivative(Real) const {
+    T primitive(T) const { QL_FAIL("XABR primitive not implemented"); }
+    T derivative(T) const { QL_FAIL("XABR derivative not implemented"); }
+    T secondDerivative(T) const {
         QL_FAIL("XABR secondDerivative not implemented");
     }
 
@@ -257,7 +260,7 @@ class XABRInterpolationImpl_t
     Disposable<Array_t<T> > interpolationErrors(const Array_t<T> &) const {
         Array_t<T> results(this->xEnd_ - this->xBegin_);
         typename std::vector<T>::const_iterator x = this->xBegin_;
-        Array::iterator r = results.begin();
+        typename Array_t<T>::iterator r = results.begin();
         typename std::vector<T>::const_iterator y = this->yBegin_;
         typename std::vector<T>::const_iterator w = this->weights_.begin();
         for (; x != this->xEnd_; ++x, ++r, ++w, ++y) {
@@ -269,7 +272,7 @@ class XABRInterpolationImpl_t
     T interpolationError() const {
         Size n = this->xEnd_ - this->xBegin_;
         T squaredError = interpolationSquaredError();
-        return QLFCT::sqrt(n * squaredError / (n - 1));
+        return QLFCT::sqrt(n * squaredError / (n == 1 ? 1 : (n - 1)));
     }
 
     T interpolationMaxError() const {
@@ -277,14 +280,14 @@ class XABRInterpolationImpl_t
         I1 i = this->xBegin_;
         I2 j = this->yBegin_;
         for (; i != this->xEnd_; ++i, ++j) {
-            error = std::fabs(value(*i) - *j);
+            error = QLFCT::abs(value(*i) - *j);
             maxError = QLFCT::max(maxError, error);
         }
         return maxError;
     }
 
   private:
-    class XABRError : public CostFunction {
+    class XABRError : public CostFunction_t<T> {
       public:
         XABRError(XABRInterpolationImpl_t<I1, I2, Model, T> *xabr)
             : xabr_(xabr) {}
@@ -310,8 +313,8 @@ class XABRInterpolationImpl_t
       private:
         XABRInterpolationImpl_t<I1, I2, Model, T> *xabr_;
     };
-    boost::shared_ptr<EndCriteria> endCriteria_;
-    boost::shared_ptr<OptimizationMethod> optMethod_;
+    boost::shared_ptr<EndCriteria_t<T>> endCriteria_;
+    boost::shared_ptr<OptimizationMethod_t<T>> optMethod_;
     const T errorAccept_;
     const bool useMaxError_;
     const Size maxGuesses_;

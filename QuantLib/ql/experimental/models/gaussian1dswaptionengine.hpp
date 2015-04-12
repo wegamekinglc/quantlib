@@ -47,13 +47,14 @@ class Gaussian1dSwaptionEngine_t
                                 typename Swaption_t<T>::results> {
   public:
     Gaussian1dSwaptionEngine_t(
-        const boost::shared_ptr<Gaussian1dModel> &model,
+        const boost::shared_ptr<Gaussian1dModel_t<T> > &model,
         const int integrationPoints = 64, const T stddevs = 7.0,
         const bool extrapolatePayoff = true,
         const bool flatPayoffExtrapolation = false,
         const Handle<YieldTermStructure_t<T> > &discountCurve =
             Handle<YieldTermStructure_t<T> >())
-        : GenericModelEngine<Gaussian1dModel, typename Swaption_t<T>::arguments,
+        : GenericModelEngine<Gaussian1dModel_t<T>,
+                             typename Swaption_t<T>::arguments,
                              typename Swaption_t<T>::results>(model),
           integrationPoints_(integrationPoints), stddevs_(stddevs),
           extrapolatePayoff_(extrapolatePayoff),
@@ -139,15 +140,15 @@ template <class T> void Gaussian1dSwaptionEngine_t<T>::calculate() const {
         if (expiry0 > settlement) {
             for (Size l = k1; l < this->arguments_.floatingCoupons.size();
                  l++) {
-                this->model_->forwardRate(this->arguments_.floatingFixingDates[l],
-                                    expiry0, 0.0,
-                                    this->arguments_.swap->iborIndex());
-                this->model_->zerobond(this->arguments_.floatingPayDates[l], expiry0,
-                                 0.0, discountCurve_);
+                this->model_->forwardRate(
+                    this->arguments_.floatingFixingDates[l], expiry0, 0.0,
+                    this->arguments_.swap->iborIndex());
+                this->model_->zerobond(this->arguments_.floatingPayDates[l],
+                                       expiry0, 0.0, discountCurve_);
             }
             for (Size l = j1; l < this->arguments_.fixedCoupons.size(); l++) {
-                this->model_->zerobond(this->arguments_.fixedPayDates[l], expiry0,
-                                 0.0, discountCurve_);
+                this->model_->zerobond(this->arguments_.fixedPayDates[l],
+                                       expiry0, 0.0, discountCurve_);
             }
             this->model_->numeraire(expiry0Time, 0.0, discountCurve_);
         }
@@ -158,21 +159,21 @@ template <class T> void Gaussian1dSwaptionEngine_t<T>::calculate() const {
         for (Size k = 0; k < (expiry0 > settlement ? npv0.size() : 1); k++) {
 
             T price = 0.0;
-            if (expiry1Time != Null<T>()) {
+            if (expiry1Time != Null<Real>()) {
                 Array_t<T> yg = this->model_->yGrid(
                     stddevs_, integrationPoints_, expiry1Time, expiry0Time,
                     expiry0 > settlement ? z[k] : 0.0);
-                CubicInterpolation payoff0(z.begin(), z.end(), npv1.begin(),
-                                           CubicInterpolation::Spline, true,
-                                           CubicInterpolation::Lagrange, 0.0,
-                                           CubicInterpolation::Lagrange, 0.0);
+                CubicInterpolation_t<T> payoff0(z.begin(), z.end(), npv1.begin(),
+                                           CubicInterpolation_t<T>::Spline, true,
+                                           CubicInterpolation_t<T>::Lagrange, 0.0,
+                                           CubicInterpolation_t<T>::Lagrange, 0.0);
                 for (Size i = 0; i < yg.size(); i++) {
                     p[i] = payoff0(yg[i], true);
                 }
-                CubicInterpolation payoff1(z.begin(), z.end(), p.begin(),
-                                           CubicInterpolation::Spline, true,
-                                           CubicInterpolation::Lagrange, 0.0,
-                                           CubicInterpolation::Lagrange, 0.0);
+                CubicInterpolation_t<T> payoff1(z.begin(), z.end(), p.begin(),
+                                           CubicInterpolation_t<T>::Spline, true,
+                                           CubicInterpolation_t<T>::Lagrange, 0.0,
+                                           CubicInterpolation_t<T>::Lagrange, 0.0);
                 for (Size i = 0; i < z.size() - 1; i++) {
                     price += this->model_->gaussianShiftedPolynomialIntegral(
                         0.0, payoff1.cCoefficients()[i],
@@ -181,25 +182,29 @@ template <class T> void Gaussian1dSwaptionEngine_t<T>::calculate() const {
                 }
                 if (extrapolatePayoff_) {
                     if (flatPayoffExtrapolation_) {
-                        price += this->model_->gaussianShiftedPolynomialIntegral(
-                            0.0, 0.0, 0.0, 0.0, p[z.size() - 2],
-                            z[z.size() - 2], z[z.size() - 1], 100.0);
-                        price += this->model_->gaussianShiftedPolynomialIntegral(
-                            0.0, 0.0, 0.0, 0.0, p[0], z[0], -100.0, z[0]);
+                        price +=
+                            this->model_->gaussianShiftedPolynomialIntegral(
+                                0.0, 0.0, 0.0, 0.0, p[z.size() - 2],
+                                z[z.size() - 2], z[z.size() - 1], 100.0);
+                        price +=
+                            this->model_->gaussianShiftedPolynomialIntegral(
+                                0.0, 0.0, 0.0, 0.0, p[0], z[0], -100.0, z[0]);
                     } else {
                         if (type == Option::Call)
-                            price += this->model_->gaussianShiftedPolynomialIntegral(
-                                0.0, payoff1.cCoefficients()[z.size() - 2],
-                                payoff1.bCoefficients()[z.size() - 2],
-                                payoff1.aCoefficients()[z.size() - 2],
-                                p[z.size() - 2], z[z.size() - 2],
-                                z[z.size() - 1], 100.0);
+                            price +=
+                                this->model_->gaussianShiftedPolynomialIntegral(
+                                    0.0, payoff1.cCoefficients()[z.size() - 2],
+                                    payoff1.bCoefficients()[z.size() - 2],
+                                    payoff1.aCoefficients()[z.size() - 2],
+                                    p[z.size() - 2], z[z.size() - 2],
+                                    z[z.size() - 1], 100.0);
                         if (type == Option::Put)
-                            price += this->model_->gaussianShiftedPolynomialIntegral(
-                                0.0, payoff1.cCoefficients()[0],
-                                payoff1.bCoefficients()[0],
-                                payoff1.aCoefficients()[0], p[0], z[0], -100.0,
-                                z[0]);
+                            price +=
+                                this->model_->gaussianShiftedPolynomialIntegral(
+                                    0.0, payoff1.cCoefficients()[0],
+                                    payoff1.bCoefficients()[0],
+                                    payoff1.aCoefficients()[0], p[0], z[0],
+                                    -100.0, z[0]);
                     }
                 }
             }
@@ -217,22 +222,23 @@ template <class T> void Gaussian1dSwaptionEngine_t<T>::calculate() const {
                          this->model_->forwardRate(
                              this->arguments_.floatingFixingDates[l], expiry0,
                              z[k], this->arguments_.swap->iborIndex())) *
-                        this->model_->zerobond(this->arguments_.floatingPayDates[l],
-                                         expiry0, z[k], discountCurve_);
+                        this->model_->zerobond(
+                            this->arguments_.floatingPayDates[l], expiry0, z[k],
+                            discountCurve_);
                 }
                 T fixedLegNpv = 0.0;
                 for (Size l = j1; l < this->arguments_.fixedCoupons.size();
                      l++) {
-                    fixedLegNpv +=
-                        this->arguments_.fixedCoupons[l] *
-                        this->model_->zerobond(this->arguments_.fixedPayDates[l],
-                                         expiry0, z[k], discountCurve_);
+                    fixedLegNpv += this->arguments_.fixedCoupons[l] *
+                                   this->model_->zerobond(
+                                       this->arguments_.fixedPayDates[l],
+                                       expiry0, z[k], discountCurve_);
                 }
-                npv0[k] =
-                    QLFCT::max(npv0[k], (type == Option::Call ? 1.0 : -1.0) *
-                                            (floatingLegNpv - fixedLegNpv) /
-                                            this->model_->numeraire(expiry0Time, z[k],
-                                                              discountCurve_));
+                npv0[k] = QLFCT::max(
+                    npv0[k], (type == Option::Call ? 1.0 : -1.0) *
+                                 (floatingLegNpv - fixedLegNpv) /
+                                 this->model_->numeraire(expiry0Time, z[k],
+                                                         discountCurve_));
             }
         }
 

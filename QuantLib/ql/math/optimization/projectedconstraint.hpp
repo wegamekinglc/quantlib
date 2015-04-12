@@ -32,7 +32,7 @@ namespace QuantLib {
 template <class T> class ProjectedConstraint_t : public Constraint_t<T> {
 
   private:
-    class Impl : public Constraint::Impl {
+    class Impl : public Constraint_t<T>::Impl {
       public:
         Impl(const Constraint_t<T> &constraint,
              const Array_t<T> &parameterValues,
@@ -61,13 +61,13 @@ template <class T> class ProjectedConstraint_t : public Constraint_t<T> {
     ProjectedConstraint_t(const Constraint_t<T> &constraint,
                           const Array_t<T> &parameterValues,
                           const std::vector<bool> &fixParameters)
-        : Constraint_t<T>(boost::shared_ptr<Constraint::Impl>(
+        : Constraint_t<T>(boost::shared_ptr<typename Constraint_t<T>::Impl>(
               new ProjectedConstraint_t<T>::Impl(constraint, parameterValues,
                                                  fixParameters))) {}
 
     ProjectedConstraint_t(const Constraint_t<T> &constraint,
                           const Projection_t<T> &projection)
-        : Constraint_t<T>(boost::shared_ptr<Constraint::Impl>(
+        : Constraint_t<T>(boost::shared_ptr<typename Constraint_t<T>::Impl>(
               new ProjectedConstraint_t<T>::Impl(constraint, projection))) {}
 };
 

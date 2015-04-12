@@ -48,26 +48,26 @@ class Gsr_t : public Gaussian1dModel_t<T>, public CalibratedModel_t<T> {
     Gsr_t(const Handle<YieldTermStructure_t<T> > &termStructure,
           const std::vector<Date> &volstepdates,
           const std::vector<T> &volatilities, const T reversion,
-          const T T0 = 60.0);
+          const Time T0 = 60.0);
     // piecewise mean reversion (with same step dates as volatilities)
     Gsr_t(const Handle<YieldTermStructure_t<T> > &termStructure,
           const std::vector<Date> &volstepdates,
           const std::vector<T> &volatilities, const std::vector<T> &reversions,
-          const T T0 = 60.0);
+          const Time T0 = 60.0);
     // constant mean reversion with floating model data
     Gsr_t(const Handle<YieldTermStructure_t<T> > &termStructure,
           const std::vector<Date> &volstepdates,
           const std::vector<Handle<Quote_t<T> > > &volatilities,
-          const Handle<Quote_t<T> > reversion, const T T0 = 60.0);
+          const Handle<Quote_t<T> > reversion, const Time T0 = 60.0);
     // piecewise mean reversion with floating model data
     Gsr_t(const Handle<YieldTermStructure_t<T> > &termStructure,
           const std::vector<Date> &volstepdates,
           const std::vector<Handle<Quote_t<T> > > &volatilities,
           const std::vector<Handle<Quote_t<T> > > &reversions,
-          const T T0 = 60.0);
+          const Time T0 = 60.0);
 
     const T numeraireTime() const;
-    const void numeraireTime(const T T0);
+    const void numeraireTime(const Time T0);
 
     const Array_t<T> &reversion() const { return reversion_.params(); }
     const Array_t<T> &volatility() const { return sigma_.params(); }
@@ -122,7 +122,7 @@ class Gsr_t : public Gaussian1dModel_t<T>, public CalibratedModel_t<T> {
             std::vector<boost::shared_ptr<CalibrationHelper_t<T> > > h(
                 1, helpers[i]);
             this->calibrate(h, method, endCriteria, constraint, weights,
-                      MoveVolatility(i));
+                            MoveVolatility(i));
         }
     }
 
@@ -151,7 +151,7 @@ class Gsr_t : public Gaussian1dModel_t<T>, public CalibratedModel_t<T> {
                          const Handle<YieldTermStructure_t<T> > &yts) const;
 
     void generateArguments() {
-        boost::static_pointer_cast<GsrProcess>(this->stateProcess_)
+        boost::static_pointer_cast<GsrProcess_t<T> >(this->stateProcess_)
             ->flushCache();
         this->notifyObservers();
     }
@@ -159,7 +159,7 @@ class Gsr_t : public Gaussian1dModel_t<T>, public CalibratedModel_t<T> {
     void update() { LazyObject::update(); }
 
     void performCalculations() const {
-        Gaussian1dModel::performCalculations();
+        Gaussian1dModel_t<T>::performCalculations();
         updateTimes();
         updateState();
     }
@@ -167,9 +167,9 @@ class Gsr_t : public Gaussian1dModel_t<T>, public CalibratedModel_t<T> {
   private:
     void updateTimes() const;
     void updateState() const;
-    void initialize(T);
+    void initialize(Time);
 
-    Parameter &reversion_, &sigma_;
+    Parameter_t<T> &reversion_, &sigma_;
 
     std::vector<Handle<Quote_t<T> > > volatilities_;
     std::vector<Handle<Quote_t<T> > > reversions_;
@@ -177,7 +177,7 @@ class Gsr_t : public Gaussian1dModel_t<T>, public CalibratedModel_t<T> {
                                      // reverisons in case of piecewise
                                      // reversions
     mutable std::vector<Time> volsteptimes_;
-    mutable Array_t<T>
+    mutable Array_t<Time>
         volsteptimesArray_; // FIXME this is redundant (just a copy of
                             // volsteptimes_)
 };
@@ -187,12 +187,12 @@ typedef Gsr_t<Real> Gsr;
 // inline
 
 template <class T> inline const T Gsr_t<T>::numeraireTime() const {
-    return boost::dynamic_pointer_cast<GsrProcess>(this->stateProcess_)
+    return boost::dynamic_pointer_cast<GsrProcess_t<T> >(this->stateProcess_)
         ->getForwardMeasureTime();
 }
 
-template <class T> inline const void Gsr_t<T>::numeraireTime(const T T0) {
-    boost::dynamic_pointer_cast<GsrProcess>(this->stateProcess_)
+template <class T> inline const void Gsr_t<T>::numeraireTime(const Time T0) {
+    boost::dynamic_pointer_cast<GsrProcess_t<T> >(this->stateProcess_)
         ->setForwardMeasureTime(T0);
 }
 
@@ -202,8 +202,8 @@ template <class T>
 Gsr_t<T>::Gsr_t(const Handle<YieldTermStructure_t<T> > &termStructure,
                 const std::vector<Date> &volstepdates,
                 const std::vector<T> &volatilities, const T reversion,
-                const T T0)
-    : Gaussian1dModel(termStructure), CalibratedModel(2),
+                const Time T0)
+    : Gaussian1dModel_t<T>(termStructure), CalibratedModel_t<T>(2),
       reversion_(this->arguments_[0]), sigma_(this->arguments_[1]),
       volstepdates_(volstepdates) {
 
@@ -224,8 +224,8 @@ template <class T>
 Gsr_t<T>::Gsr_t(const Handle<YieldTermStructure_t<T> > &termStructure,
                 const std::vector<Date> &volstepdates,
                 const std::vector<T> &volatilities,
-                const std::vector<T> &reversions, const T T0)
-    : Gaussian1dModel(termStructure), CalibratedModel(2),
+                const std::vector<T> &reversions, const Time T0)
+    : Gaussian1dModel(termStructure), CalibratedModel_t<T>(2),
       reversion_(this->arguments_[0]), sigma_(this->arguments_[1]),
       volstepdates_(volstepdates) {
 
@@ -247,8 +247,8 @@ template <class T>
 Gsr_t<T>::Gsr_t(const Handle<YieldTermStructure_t<T> > &termStructure,
                 const std::vector<Date> &volstepdates,
                 const std::vector<Handle<Quote_t<T> > > &volatilities,
-                const Handle<Quote_t<T> > reversion, const T T0)
-    : Gaussian1dModel(termStructure), CalibratedModel(2),
+                const Handle<Quote_t<T> > reversion, const Time T0)
+    : Gaussian1dModel(termStructure), CalibratedModel_t<T>(2),
       reversion_(this->arguments_[0]), sigma_(this->arguments_[1]),
       volatilities_(volatilities),
       reversions_(std::vector<Handle<Quote_t<T> > >(1, reversion)),
@@ -262,8 +262,9 @@ template <class T>
 Gsr_t<T>::Gsr_t(const Handle<YieldTermStructure_t<T> > &termStructure,
                 const std::vector<Date> &volstepdates,
                 const std::vector<Handle<Quote_t<T> > > &volatilities,
-                const std::vector<Handle<Quote_t<T> > > &reversions, const T T0)
-    : Gaussian1dModel(termStructure), CalibratedModel(2),
+                const std::vector<Handle<Quote_t<T> > > &reversions,
+                const Time T0)
+    : Gaussian1dModel(termStructure), CalibratedModel_t<T>(2),
       reversion_(this->arguments_[0]), sigma_(this->arguments_[1]),
       volatilities_(volatilities), reversions_(reversions),
       volstepdates_(volstepdates) {
@@ -289,7 +290,7 @@ template <class T> void Gsr_t<T>::updateTimes() const {
                            << volsteptimes_[j] << "@" << j << ")");
     }
     if (this->stateProcess_ != NULL)
-        boost::static_pointer_cast<GsrProcess>(this->stateProcess_)
+        boost::static_pointer_cast<GsrProcess_t<T> >(this->stateProcess_)
             ->flushCache();
 }
 
@@ -300,12 +301,13 @@ template <class T> void Gsr_t<T>::updateState() const {
     for (Size i = 0; i < reversion_.size(); i++) {
         reversion_.setParam(i, reversions_[i]->value());
     }
-    boost::static_pointer_cast<GsrProcess>(this->stateProcess_)->flushCache();
+    boost::static_pointer_cast<GsrProcess_t<T> >(this->stateProcess_)
+        ->flushCache();
 }
 
-template <class T> void Gsr_t<T>::initialize(T T0) {
+template <class T> void Gsr_t<T>::initialize(Time T0) {
 
-    volsteptimesArray_ = Array_t<T>(volstepdates_.size());
+    volsteptimesArray_ = Array_t<Time>(volstepdates_.size());
 
     updateTimes();
 
@@ -315,7 +317,8 @@ template <class T> void Gsr_t<T>::initialize(T T0) {
                    << volsteptimes_.size() << ")");
     // sigma_ =
     // PiecewiseConstantParameter(volsteptimes_,PositiveConstraint());
-    sigma_ = PiecewiseConstantParameter(volsteptimes_, NoConstraint());
+    sigma_ =
+        PiecewiseConstantParameter_t<T>(volsteptimes_, NoConstraint_t<T>());
 
     QL_REQUIRE(reversions_.size() == 1 ||
                    reversions_.size() == volsteptimes_.size() + 1,
@@ -323,9 +326,11 @@ template <class T> void Gsr_t<T>::initialize(T T0) {
                    << reversions_.size() << ") for n volatility step times ("
                    << volsteptimes_.size() << ")");
     if (reversions_.size() == 1) {
-        reversion_ = ConstantParameter(reversions_[0]->value(), NoConstraint());
+        reversion_ = ConstantParameter_t<T>(reversions_[0]->value(),
+                                            NoConstraint_t<T>());
     } else {
-        reversion_ = PiecewiseConstantParameter(volsteptimes_, NoConstraint());
+        reversion_ =
+            PiecewiseConstantParameter_t<T>(volsteptimes_, NoConstraint_t<T>());
     }
 
     this->stateProcess_ =
@@ -355,8 +360,8 @@ Gsr_t<T>::zerobondImpl(const Time T0, const Time t, const T y,
         return yts.empty() ? this->termStructure()->discount(T0, true)
                            : yts->discount(T0, true);
 
-    boost::shared_ptr<GsrProcess> p =
-        boost::dynamic_pointer_cast<GsrProcess>(this->stateProcess_);
+    boost::shared_ptr<GsrProcess_t<T> > p =
+        boost::dynamic_pointer_cast<GsrProcess_t<T> >(this->stateProcess_);
 
     T x = y * p->stdDeviation(0.0, 0.0, t) +
           this->stateProcess_->expectation(0.0, 0.0, t);
@@ -377,8 +382,8 @@ Gsr_t<T>::numeraireImpl(const Time t, const T y,
 
     this->calculate();
 
-    boost::shared_ptr<GsrProcess> p =
-        boost::dynamic_pointer_cast<GsrProcess>(this->stateProcess_);
+    boost::shared_ptr<GsrProcess_t<T> > p =
+        boost::dynamic_pointer_cast<GsrProcess_t<T> >(this->stateProcess_);
 
     if (t == 0)
         return yts.empty()

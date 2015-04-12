@@ -53,7 +53,7 @@ template <class T> class FlatExtrapolator2D_t : public Interpolation2D_t<T> {
         T yMax() const { return decoratedInterp_->yMax(); }
         std::vector<T> yValues() const { return decoratedInterp_->yValues(); }
         Size locateY(T y) const { return decoratedInterp_->locateY(y); }
-        const Matrix &zData() const { return decoratedInterp_->zData(); }
+        const Matrix_t<T> &zData() const { return decoratedInterp_->zData(); }
         bool isInRange(T x, T y) const {
             return decoratedInterp_->isInRange(x, y);
         }

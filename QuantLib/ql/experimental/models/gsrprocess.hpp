@@ -42,8 +42,8 @@ namespace QuantLib {
 /*! \ingroup processes */
 template <class T> class GsrProcess_t : public ForwardMeasureProcess1D_t<T> {
   public:
-    GsrProcess_t(const Array_t<T> &times, const Array_t<T> &vols,
-                 const Array_t<T> &reversions, const T T0 = 60.0);
+    GsrProcess_t(const Array_t<Time> &times, const Array_t<T> &vols,
+                 const Array_t<T> &reversions, const Time T0 = 60.0);
     //! \name StochasticProcess1D interface
     //@{
     T x0() const;
@@ -60,12 +60,12 @@ template <class T> class GsrProcess_t : public ForwardMeasureProcess1D_t<T> {
     //@}
     void setForwardMeasureTime(Time t) {
         flushCache();
-        ForwardMeasureProcess1D::setForwardMeasureTime(t);
+        ForwardMeasureProcess1D_t<T>::setForwardMeasureTime(t);
     }
     void flushCache() const;
 
   protected:
-    const Array_t<T> &times_;
+    const Array_t<Time> &times_;
     const Array_t<T> &vols_;
     const Array_t<T> &reversions_;
 
@@ -77,9 +77,9 @@ template <class T> class GsrProcess_t : public ForwardMeasureProcess1D_t<T> {
     T expectationp2(Time t0, Time dt) const;
     const int lowerIndex(Time t) const;
     const int upperIndex(Time t) const;
-    const T time2(Size index) const;
-    const T cappedTime(Size index, T cap = Null<T>()) const;
-    const T flooredTime(Size index, T floor = Null<T>()) const;
+    const Time time2(Size index) const;
+    const Time cappedTime(Size index, Time cap = Null<Time>()) const;
+    const Time flooredTime(Size index, Time floor = Null<Time>()) const;
     const T vol(Size index) const;
     const T rev(Size index) const;
     const bool revZero(Size index) const;
@@ -93,9 +93,9 @@ typedef GsrProcess_t<Real> GsrProcess;
 // implementation
 
 template <class T>
-GsrProcess_t<T>::GsrProcess_t(const Array_t<T> &times, const Array_t<T> &vols,
-                              const Array_t<T> &reversions, const T T0)
-    : ForwardMeasureProcess1D(T0), times_(times), vols_(vols),
+GsrProcess_t<T>::GsrProcess_t(const Array_t<Time> &times, const Array_t<T> &vols,
+                              const Array_t<T> &reversions, const Time T0)
+    : ForwardMeasureProcess1D_t<T>(T0), times_(times), vols_(vols),
       reversions_(reversions), revZero_(reversions.size(), false) {
     QL_REQUIRE(times.size() == vols.size() - 1,
                "number of volatilities ("
@@ -135,7 +135,7 @@ template <class T> T GsrProcess_t<T>::diffusion(Time t, T) const {
 
 template <class T> T GsrProcess_t<T>::expectation(Time w, T xw, Time dt) const {
 
-    T t = w + dt;
+    Time t = w + dt;
     QL_REQUIRE(t <= this->getForwardMeasureTime(),
                "t (" << t << ") must not be greater than forward measure time ("
                      << this->getForwardMeasureTime() << ")");
@@ -162,7 +162,7 @@ template <class T> void GsrProcess_t<T>::flushCache() const {
 
 template <class T>
 T GsrProcess_t<T>::expectationp1(Time w, T xw, Time dt) const {
-    T t = w + dt;
+    Time t = w + dt;
     std::pair<T, T> key;
     key = std::make_pair(w, t);
     typename std::map<std::pair<T, T>, T>::const_iterator k = cache1_.find(key);
@@ -180,7 +180,7 @@ T GsrProcess_t<T>::expectationp1(Time w, T xw, Time dt) const {
 
 template <class T> T GsrProcess_t<T>::expectationp2(Time w, Time dt) const {
 
-    T t = w + dt;
+    Time t = w + dt;
 
     std::pair<T, T> key;
     key = std::make_pair(w, t);
@@ -188,7 +188,7 @@ template <class T> T GsrProcess_t<T>::expectationp2(Time w, Time dt) const {
     if (k != cache2_.end())
         return k->second;
 
-    T T0 = this->getForwardMeasureTime();
+    Time T0 = this->getForwardMeasureTime();
 
     T res = 0.0;
 
@@ -325,7 +325,7 @@ T GsrProcess_t<T>::stdDeviation(Time t0, T x0, Time dt) const {
 
 template <class T> T GsrProcess_t<T>::variance(Time w, T, Time dt) const {
 
-    T t = w + dt;
+    Time t = w + dt;
     QL_REQUIRE(t <= this->getForwardMeasureTime(),
                "t (" << t << ") must not be greater than forward measure time ("
                      << this->getForwardMeasureTime() << ")");
@@ -444,16 +444,16 @@ template <class T> const int GsrProcess_t<T>::upperIndex(Time t) const {
 }
 
 template <class T>
-const T GsrProcess_t<T>::cappedTime(Size index, T cap) const {
-    return cap != Null<T>() ? QLFCT::min(cap, time2(index)) : time2(index);
+const Time GsrProcess_t<T>::cappedTime(Size index, Time cap) const {
+    return cap != Null<Time>() ? std::min(cap, time2(index)) : time2(index);
 }
 
 template <class T>
-const T GsrProcess_t<T>::flooredTime(Size index, T floor) const {
-    return floor != Null<T>() ? QLFCT::max(floor, time2(index)) : time2(index);
+const Time GsrProcess_t<T>::flooredTime(Size index, Time floor) const {
+    return floor != Null<Time>() ? std::max(floor, time2(index)) : time2(index);
 }
 
-template <class T> const T GsrProcess_t<T>::time2(Size index) const {
+template <class T> const Time GsrProcess_t<T>::time2(Size index) const {
     if (index == 0)
         return 0.0;
     if (index > times_.size())

@@ -121,7 +121,7 @@ T CalibrationHelper_t<T>::impliedVolatility(T targetValue, T accuracy,
                                             T maxVol) const {
 
     ImpliedVolatilityHelper f(*this, targetValue);
-    Brent solver;
+    Brent_t<T> solver;
     solver.setMaxEvaluations(maxEvaluations);
     return solver.solve(f, accuracy, volatility_->value(), minVol, maxVol);
 }

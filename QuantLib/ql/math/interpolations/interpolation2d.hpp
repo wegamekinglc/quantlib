@@ -57,7 +57,7 @@ template <class T> class Interpolation2D_t : public Extrapolator {
         virtual T yMax() const = 0;
         virtual std::vector<T> yValues() const = 0;
         virtual Size locateY(T y) const = 0;
-        virtual const Matrix &zData() const = 0;
+        virtual const Matrix_t<T> &zData() const = 0;
         virtual bool isInRange(T x, T y) const = 0;
         virtual T value(T x, T y) const = 0;
     };
@@ -94,7 +94,7 @@ template <class T> class Interpolation2D_t : public Extrapolator {
         std::vector<T> yValues() const {
             return std::vector<T>(yBegin_, yEnd_);
         }
-        const Matrix &zData() const { return zData_; }
+        const Matrix_t<T> &zData() const { return zData_; }
         bool isInRange(T x, T y) const {
 #if defined(QL_EXTRA_SAFETY_CHECKS)
             for (I1 i = xBegin_, j = xBegin_ + 1; j != xEnd_; ++i, ++j)
@@ -158,7 +158,7 @@ template <class T> class Interpolation2D_t : public Extrapolator {
     T yMax() const { return impl_->yMax(); }
     std::vector<T> yValues() const { return impl_->yValues(); }
     Size locateY(T y) const { return impl_->locateY(y); }
-    const Matrix &zData() const { return impl_->zData(); }
+    const Matrix_t<T> &zData() const { return impl_->zData(); }
     bool isInRange(T x, T y) const { return impl_->isInRange(x, y); }
     void update() { impl_->calculate(); }
 

@@ -119,7 +119,7 @@ class CalibratedModel_t : public virtual Observer, public virtual Observable {
 
   protected:
     virtual void generateArguments() {}
-    std::vector<Parameter> arguments_;
+    std::vector<Parameter_t<T> > arguments_;
     boost::shared_ptr<Constraint_t<T> > constraint_;
     typename EndCriteria_t<T>::Type shortRateEndCriteria_;
 
@@ -156,7 +156,7 @@ class CalibratedModel_t<T>::PrivateConstraint : public Constraint_t<T> {
   private:
     class Impl : public Constraint_t<T>::Impl {
       public:
-        Impl(const std::vector<Parameter> &arguments) : arguments_(arguments) {}
+        Impl(const std::vector<Parameter_t<T>> &arguments) : arguments_(arguments) {}
 
         bool test(const Array_t<T> &params) const {
             Size k = 0;
@@ -212,7 +212,7 @@ class CalibratedModel_t<T>::PrivateConstraint : public Constraint_t<T> {
         }
 
       private:
-        const std::vector<Parameter> &arguments_;
+        const std::vector<Parameter_t<T> > &arguments_;
     };
 
   public:
@@ -285,7 +285,7 @@ void CalibratedModel_t<T>::calibrate(
     if (additionalConstraint.empty())
         c = *constraint_;
     else
-        c = CompositeConstraint(*constraint_, additionalConstraint);
+        c = CompositeConstraint_t<T>(*constraint_, additionalConstraint);
     std::vector<T> w =
         weights.empty() ? std::vector<T>(instruments.size(), 1.0) : weights;
 

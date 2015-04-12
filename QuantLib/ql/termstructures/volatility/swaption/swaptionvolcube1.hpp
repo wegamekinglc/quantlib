@@ -55,7 +55,7 @@ template <class> class EndCriteria_t;
 template <class> class OptimizationMethod_t;
 
 template <template <class> class Model, class T>
-class SwaptionVolCube1x_t : public SwaptionVolatilityCube {
+class SwaptionVolCube1x_t : public SwaptionVolatilityCube_t<T> {
     class Cube {
       public:
         Cube() {}
@@ -101,7 +101,7 @@ class SwaptionVolCube1x_t : public SwaptionVolatilityCube {
 
   public:
     SwaptionVolCube1x_t(
-        const Handle<SwaptionVolatilityStructure_t<T>> &atmVolStructure,
+        const Handle<SwaptionVolatilityStructure_t<T> > &atmVolStructure,
         const std::vector<Period> &optionTenors,
         const std::vector<Period> &swapTenors,
         const std::vector<T> &strikeSpreads,
@@ -111,11 +111,11 @@ class SwaptionVolCube1x_t : public SwaptionVolatilityCube {
         bool vegaWeightedSmileFit,
         const std::vector<std::vector<Handle<Quote_t<T> > > > &parametersGuess,
         const std::vector<bool> &isParameterFixed, bool isAtmCalibrated,
-        const boost::shared_ptr<EndCriteria_t<T>> &endCriteria =
-            boost::shared_ptr<EndCriteria_t<T>>(),
+        const boost::shared_ptr<EndCriteria_t<T> > &endCriteria =
+            boost::shared_ptr<EndCriteria_t<T> >(),
         T maxErrorTolerance = Null<T>(),
-        const boost::shared_ptr<OptimizationMethod_t<T>> &optMethod =
-            boost::shared_ptr<OptimizationMethod_t<T>>(),
+        const boost::shared_ptr<OptimizationMethod_t<T> > &optMethod =
+            boost::shared_ptr<OptimizationMethod_t<T> >(),
         const T errorAccept = Null<T>(), const bool useMaxError = false,
         const Size maxGuesses = 50, const bool backwardFlat = false,
         const T cutoffStrike = 0.0001);
@@ -169,9 +169,9 @@ class SwaptionVolCube1x_t : public SwaptionVolatilityCube {
     mutable Cube parametersGuess_;
     std::vector<bool> isParameterFixed_;
     bool isAtmCalibrated_;
-    const boost::shared_ptr<EndCriteria_t<T>> endCriteria_;
+    const boost::shared_ptr<EndCriteria_t<T> > endCriteria_;
     T maxErrorTolerance_;
-    const boost::shared_ptr<OptimizationMethod_t<T>> optMethod_;
+    const boost::shared_ptr<OptimizationMethod_t<T> > optMethod_;
     T errorAccept_;
     const bool useMaxError_;
     const Size maxGuesses_;
@@ -199,7 +199,7 @@ class SwaptionVolCube1x_t : public SwaptionVolatilityCube {
 
 template <template <class> class Model, class T>
 SwaptionVolCube1x_t<Model, T>::SwaptionVolCube1x_t(
-    const Handle<SwaptionVolatilityStructure_t<T>> &atmVolStructure,
+    const Handle<SwaptionVolatilityStructure_t<T> > &atmVolStructure,
     const std::vector<Period> &optionTenors,
     const std::vector<Period> &swapTenors, const std::vector<T> &strikeSpreads,
     const std::vector<std::vector<Handle<Quote_t<T> > > > &volSpreads,
@@ -208,13 +208,14 @@ SwaptionVolCube1x_t<Model, T>::SwaptionVolCube1x_t(
     bool vegaWeightedSmileFit,
     const std::vector<std::vector<Handle<Quote_t<T> > > > &parametersGuess,
     const std::vector<bool> &isParameterFixed, bool isAtmCalibrated,
-    const boost::shared_ptr<EndCriteria_t<T>> &endCriteria, T maxErrorTolerance,
-    const boost::shared_ptr<OptimizationMethod_t<T>> &optMethod, const T errorAccept,
-    const bool useMaxError, const Size maxGuesses, const bool backwardFlat,
-    const T cutoffStrike)
-    : SwaptionVolatilityCube(atmVolStructure, optionTenors, swapTenors,
-                             strikeSpreads, volSpreads, swapIndexBase,
-                             shortSwapIndexBase, vegaWeightedSmileFit),
+    const boost::shared_ptr<EndCriteria_t<T> > &endCriteria,
+    T maxErrorTolerance,
+    const boost::shared_ptr<OptimizationMethod_t<T> > &optMethod,
+    const T errorAccept, const bool useMaxError, const Size maxGuesses,
+    const bool backwardFlat, const T cutoffStrike)
+    : SwaptionVolatilityCube_t<T>(atmVolStructure, optionTenors, swapTenors,
+                                  strikeSpreads, volSpreads, swapIndexBase,
+                                  shortSwapIndexBase, vegaWeightedSmileFit),
       parametersGuessQuotes_(parametersGuess),
       isParameterFixed_(isParameterFixed), isAtmCalibrated_(isAtmCalibrated),
       endCriteria_(endCriteria), optMethod_(optMethod),
@@ -225,7 +226,7 @@ SwaptionVolCube1x_t<Model, T>::SwaptionVolCube1x_t(
         maxErrorTolerance_ = maxErrorTolerance;
     } else {
         maxErrorTolerance_ = SWAPTIONVOLCUBE_TOL;
-        if (vegaWeightedSmileFit_)
+        if (this->vegaWeightedSmileFit_)
             maxErrorTolerance_ = SWAPTIONVOLCUBE_VEGAWEIGHTED_TOL;
     }
     if (errorAccept != Null<T>()) {
@@ -242,25 +243,27 @@ SwaptionVolCube1x_t<Model, T>::SwaptionVolCube1x_t(
 template <template <class> class Model, class T>
 void SwaptionVolCube1x_t<Model, T>::registerWithParametersGuess() {
     for (Size i = 0; i < 4; i++)
-        for (Size j = 0; j < nOptionTenors_; j++)
-            for (Size k = 0; k < nSwapTenors_; k++)
+        for (Size j = 0; j < this->nOptionTenors_; j++)
+            for (Size k = 0; k < this->nSwapTenors_; k++)
                 privateObserver_->registerWith(
-                    parametersGuessQuotes_[j + k * nOptionTenors_][i]);
+                    parametersGuessQuotes_[j + k * this->nOptionTenors_][i]);
 }
 
 template <template <class> class Model, class T>
 void SwaptionVolCube1x_t<Model, T>::setParameterGuess() const {
 
     //! set parametersGuess_ by parametersGuessQuotes_
-    parametersGuess_ = Cube(optionDates_, swapTenors_, optionTimes_,
-                            swapLengths_, 4, true, backwardFlat_);
+    parametersGuess_ =
+        Cube(this->optionDates_, this->swapTenors_, this->optionTimes_,
+             this->swapLengths_, 4, true, backwardFlat_);
     Size i;
     for (i = 0; i < 4; i++)
-        for (Size j = 0; j < nOptionTenors_; j++)
-            for (Size k = 0; k < nSwapTenors_; k++) {
+        for (Size j = 0; j < this->nOptionTenors_; j++)
+            for (Size k = 0; k < this->nSwapTenors_; k++) {
                 parametersGuess_.setElement(
                     i, j, k,
-                    parametersGuessQuotes_[j + k * nOptionTenors_][i]->value());
+                    parametersGuessQuotes_[j + k * this->nOptionTenors_][i]
+                        ->value());
             }
     parametersGuess_.updateInterpolators();
 }
@@ -268,20 +271,23 @@ void SwaptionVolCube1x_t<Model, T>::setParameterGuess() const {
 template <template <class> class Model, class T>
 void SwaptionVolCube1x_t<Model, T>::performCalculations() const {
 
-    SwaptionVolatilityDiscrete::performCalculations();
+    SwaptionVolatilityDiscrete_t<T>::performCalculations();
 
     //! set marketVolCube_ by volSpreads_ quotes
     marketVolCube_ =
-        Cube(optionDates_, swapTenors_, optionTimes_, swapLengths_, nStrikes_);
+        Cube(this->optionDates_, this->swapTenors_, this->optionTimes_,
+             this->swapLengths_, this->nStrikes_);
     T atmForward;
     T atmVol, vol;
-    for (Size j = 0; j < nOptionTenors_; ++j) {
-        for (Size k = 0; k < nSwapTenors_; ++k) {
-            atmForward = atmStrike(optionDates_[j], swapTenors_[k]);
-            atmVol = atmVol_->volatility(optionDates_[j], swapTenors_[k],
-                                         atmForward);
-            for (Size i = 0; i < nStrikes_; ++i) {
-                vol = atmVol + volSpreads_[j * nSwapTenors_ + k][i]->value();
+    for (Size j = 0; j < this->nOptionTenors_; ++j) {
+        for (Size k = 0; k < this->nSwapTenors_; ++k) {
+            atmForward =
+                this->atmStrike(this->optionDates_[j], this->swapTenors_[k]);
+            atmVol = this->atmVol_->volatility(
+                this->optionDates_[j], this->swapTenors_[k], atmForward);
+            for (Size i = 0; i < this->nStrikes_; ++i) {
+                vol = atmVol +
+                      this->volSpreads_[j * this->nSwapTenors_ + k][i]->value();
                 marketVolCube_.setElement(i, j, k, vol);
             }
         }
@@ -309,7 +315,7 @@ void SwaptionVolCube1x_t<Model, T>::updateAfterRecalibration() {
         denseParameters_ = sabrCalibration(volCubeAtmCalibrated_);
         denseParameters_.updateInterpolators();
     }
-    notifyObservers();
+    this->notifyObservers();
 }
 
 template <template <class> class Model, class T>
@@ -332,16 +338,16 @@ SwaptionVolCube1x_t<Model, T>::sabrCalibration(
 
     const std::vector<Matrix_t<T> > &tmpMarketVolCube = marketVolCube.points();
 
-    std::vector<T> strikes(strikeSpreads_.size());
-    std::vector<T> volatilities(strikeSpreads_.size());
+    std::vector<T> strikes(this->strikeSpreads_.size());
+    std::vector<T> volatilities(this->strikeSpreads_.size());
 
     for (Size j = 0; j < optionTimes.size(); j++) {
         for (Size k = 0; k < swapLengths.size(); k++) {
-            T atmForward = atmStrike(optionDates[j], swapTenors[k]);
+            T atmForward = this->atmStrike(optionDates[j], swapTenors[k]);
             strikes.clear();
             volatilities.clear();
-            for (Size i = 0; i < nStrikes_; i++) {
-                T strike = atmForward + strikeSpreads_[i];
+            for (Size i = 0; i < this->nStrikes_; i++) {
+                T strike = atmForward + this->strikeSpreads_[i];
                 if (strike >= cutoffStrike_) {
                     strikes.push_back(strike);
                     volatilities.push_back(tmpMarketVolCube[i][j][k]);
@@ -353,15 +359,15 @@ SwaptionVolCube1x_t<Model, T>::sabrCalibration(
 
             const boost::shared_ptr<typename Model<T>::Interpolation>
                 sabrInterpolation =
-                    boost::shared_ptr<typename Model<T>::Interpolation>(
-                        new (typename Model<T>::Interpolation)(
-                            strikes.begin(), strikes.end(),
-                            volatilities.begin(), optionTimes[j], atmForward,
-                            guess[0], guess[1], guess[2], guess[3],
-                            isParameterFixed_[0], isParameterFixed_[1],
-                            isParameterFixed_[2], isParameterFixed_[3],
-                            vegaWeightedSmileFit_, endCriteria_, optMethod_,
-                            errorAccept_, useMaxError_, maxGuesses_));
+                    boost::shared_ptr<typename Model<T>::Interpolation>(new (
+                        typename Model<T>::Interpolation)(
+                        strikes.begin(), strikes.end(), volatilities.begin(),
+                        optionTimes[j], atmForward, guess[0], guess[1],
+                        guess[2], guess[3], isParameterFixed_[0],
+                        isParameterFixed_[1], isParameterFixed_[2],
+                        isParameterFixed_[3], this->vegaWeightedSmileFit_,
+                        endCriteria_, optMethod_, errorAccept_, useMaxError_,
+                        maxGuesses_));
             sabrInterpolation->update();
 
             T rmsError = sabrInterpolation->rmsError();
@@ -381,21 +387,20 @@ SwaptionVolCube1x_t<Model, T>::sabrCalibration(
                           << "\n"
                           << "option maturity = " << optionDates[j] << ", \n"
                           << "swap tenor = " << swapTenors[k] << ", \n"
-                          << "error = " << io::rate(errors[j][k]) << ", \n"
-                          << "max error = " << io::rate(maxErrors[j][k])
-                          << ", \n"
-                          << "   alpha = " << alphas[j][k] << "n"
+                          << "error = " << errors[j][k] << ", \n"
+                          << "max error = " << maxErrors[j][k] << ", \n"
+                          << "   alpha = " << alphas[j][k] << "\n"
                           << "   beta = " << betas[j][k] << "\n"
                           << "   nu = " << nus[j][k] << "\n"
                           << "   rho = " << rhos[j][k] << "\n");
 
-            QL_ENSURE(useMaxError_ ? maxError : rmsError < maxErrorTolerance_,
+            QL_ENSURE((useMaxError_ ? maxError : rmsError) < maxErrorTolerance_,
                       "global swaptions calibration failed: "
                       "option tenor "
                           << optionDates[j] << ", swap tenor " << swapTenors[k]
                           << (useMaxError_ ? ": max error " : ": error")
                           << (useMaxError_ ? maxError : rmsError)
-                          << "   alpha = " << alphas[j][k] << "n"
+                          << "   alpha = " << alphas[j][k] << "\n"
                           << "   beta = " << betas[j][k] << "\n"
                           << "   nu = " << nus[j][k] << "\n"
                           << "   rho = " << rhos[j][k] << "\n"
@@ -434,15 +439,15 @@ void SwaptionVolCube1x_t<Model, T>::sabrCalibrationSection(
     std::vector<T> calibrationResult(8, 0.);
     const std::vector<Matrix_t<T> > &tmpMarketVolCube = marketVolCube.points();
 
-    std::vector<T> strikes(strikeSpreads_.size());
-    std::vector<T> volatilities(strikeSpreads_.size());
+    std::vector<T> strikes(this->strikeSpreads_.size());
+    std::vector<T> volatilities(this->strikeSpreads_.size());
 
     for (Size j = 0; j < optionTimes.size(); j++) {
-        T atmForward = atmStrike(optionDates[j], swapTenors[k]);
+        T atmForward = this->atmStrike(optionDates[j], swapTenors[k]);
         strikes.clear();
         volatilities.clear();
-        for (Size i = 0; i < nStrikes_; i++) {
-            T strike = atmForward + strikeSpreads_[i];
+        for (Size i = 0; i < this->nStrikes_; i++) {
+            T strike = atmForward + this->strikeSpreads_[i];
             if (strike >= cutoffStrike_) {
                 strikes.push_back(strike);
                 volatilities.push_back(tmpMarketVolCube[i][j][k]);
@@ -459,7 +464,7 @@ void SwaptionVolCube1x_t<Model, T>::sabrCalibrationSection(
                     optionTimes[j], atmForward, guess[0], guess[1], guess[2],
                     guess[3], isParameterFixed_[0], isParameterFixed_[1],
                     isParameterFixed_[2], isParameterFixed_[3],
-                    vegaWeightedSmileFit_, endCriteria_, optMethod_,
+                    this->vegaWeightedSmileFit_, endCriteria_, optMethod_,
                     errorAccept_, useMaxError_, maxGuesses_));
 
         sabrInterpolation->update();
@@ -509,7 +514,7 @@ template <template <class> class Model, class T>
 void SwaptionVolCube1x_t<Model, T>::fillVolatilityCube() const {
 
     const boost::shared_ptr<SwaptionVolatilityDiscrete> atmVolStructure =
-        boost::dynamic_pointer_cast<SwaptionVolatilityDiscrete>(*atmVol_);
+        boost::dynamic_pointer_cast<SwaptionVolatilityDiscrete>(*this->atmVol_);
 
     std::vector<Time> atmOptionTimes(atmVolStructure->optionTimes());
     std::vector<Time> optionTimes(volCubeAtmCalibrated_.optionTimes());
@@ -556,14 +561,15 @@ void SwaptionVolCube1x_t<Model, T>::fillVolatilityCube() const {
             bool expandSwapLengths = !(std::binary_search(
                 swapLengths.begin(), swapLengths.end(), atmSwapLengths[k]));
             if (expandOptionTimes || expandSwapLengths) {
-                T atmForward = atmStrike(atmOptionDates[j], atmSwapTenors[k]);
-                T atmVol = atmVol_->volatility(atmOptionDates[j],
-                                               atmSwapTenors[k], atmForward);
+                T atmForward =
+                    this->atmStrike(atmOptionDates[j], atmSwapTenors[k]);
+                T atmVol = this->atmVol_->volatility(
+                    atmOptionDates[j], atmSwapTenors[k], atmForward);
                 std::vector<T> spreadVols =
                     spreadVolInterpolation(atmOptionDates[j], atmSwapTenors[k]);
                 std::vector<T> volAtmCalibrated;
-                volAtmCalibrated.reserve(nStrikes_);
-                for (Size i = 0; i < nStrikes_; i++)
+                volAtmCalibrated.reserve(this->nStrikes_);
+                for (Size i = 0; i < this->nStrikes_; i++)
                     volAtmCalibrated.push_back(atmVol + spreadVols[i]);
                 volCubeAtmCalibrated_.setPoint(
                     atmOptionDates[j], atmSwapTenors[k], atmOptionTimes[j],
@@ -597,8 +603,8 @@ template <template <class> class Model, class T>
 std::vector<T> SwaptionVolCube1x_t<Model, T>::spreadVolInterpolation(
     const Date &atmOptionDate, const Period &atmSwapTenor) const {
 
-    Time atmOptionTime = timeFromReference(atmOptionDate);
-    Time atmTimeLength = swapLength(atmSwapTenor);
+    Time atmOptionTime = this->timeFromReference(atmOptionDate);
+    Time atmTimeLength = this->swapLength(atmSwapTenor);
 
     std::vector<T> result;
     const std::vector<Time> &optionTimes(sparseParameters_.optionTimes());
@@ -606,7 +612,7 @@ std::vector<T> SwaptionVolCube1x_t<Model, T>::spreadVolInterpolation(
     const std::vector<Date> &optionDates = sparseParameters_.optionDates();
     const std::vector<Period> &swapTenors = sparseParameters_.swapTenors();
 
-    typename std::vector<T>::const_iterator optionTimesPreviousNode,
+    typename std::vector<Time>::const_iterator optionTimesPreviousNode,
         swapLengthsPreviousNode;
 
     optionTimesPreviousNode =
@@ -644,7 +650,7 @@ std::vector<T> SwaptionVolCube1x_t<Model, T>::spreadVolInterpolation(
     smiles.push_back(smilesOnPreviousExpiry);
     smiles.push_back(smilesOnNextExpiry);
 
-    std::vector<T> optionsNodes(2);
+    std::vector<Time> optionsNodes(2);
     optionsNodes[0] = optionTimes[optionTimesPreviousIndex];
     optionsNodes[1] = optionTimes[optionTimesPreviousIndex + 1];
 
@@ -652,7 +658,7 @@ std::vector<T> SwaptionVolCube1x_t<Model, T>::spreadVolInterpolation(
     optionsDateNodes[0] = optionDates[optionTimesPreviousIndex];
     optionsDateNodes[1] = optionDates[optionTimesPreviousIndex + 1];
 
-    std::vector<T> swapLengthsNodes(2);
+    std::vector<Time> swapLengthsNodes(2);
     swapLengthsNodes[0] = swapLengths[swapLengthsPreviousIndex];
     swapLengthsNodes[1] = swapLengths[swapLengthsPreviousIndex + 1];
 
@@ -660,16 +666,16 @@ std::vector<T> SwaptionVolCube1x_t<Model, T>::spreadVolInterpolation(
     swapTenorNodes[0] = swapTenors[swapLengthsPreviousIndex];
     swapTenorNodes[1] = swapTenors[swapLengthsPreviousIndex + 1];
 
-    T atmForward = atmStrike(atmOptionDate, atmSwapTenor);
+    T atmForward = this->atmStrike(atmOptionDate, atmSwapTenor);
 
     Matrix_t<T> atmForwards(2, 2, 0.0);
     Matrix_t<T> atmVols(2, 2, 0.0);
     for (Size i = 0; i < 2; i++) {
         for (Size j = 0; j < 2; j++) {
             atmForwards[i][j] =
-                atmStrike(optionsDateNodes[i], swapTenorNodes[j]);
+                this->atmStrike(optionsDateNodes[i], swapTenorNodes[j]);
             // atmVols[i][j] = smiles[i][j]->volatility(atmForwards[i][j]);
-            atmVols[i][j] = atmVol_->volatility(
+            atmVols[i][j] = this->atmVol_->volatility(
                 optionsDateNodes[i], swapTenorNodes[j], atmForwards[i][j]);
             /* With the old implementation the interpolated spreads on ATM
                volatilities were null even if the spreads on ATM volatilities to
@@ -699,9 +705,9 @@ std::vector<T> SwaptionVolCube1x_t<Model, T>::spreadVolInterpolation(
         }
     }
 
-    for (Size k = 0; k < nStrikes_; k++) {
+    for (Size k = 0; k < this->nStrikes_; k++) {
         const T strike =
-            QLFCT::max(atmForward + strikeSpreads_[k], cutoffStrike_);
+            QLFCT::max(atmForward + this->strikeSpreads_[k], cutoffStrike_);
         const T moneyness = atmForward / strike;
 
         Matrix_t<T> strikes(2, 2, 0.);
@@ -731,7 +737,7 @@ SwaptionVolCube1x_t<Model, T>::smileSection(
     this->calculate();
     const std::vector<T> sabrParameters =
         sabrParametersCube(optionTime, swapLength);
-    return boost::shared_ptr<SmileSection_t<T>>(
+    return boost::shared_ptr<SmileSection_t<T> >(
         new (typename Model<T>::SmileSection)(optionTime, sabrParameters[4],
                                               sabrParameters));
 }
@@ -774,7 +780,7 @@ template <template <class> class Model, class T>
 void SwaptionVolCube1x_t<Model, T>::recalibration(T beta,
                                                   const Period &swapTenor) {
 
-    std::vector<T> betaVector(nOptionTenors_, beta);
+    std::vector<T> betaVector(this->nOptionTenors_, beta);
     recalibration(betaVector, swapTenor);
 }
 
@@ -782,10 +788,10 @@ template <template <class> class Model, class T>
 void SwaptionVolCube1x_t<Model, T>::recalibration(const std::vector<T> &beta,
                                                   const Period &swapTenor) {
 
-    QL_REQUIRE(beta.size() == nOptionTenors_,
+    QL_REQUIRE(beta.size() == this->nOptionTenors_,
                "beta size (" << beta.size()
                              << ") must be equal to number of option tenors ("
-                             << nOptionTenors_ << ")");
+                             << this->nOptionTenors_ << ")");
 
     const std::vector<Period> &swapTenors = marketVolCube_.swapTenors();
     Size k = std::find(swapTenors.begin(), swapTenors.end(), swapTenor) -
@@ -794,7 +800,7 @@ void SwaptionVolCube1x_t<Model, T>::recalibration(const std::vector<T> &beta,
     QL_REQUIRE(k != swapTenors.size(), "swap tenor (" << swapTenor
                                                       << ") not found");
 
-    for (Size i = 0; i < nOptionTenors_; ++i) {
+    for (Size i = 0; i < this->nOptionTenors_; ++i) {
         parametersGuess_.setElement(1, i, k, beta[i]);
     }
 
@@ -807,7 +813,7 @@ void SwaptionVolCube1x_t<Model, T>::recalibration(const std::vector<T> &beta,
         sabrCalibrationSection(volCubeAtmCalibrated_, denseParameters_,
                                swapTenor);
     }
-    notifyObservers();
+    this->notifyObservers();
 }
 
 template <template <class> class Model, class T>
@@ -823,14 +829,14 @@ void SwaptionVolCube1x_t<Model, T>::recalibration(
     std::vector<Time> betaTimes;
     for (Size i = 0; i < beta.size(); i++)
         betaTimes.push_back(
-            timeFromReference(optionDateFromTenor(swapLengths[i])));
+            this->timeFromReference(this->optionDateFromTenor(swapLengths[i])));
 
     LinearInterpolation betaInterpolation(betaTimes.begin(), betaTimes.end(),
                                           beta.begin());
 
     std::vector<T> cubeBeta;
-    for (Size i = 0; i < optionTimes().size(); i++) {
-        T t = optionTimes()[i];
+    for (Size i = 0; i < this->optionTimes().size(); i++) {
+        T t = this->optionTimes()[i];
         // flat extrapolation ensures admissable values
         if (t < betaTimes.front())
             t = betaTimes.front();
@@ -881,7 +887,7 @@ SwaptionVolCube1x_t<Model, T>::Cube::Cube(const std::vector<Date> &optionDates,
                 optionTimes_.begin(), optionTimes_.end(), swapLengths_.begin(),
                 swapLengths_.end(), transposedPoints_[k]);
         interpolators_.push_back(boost::shared_ptr<Interpolation2D_t<T> >(
-                                     new FlatExtrapolator2D_t<T>(interpolation)));
+            new FlatExtrapolator2D_t<T>(interpolation)));
         interpolators_[k]->enableExtrapolation();
     }
     setPoints(points);
@@ -900,15 +906,17 @@ SwaptionVolCube1x_t<Model, T>::Cube::Cube(const Cube &o) {
     for (Size k = 0; k < nLayers_; ++k) {
         boost::shared_ptr<Interpolation2D_t<T> > interpolation;
         if (k <= 4 && backwardFlat_)
-            interpolation = boost::make_shared<BackwardflatLinearInterpolation_t<T>>(
-                optionTimes_.begin(), optionTimes_.end(), swapLengths_.begin(),
-                swapLengths_.end(), transposedPoints_[k]);
+            interpolation =
+                boost::make_shared<BackwardflatLinearInterpolation_t<T> >(
+                    optionTimes_.begin(), optionTimes_.end(),
+                    swapLengths_.begin(), swapLengths_.end(),
+                    transposedPoints_[k]);
         else
-            interpolation = boost::make_shared<BilinearInterpolation_t<T>>(
+            interpolation = boost::make_shared<BilinearInterpolation_t<T> >(
                 optionTimes_.begin(), optionTimes_.end(), swapLengths_.begin(),
                 swapLengths_.end(), transposedPoints_[k]);
         interpolators_.push_back(boost::shared_ptr<Interpolation2D_t<T> >(
-                                     new FlatExtrapolator2D_t<T>(interpolation)));
+            new FlatExtrapolator2D_t<T>(interpolation)));
         interpolators_[k]->enableExtrapolation();
     }
     setPoints(o.points_);
@@ -935,11 +943,11 @@ typename SwaptionVolCube1x_t<Model, T>::Cube &
                     swapLengths_.begin(), swapLengths_.end(),
                     transposedPoints_[k]);
         else
-            interpolation = boost::make_shared<BilinearInterpolation_t<T>>(
+            interpolation = boost::make_shared<BilinearInterpolation_t<T> >(
                 optionTimes_.begin(), optionTimes_.end(), swapLengths_.begin(),
                 swapLengths_.end(), transposedPoints_[k]);
         interpolators_.push_back(boost::shared_ptr<Interpolation2D_t<T> >(
-                                     new FlatExtrapolator2D_t<T>(interpolation)));
+            new FlatExtrapolator2D_t<T>(interpolation)));
         interpolators_[k]->enableExtrapolation();
     }
     setPoints(o.points_);
@@ -993,7 +1001,7 @@ void SwaptionVolCube1x_t<Model, T>::Cube::setPoint(
     const bool expandSwapLengths = !(std::binary_search(
         swapLengths_.begin(), swapLengths_.end(), swapLength));
 
-    typename std::vector<T>::const_iterator optionTimesPreviousNode,
+    typename std::vector<Time>::const_iterator optionTimesPreviousNode,
         swapLengthsPreviousNode;
 
     optionTimesPreviousNode =
@@ -1088,11 +1096,13 @@ void SwaptionVolCube1x_t<Model, T>::Cube::updateInterpolators() const {
         transposedPoints_[k] = transpose(points_[k]);
         boost::shared_ptr<Interpolation2D_t<T> > interpolation;
         if (k <= 4 && backwardFlat_)
-            interpolation = boost::make_shared<BackwardflatLinearInterpolation>(
-                optionTimes_.begin(), optionTimes_.end(), swapLengths_.begin(),
-                swapLengths_.end(), transposedPoints_[k]);
+            interpolation =
+                boost::make_shared<BackwardflatLinearInterpolation_t<T> >(
+                    optionTimes_.begin(), optionTimes_.end(),
+                    swapLengths_.begin(), swapLengths_.end(),
+                    transposedPoints_[k]);
         else
-            interpolation = boost::make_shared<BilinearInterpolation_t<T>>(
+            interpolation = boost::make_shared<BilinearInterpolation_t<T> >(
                 optionTimes_.begin(), optionTimes_.end(), swapLengths_.begin(),
                 swapLengths_.end(), transposedPoints_[k]);
         interpolators_[k] = boost::shared_ptr<Interpolation2D_t<T> >(
@@ -1126,10 +1136,10 @@ template <class T> struct SwaptionVolCubeSabrModel {
 };
 
 template <class T> struct SwaptionVolCube1_t {
-    typedef SwaptionVolCube1x_t<SwaptionVolCubeSabrModel, T> type;
+    typedef SwaptionVolCube1x_t<SwaptionVolCubeSabrModel, T> Type;
 };
 
-typedef SwaptionVolCube1_t<Real>::type SwaptionVolCube1;
+typedef SwaptionVolCube1_t<Real>::Type SwaptionVolCube1;
 
 //======================================================================//
 //                      SwaptionVolCube1a (NoArbSabr)                    //

@@ -34,13 +34,13 @@ template <class T> class CostFunction_t {
   public:
     virtual ~CostFunction_t() {}
     //! method to overload to compute the cost function value in x
-    virtual T value(const Array &x) const = 0;
+    virtual T value(const Array_t<T> &x) const = 0;
     //! method to overload to compute the cost function values in x
-    virtual Disposable<Array_t<T> > values(const Array &x) const = 0;
+    virtual Disposable<Array_t<T> > values(const Array_t<T> &x) const = 0;
 
     //! method to overload to compute grad_f, the first derivative of
     //  the cost function with respect to x
-    virtual void gradient(Array &grad, const Array &x) const {
+    virtual void gradient(Array_t<T> &grad, const Array_t<T> &x) const {
         T eps = finiteDifferenceEpsilon(), fp, fm;
         Array_t<T> xx(x);
         for (Size i = 0; i < x.size(); i++) {
@@ -55,7 +55,7 @@ template <class T> class CostFunction_t {
 
     //! method to overload to compute grad_f, the first derivative of
     //  the cost function with respect to x and also the cost function
-    virtual T valueAndGradient(Array &grad, const Array &x) const {
+    virtual T valueAndGradient(Array_t<T> &grad, const Array_t<T> &x) const {
         gradient(grad, x);
         return value(x);
     }
@@ -69,8 +69,8 @@ typedef CostFunction_t<Real> CostFunction;
 template <class T> class ParametersTransformation_t {
   public:
     virtual ~ParametersTransformation_t() {}
-    virtual Array_t<T> direct(const Array &x) const = 0;
-    virtual Array_t<T> inverse(const Array &x) const = 0;
+    virtual Array_t<T> direct(const Array_t<T> &x) const = 0;
+    virtual Array_t<T> inverse(const Array_t<T> &x) const = 0;
 };
 
 typedef ParametersTransformation_t<Real> ParametersTransformation;

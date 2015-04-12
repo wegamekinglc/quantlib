@@ -66,7 +66,7 @@ std::ostream &operator<<(std::ostream &out, Settlement::Type type);
 
     \todo add greeks and explicit exercise lag
 */
-template <class T> class Swaption_t : public Option {
+template <class T> class Swaption_t : public Option_t<T> {
   public:
     class arguments;
     class engine;
@@ -105,7 +105,7 @@ typedef Swaption_t<Real> Swaption;
 //! %Arguments for swaption calculation
 template <class T>
 class Swaption_t<T>::arguments : public VanillaSwap_t<T>::arguments,
-                                 public Option::arguments {
+                                 public Option_t<T>::arguments {
   public:
     arguments() : settlementType(Settlement::Physical) {}
     boost::shared_ptr<VanillaSwap_t<T> > swap;
@@ -116,7 +116,8 @@ class Swaption_t<T>::arguments : public VanillaSwap_t<T>::arguments,
 //! base class for swaption engines
 template <class T>
 class Swaption_t<T>::engine
-    : public GenericEngine<Swaption_t<T>::arguments, Swaption_t<T>::results> {};
+    : public GenericEngine<typename Swaption_t<T>::arguments,
+                           typename Swaption_t<T>::results> {};
 
 } // namespace QuantLib
 

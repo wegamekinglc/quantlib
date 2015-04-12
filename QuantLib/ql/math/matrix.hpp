@@ -592,7 +592,7 @@ inline const Disposable<Array_t<T> > operator*(const Array_t<T> &v,
     Array_t<T> result(m.columns());
     for (Size i = 0; i < result.size(); i++)
         result[i] =
-            std::inner_product(v.begin(), v.end(), m.column_begin(i), 0.0);
+            std::inner_product(v.begin(), v.end(), m.column_begin(i), T(0.0));
     return result;
 }
 
@@ -605,7 +605,7 @@ inline const Disposable<Array_t<T> > operator*(const Matrix_t<T> &m,
                    << ") cannot be multiplied");
     Array_t<T> result(m.rows());
     for (Size i = 0; i < result.size(); i++)
-        result[i] = std::inner_product(v.begin(), v.end(), m.row_begin(i), 0.0);
+        result[i] = std::inner_product(v.begin(), v.end(), m.row_begin(i), T(0.0));
     return result;
 }
 

@@ -45,7 +45,7 @@ template <class T> class Parameter_t {
     boost::shared_ptr<Impl> impl_;
 
   public:
-    Parameter_t() : constraint_(NoConstraint()) {}
+    Parameter_t() : constraint_(NoConstraint_t<T>()) {}
     const Array_t<T> &params() const { return params_; }
     void setParam(Size i, T x) { params_[i] = x; }
     bool testParams(const Array_t<T> &params) const {

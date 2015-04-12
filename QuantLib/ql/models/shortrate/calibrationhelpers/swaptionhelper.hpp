@@ -43,7 +43,7 @@ template <class T> class SwaptionHelper_t : public CalibrationHelper_t<T> {
   public:
     SwaptionHelper_t(const Period &maturity, const Period &length,
                      const Handle<Quote_t<T> > &volatility,
-                     const boost::shared_ptr<IborIndex> &index,
+                     const boost::shared_ptr<IborIndex_t<T> > &index,
                      const Period &fixedLegTenor,
                      const DayCounter &fixedLegDayCounter,
                      const DayCounter &floatingLegDayCounter,
@@ -54,7 +54,7 @@ template <class T> class SwaptionHelper_t : public CalibrationHelper_t<T> {
 
     SwaptionHelper_t(const Date &exerciseDate, const Period &length,
                      const Handle<Quote_t<T> > &volatility,
-                     const boost::shared_ptr<IborIndex> &index,
+                     const boost::shared_ptr<IborIndex_t<T> > &index,
                      const Period &fixedLegTenor,
                      const DayCounter &fixedLegDayCounter,
                      const DayCounter &floatingLegDayCounter,
@@ -65,7 +65,7 @@ template <class T> class SwaptionHelper_t : public CalibrationHelper_t<T> {
 
     SwaptionHelper_t(const Date &exerciseDate, const Date &endDate,
                      const Handle<Quote_t<T> > &volatility,
-                     const boost::shared_ptr<IborIndex> &index,
+                     const boost::shared_ptr<IborIndex_t<T> > &index,
                      const Period &fixedLegTenor,
                      const DayCounter &fixedLegDayCounter,
                      const DayCounter &floatingLegDayCounter,
@@ -91,7 +91,7 @@ template <class T> class SwaptionHelper_t : public CalibrationHelper_t<T> {
     void performCalculations() const;
     mutable Date exerciseDate_, endDate_;
     const Period maturity_, length_, fixedLegTenor_;
-    const boost::shared_ptr<IborIndex> index_;
+    const boost::shared_ptr<IborIndex_t<T> > index_;
     const DayCounter fixedLegDayCounter_, floatingLegDayCounter_;
     const T strike_, nominal_;
     mutable T exerciseRate_;
@@ -107,8 +107,8 @@ template <class T>
 SwaptionHelper_t<T>::SwaptionHelper_t(
     const Period &maturity, const Period &length,
     const Handle<Quote_t<T> > &volatility,
-    const boost::shared_ptr<IborIndex> &index, const Period &fixedLegTenor,
-    const DayCounter &fixedLegDayCounter,
+    const boost::shared_ptr<IborIndex_t<T> > &index,
+    const Period &fixedLegTenor, const DayCounter &fixedLegDayCounter,
     const DayCounter &floatingLegDayCounter,
     const Handle<YieldTermStructure_t<T> > &termStructure,
     typename CalibrationHelper_t<T>::CalibrationErrorType errorType,
@@ -128,8 +128,8 @@ template <class T>
 SwaptionHelper_t<T>::SwaptionHelper_t(
     const Date &exerciseDate, const Period &length,
     const Handle<Quote_t<T> > &volatility,
-    const boost::shared_ptr<IborIndex> &index, const Period &fixedLegTenor,
-    const DayCounter &fixedLegDayCounter,
+    const boost::shared_ptr<IborIndex_t<T> > &index,
+    const Period &fixedLegTenor, const DayCounter &fixedLegDayCounter,
     const DayCounter &floatingLegDayCounter,
     const Handle<YieldTermStructure_t<T> > &termStructure,
     typename CalibrationHelper_t<T>::CalibrationErrorType errorType,
@@ -148,8 +148,8 @@ template <class T>
 SwaptionHelper_t<T>::SwaptionHelper_t(
     const Date &exerciseDate, const Date &endDate,
     const Handle<Quote_t<T> > &volatility,
-    const boost::shared_ptr<IborIndex> &index, const Period &fixedLegTenor,
-    const DayCounter &fixedLegDayCounter,
+    const boost::shared_ptr<IborIndex_t<T> > &index,
+    const Period &fixedLegTenor, const DayCounter &fixedLegDayCounter,
     const DayCounter &floatingLegDayCounter,
     const Handle<YieldTermStructure_t<T> > &termStructure,
     typename CalibrationHelper_t<T>::CalibrationErrorType errorType,
@@ -170,7 +170,7 @@ void SwaptionHelper_t<T>::addTimesTo(std::list<Time> &times) const {
     typename Swaption_t<T>::arguments args;
     swaption_->setupArguments(&args);
     std::vector<Time> swaptionTimes =
-        DiscretizedSwaption(args, this->termStructure_->referenceDate(),
+        DiscretizedSwaption_t<T>(args, this->termStructure_->referenceDate(),
                             this->termStructure_->dayCounter())
             .mandatoryTimes();
     times.insert(times.end(), swaptionTimes.begin(), swaptionTimes.end());
@@ -223,7 +223,7 @@ template <class T> void SwaptionHelper_t<T>::performCalculations() const {
                            DateGeneration::Forward, false);
 
     boost::shared_ptr<PricingEngine> swapEngine(
-        new DiscountingSwapEngine(this->termStructure_, false));
+        new DiscountingSwapEngine_t<T>(this->termStructure_, false));
 
     typename VanillaSwap_t<T>::Type type = VanillaSwap_t<T>::Receiver;
 

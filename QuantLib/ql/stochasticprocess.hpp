@@ -213,7 +213,7 @@ template <class T> class StochasticProcess1D_t : public StochasticProcess_t<T> {
     /*! applies a change to the asset value. By default, it
         returns \f$ x + \Delta x \f$.
     */
-    virtual T apply(Real x0, T dx) const;
+    virtual T apply(T x0, T dx) const;
     //@}
   protected:
     StochasticProcess1D_t();
@@ -415,7 +415,7 @@ T StochasticProcess1D_t<T>::evolve(Time t0, T x0, Time dt, T dw) const {
     return apply(expectation(t0, x0, dt), stdDeviation(t0, x0, dt) * dw);
 }
 
-template <class T> T StochasticProcess1D_t<T>::apply(Real x0, T dx) const {
+template <class T> T StochasticProcess1D_t<T>::apply(T x0, T dx) const {
     return x0 + dx;
 }
 }
