@@ -24,7 +24,7 @@
 #ifndef ql_cppad_hpp
 #define ql_cppad_hpp
 
-// cppad does not go together with ublas
+// currently errors are thrown, to be investigated
 #define QL_NO_UBLAS_SUPPORT  
 
 #include <cppad/cppad.hpp>

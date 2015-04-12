@@ -52,7 +52,7 @@ template <class T> class TridiagonalOperator_t {
     template<class S> friend Disposable<TridiagonalOperator_t<S> > operator-
         (const TridiagonalOperator_t<S> &, const TridiagonalOperator_t<S> &);
     template<class S> friend Disposable<TridiagonalOperator_t<S> >
-    operator*(T, const TridiagonalOperator_t<S> &);
+    operator*(S, const TridiagonalOperator_t<S> &);
     template<class S> friend Disposable<TridiagonalOperator_t<S> >
     operator*(const TridiagonalOperator_t<S> &, S);
     template<class S> friend Disposable<TridiagonalOperator_t<S> > operator/

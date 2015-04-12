@@ -156,7 +156,7 @@ namespace QuantLib {
                             0.5 * sigma2 *  vecerTerm * vecerTerm * upperD[i]);
                     }
                     explicit_part = gammaOp.identity(gammaOp.size()) +
-                                    (1 - Theta) * k * gammaOp;
+                        (1 - Theta) * k * gammaOp;
                     explicit_part.setFirstRow(1.0,0.0); // Apply before applying
                     explicit_part.setLastRow(-1.0,1.0); // Neumann BC
 
@@ -178,7 +178,7 @@ namespace QuantLib {
                     }
 
                     implicit_part = gammaOp.identity(gammaOp.size()) -
-                                    Theta * k * gammaOp;
+                        Theta * k * gammaOp;
 
                     // Apply before solving
                     implicit_part.setFirstRow(1.0,0.0);

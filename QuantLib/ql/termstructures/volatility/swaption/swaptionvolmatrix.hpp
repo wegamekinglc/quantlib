@@ -296,7 +296,7 @@ template <class T>
 void SwaptionVolatilityMatrix_t<T>::registerWithMarketData() {
     for (Size i = 0; i < volHandles_.size(); ++i)
         for (Size j = 0; j < volHandles_.front().size(); ++j)
-            registerWith(volHandles_[i][j]);
+            this->registerWith(volHandles_[i][j]);
 }
 
 template <class T>

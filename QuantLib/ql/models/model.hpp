@@ -258,6 +258,13 @@ class CalibratedModel_t<T>::CalibrationFunction : public CostFunction_t<T> {
             values[i] =
                 instruments_[i]->calibrationError() * QLFCT::sqrt(weights_[i]);
         }
+        // std::cout << "lm step;";
+        // for(Size i=0;i<params.size();++i)
+        //     std::cout << params[i] << ";";
+        // std::cout << "values;";
+        // for(Size i=0;i<values.size();++i)
+        //     std::cout << values[i] << ";";
+        // std::cout << std::endl;
         return values;
     }
 
