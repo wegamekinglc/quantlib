@@ -9,7 +9,6 @@ this_include_HEADERS = \
     treeswapengine.hpp
 
 libSwapEngines_la_SOURCES = \
-    discretizedswap.cpp \
     treeswapengine.cpp
 
 noinst_LTLIBRARIES = libSwapEngines.la

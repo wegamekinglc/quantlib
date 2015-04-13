@@ -28,7 +28,8 @@
 
 namespace QuantLib {
 
-    class EndCriteria;
+    template<class> class EndCriteria_t;
+    typedef EndCriteria_t<Real> EndCriteria;
 
     //! Armijo line search.
     /*! Let \f$ \alpha \f$ and \f$ \beta \f$ be 2 scalars in \f$ [0,1]

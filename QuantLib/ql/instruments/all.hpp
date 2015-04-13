@@ -11,6 +11,7 @@
 #include <ql/instruments/bond.hpp>
 #include <ql/instruments/callabilityschedule.hpp>
 #include <ql/instruments/capfloor.hpp>
+#include <ql/instruments/capfloorbase.hpp>
 #include <ql/instruments/claim.hpp>
 #include <ql/instruments/cliquetoption.hpp>
 #include <ql/instruments/compositeinstrument.hpp>
@@ -45,6 +46,7 @@
 #include <ql/instruments/stock.hpp>
 #include <ql/instruments/swap.hpp>
 #include <ql/instruments/swaption.hpp>
+#include <ql/instruments/swaptionbase.hpp>
 #include <ql/instruments/vanillaoption.hpp>
 #include <ql/instruments/vanillastorageoption.hpp>
 #include <ql/instruments/vanillaswingoption.hpp>

@@ -85,7 +85,7 @@ class FlatForward_t : public YieldTermStructure_t<T>, public LazyObject {
     Handle<Quote_t<T> > forward_;
     Compounding compounding_;
     Frequency frequency_;
-    mutable InterestRate rate_;
+    mutable InterestRate_t<T> rate_;
 };
 
 typedef FlatForward_t<Real> FlatForward;
@@ -103,7 +103,7 @@ template <class T> inline T FlatForward_t<T>::discountImpl(Time t) const {
 }
 
 template <class T> inline void FlatForward_t<T>::performCalculations() const {
-    rate_ = InterestRate(forward_->value(), this->dayCounter(), compounding_,
+    rate_ = InterestRate_t<T>(forward_->value(), this->dayCounter(), compounding_,
                          frequency_);
 }
 

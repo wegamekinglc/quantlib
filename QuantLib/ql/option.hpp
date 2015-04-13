@@ -2,6 +2,7 @@
 
 /*
  Copyright (C) 2000, 2001, 2002, 2003 RiskMap srl
+ Copyright (C) 2015 Peter Caspers
 
  This file is part of QuantLib, a free-software/open-source library
  for financial quantitative analysts and developers - http://quantlib.org/
@@ -28,91 +29,97 @@
 
 namespace QuantLib {
 
-    class Payoff;
-    class Exercise;
+class Payoff;
+class Exercise;
 
-    //! base option class
-    class Option : public Instrument {
-      public:
-        class arguments;
-        enum Type { Put = -1,
-                    Call = 1
-        };
-        Option(const boost::shared_ptr<Payoff>& payoff,
-               const boost::shared_ptr<Exercise>& exercise)
+//! base option class
+template <class T> class Option_t : public Instrument_t<T> {
+  public:
+    class arguments;
+    enum Type { Put = -1, Call = 1 };
+    Option_t(const boost::shared_ptr<Payoff> &payoff,
+             const boost::shared_ptr<Exercise> &exercise)
         : payoff_(payoff), exercise_(exercise) {}
-        void setupArguments(PricingEngine::arguments*) const;
-        boost::shared_ptr<Payoff> payoff() { return payoff_; }
-        boost::shared_ptr<Exercise> exercise() { return exercise_; };
-      protected:
-        // arguments
-        boost::shared_ptr<Payoff> payoff_;
-        boost::shared_ptr<Exercise> exercise_;
-    };
+    void setupArguments(PricingEngine::arguments *) const;
+    boost::shared_ptr<Payoff> payoff() { return payoff_; }
+    boost::shared_ptr<Exercise> exercise() { return exercise_; };
 
-    /*! \relates Option */
-    std::ostream& operator<<(std::ostream&, Option::Type);
+  protected:
+    // arguments
+    boost::shared_ptr<Payoff> payoff_;
+    boost::shared_ptr<Exercise> exercise_;
+};
 
-    //! basic %option %arguments
-    class Option::arguments : public virtual PricingEngine::arguments {
-      public:
-        arguments() {}
-        void validate() const {
-            QL_REQUIRE(payoff, "no payoff given");
-            QL_REQUIRE(exercise, "no exercise given");
-        }
-        boost::shared_ptr<Payoff> payoff;
-        boost::shared_ptr<Exercise> exercise;
-    };
+typedef Option_t<Real> Option;
 
-    //! additional %option results
-    class Greeks : public virtual PricingEngine::results {
-      public:
-        void reset() {
-            delta =  gamma = theta = vega =
-                rho = dividendRho = Null<Real>();
-        }
-        Real delta, gamma;
-        Real theta;
-        Real vega;
-        Real rho, dividendRho;
-    };
+/*! \relates Option */
+template <class T>
+std::ostream &operator<<(std::ostream &, typename Option_t<T>::Type);
 
-    //! more additional %option results
-    class MoreGreeks : public virtual PricingEngine::results {
-      public:
-        void reset() {
-            itmCashProbability = deltaForward = elasticity = thetaPerDay =
-                strikeSensitivity = Null<Real>();
-        }
-        Real itmCashProbability, deltaForward, elasticity, thetaPerDay,
-             strikeSensitivity;
-    };
-
-
-    // inline definitions
-
-    inline void Option::setupArguments(PricingEngine::arguments* args) const {
-        Option::arguments* arguments =
-            dynamic_cast<Option::arguments*>(args);
-        QL_REQUIRE(arguments != 0, "wrong argument type");
-
-        arguments->payoff = payoff_;
-        arguments->exercise = exercise_;
+//! basic %option %arguments
+template <class T>
+class Option_t<T>::arguments : public virtual PricingEngine::arguments {
+  public:
+    arguments() {}
+    void validate() const {
+        QL_REQUIRE(payoff, "no payoff given");
+        QL_REQUIRE(exercise, "no exercise given");
     }
+    boost::shared_ptr<Payoff> payoff;
+    boost::shared_ptr<Exercise> exercise;
+};
 
-    inline std::ostream& operator<<(std::ostream& out, Option::Type type) {
-        switch (type) {
-          case Option::Call:
-            return out << "Call";
-          case Option::Put:
-            return out << "Put";
-          default:
-            QL_FAIL("unknown option type");
-        }
+//! additional %option results
+template <class T> class Greeks_t : public virtual PricingEngine::results {
+  public:
+    void reset() {
+        delta = gamma = theta = vega = rho = dividendRho = Null<T>();
     }
+    T delta, gamma;
+    T theta;
+    T vega;
+    T rho, dividendRho;
+};
 
+typedef Greeks_t<Real> Greeks;
+
+//! more additional %option results
+template <class T> class MoreGreeks_t : public virtual PricingEngine::results {
+  public:
+    void reset() {
+        itmCashProbability = deltaForward = elasticity = thetaPerDay =
+            strikeSensitivity = Null<T>();
+    }
+    T itmCashProbability, deltaForward, elasticity, thetaPerDay,
+        strikeSensitivity;
+};
+
+typedef MoreGreeks_t<Real> MoreGreeks;
+
+// inline definitions
+
+template <class T>
+inline void Option_t<T>::setupArguments(PricingEngine::arguments *args) const {
+    Option_t<T>::arguments *arguments =
+        dynamic_cast<Option_t<T>::arguments *>(args);
+    QL_REQUIRE(arguments != 0, "wrong argument type");
+
+    arguments->payoff = payoff_;
+    arguments->exercise = exercise_;
 }
 
+template <class T>
+inline std::ostream &operator<<(std::ostream &out,
+                                typename Option_t<T>::Type type) {
+    switch (type) {
+    case Option_t<T>::Call:
+        return out << "Call";
+    case Option_t<T>::Put:
+        return out << "Put";
+    default:
+        QL_FAIL("unknown option type");
+    }
+}
+}
 
 #endif

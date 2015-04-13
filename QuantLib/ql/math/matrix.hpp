@@ -83,6 +83,8 @@ template <class T> class Matrix_t {
     Matrix_t(Size rows, Size columns);
     //! creates the matrix and fills it with <tt>value</tt>
     Matrix_t(Size rows, Size columns, T value);
+    //! creates the matrix and fills with values given by iterator start and end
+    template<class I> Matrix_t(Size rows, Size columns, I start, I end);
     Matrix_t(const Matrix_t<T> &);
     Matrix_t(const Disposable<Matrix_t<T> > &);
     Matrix_t<T> &operator=(const Matrix_t<T> &);
@@ -248,6 +250,13 @@ inline Matrix_t<T>::Matrix_t(Size rows, Size columns, T value)
       columns_(columns) {
     std::fill(begin(), end(), value);
 }
+
+template<class T> template <class I>
+Matrix_t<T>::Matrix_t(Size rows, Size columns, I start, I end)
+    : data_(new T[rows * columns]), rows_(rows), columns_(columns) {
+    std::copy(start, end, begin());
+}
+
 
 template <class T>
 inline Matrix_t<T>::Matrix_t(const Matrix_t<T> &from)
@@ -592,7 +601,7 @@ inline const Disposable<Array_t<T> > operator*(const Array_t<T> &v,
     Array_t<T> result(m.columns());
     for (Size i = 0; i < result.size(); i++)
         result[i] =
-            std::inner_product(v.begin(), v.end(), m.column_begin(i), 0.0);
+            std::inner_product(v.begin(), v.end(), m.column_begin(i), T(0.0));
     return result;
 }
 
@@ -605,7 +614,7 @@ inline const Disposable<Array_t<T> > operator*(const Matrix_t<T> &m,
                    << ") cannot be multiplied");
     Array_t<T> result(m.rows());
     for (Size i = 0; i < result.size(); i++)
-        result[i] = std::inner_product(v.begin(), v.end(), m.row_begin(i), 0.0);
+        result[i] = std::inner_product(v.begin(), v.end(), m.row_begin(i), T(0.0));
     return result;
 }
 
@@ -690,11 +699,11 @@ template <class T> Disposable<Matrix_t<T> > inverse(const Matrix_t<T> &m) {
 
     QL_REQUIRE(m.rows() == m.columns(), "matrix is not square");
 
-    boost::numeric::ublas::matrix<Real> a(m.rows(), m.columns());
+    boost::numeric::ublas::matrix<T> a(m.rows(), m.columns());
 
     std::copy(m.begin(), m.end(), a.data().begin());
 
-    boost::numeric::ublas::permutation_matrix<Size> pert(m.rows());
+    boost::numeric::ublas::permutation_matrix<T> pert(m.rows());
 
     // lu decomposition
     const Size singular = lu_factorize(a, pert);

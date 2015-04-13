@@ -102,7 +102,7 @@ template <class T>
 EuriborSwapIsdaFixA_t<T>::EuriborSwapIsdaFixA_t(
     const Period &tenor,
     const Handle<YieldTermStructure_t<T> > &h)
-    : SwapIndex(
+    : SwapIndex_t<T>(
           "EuriborSwapIsdaFixA", // familyName
           tenor,
           2, // settlementDays
@@ -118,7 +118,7 @@ template <class T>
 EuriborSwapIsdaFixA_t<T>::EuriborSwapIsdaFixA_t(
     const Period &tenor, const Handle<YieldTermStructure_t<T> > &forwarding,
     const Handle<YieldTermStructure_t<T> > &discounting)
-    : SwapIndex("EuriborSwapIsdaFixA", // familyName
+    : SwapIndex_t<T>("EuriborSwapIsdaFixA", // familyName
                 tenor,
                 2, // settlementDays
                 EURCurrency(), TARGET(),
@@ -136,7 +136,7 @@ template <class T>
 EuriborSwapIsdaFixB_t<T>::EuriborSwapIsdaFixB_t(
     const Period &tenor,
     const Handle<YieldTermStructure_t<T> > &h)
-    : SwapIndex(
+    : SwapIndex_t<T>(
           "EuriborSwapIsdaFixB", // familyName
           tenor,
           2, // settlementDays
@@ -152,7 +152,7 @@ template <class T>
 EuriborSwapIsdaFixB_t<T>::EuriborSwapIsdaFixB_t(
     const Period &tenor, const Handle<YieldTermStructure_t<T> > &forwarding,
     const Handle<YieldTermStructure_t<T> > &discounting)
-    : SwapIndex("EuriborSwapIsdaFixB", // familyName
+    : SwapIndex_t<T>("EuriborSwapIsdaFixB", // familyName
                 tenor,
                 2, // settlementDays
                 EURCurrency(), TARGET(),
@@ -170,7 +170,7 @@ template <class T>
 EuriborSwapIfrFix_t<T>::EuriborSwapIfrFix_t(
     const Period &tenor,
     const Handle<YieldTermStructure_t<T> > &h)
-    : SwapIndex(
+    : SwapIndex_t<T>(
           "EuriborSwapIfrFix", // familyName
           tenor,
           2, // settlementDays
@@ -186,7 +186,7 @@ template <class T>
 EuriborSwapIfrFix_t<T>::EuriborSwapIfrFix_t(
     const Period &tenor, const Handle<YieldTermStructure_t<T> > &forwarding,
     const Handle<YieldTermStructure_t<T> > &discounting)
-    : SwapIndex("EuriborSwapIfrFix", // familyName
+    : SwapIndex_t<T>("EuriborSwapIfrFix", // familyName
                 tenor,
                 2, // settlementDays
                 EURCurrency(), TARGET(),

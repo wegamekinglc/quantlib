@@ -29,16 +29,10 @@ libOptimization_la_SOURCES = \
     armijo.cpp \
     bfgs.cpp \
     conjugategradient.cpp \
-    constraint.cpp \
     differentialevolution.cpp \
-    endcriteria.cpp \
     leastsquare.cpp \
-    levenbergmarquardt.cpp \
     linesearch.cpp \
     linesearchbasedmethod.cpp \
-    lmdif.cpp \
-    projectedcostfunction.cpp \
-    projection.cpp \
     simplex.cpp \
     spherecylinder.cpp \
     steepestdescent.cpp

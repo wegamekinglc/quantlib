@@ -1443,7 +1443,7 @@ void EuropeanOptionTest::testLocalVolatility() {
                                  std::vector<Date>(dates.begin()+1, dates.end()),
                                  strikes, blackVolMatrix,
                                  dayCounter));
-    volTS->setInterpolation<Bicubic>();
+    volTS->setInterpolation<Bicubic<Real> >();
     const boost::shared_ptr<GeneralizedBlackScholesProcess> process =
                                               makeProcess(s0, qTS, rTS,volTS);
     

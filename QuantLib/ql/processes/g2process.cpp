@@ -148,8 +148,8 @@ namespace QuantLib {
 
     Disposable<Array> G2ForwardProcess::drift(Time t, const Array& x) const {
         Array tmp(2);
-        tmp[0] = xProcess_->drift(t, x[0]) + xForwardDrift(t, T_);
-        tmp[1] = yProcess_->drift(t, x[1]) + yForwardDrift(t, T_);
+        tmp[0] = xProcess_->drift(t, x[0]) + xForwardDrift(t, T0_);
+        tmp[1] = yProcess_->drift(t, x[1]) + yForwardDrift(t, T0_);
         return tmp;
     }
 
@@ -165,8 +165,8 @@ namespace QuantLib {
     Disposable<Array> G2ForwardProcess::expectation(Time t0, const Array& x0,
                                                     Time dt) const {
         Array tmp(2);
-        tmp[0] = xProcess_->expectation(t0, x0[0], dt) - Mx_T(t0, t0+dt, T_);
-        tmp[1] = yProcess_->expectation(t0, x0[1], dt) - My_T(t0, t0+dt, T_);
+        tmp[0] = xProcess_->expectation(t0, x0[0], dt) - Mx_T(t0, t0+dt, T0_);
+        tmp[1] = yProcess_->expectation(t0, x0[1], dt) - My_T(t0, t0+dt, T0_);
         return tmp;
     }
 

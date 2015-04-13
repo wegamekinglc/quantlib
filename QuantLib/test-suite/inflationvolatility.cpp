@@ -76,7 +76,7 @@ namespace {
     boost::shared_ptr<Matrix> cPriceUK;
     boost::shared_ptr<Matrix> fPriceUK;
 
-    boost::shared_ptr<InterpolatedYoYCapFloorTermPriceSurface<Bicubic,Cubic> > priceSurfEU;
+    boost::shared_ptr<InterpolatedYoYCapFloorTermPriceSurface<Bicubic<Real>,Cubic > > priceSurfEU;
 
     void reset() {
         nominalEUR = Handle<YieldTermStructure>();
@@ -264,8 +264,8 @@ namespace {
         boost::shared_ptr<QuantLib::YieldTermStructure> pn =
             nominalEUR.currentLink();
         Handle<QuantLib::YieldTermStructure> n(pn,false);
-        boost::shared_ptr<InterpolatedYoYCapFloorTermPriceSurface<Bicubic,Cubic> >
-        cfEUprices(new InterpolatedYoYCapFloorTermPriceSurface<Bicubic,Cubic>(
+        boost::shared_ptr<InterpolatedYoYCapFloorTermPriceSurface<Bicubic<Real>,Cubic> >
+            cfEUprices(new InterpolatedYoYCapFloorTermPriceSurface<Bicubic<Real>,Cubic>(
                                        fixingDays,
                                        yyLag, yoyIndexEU, baseRate,
                                        n, dc,

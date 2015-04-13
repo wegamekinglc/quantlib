@@ -34,10 +34,6 @@
 
 namespace QuantLib {
 
-    namespace detail {
-        inline void no_deletion(Basket*) {}
-    }
-
     /*! Default loss model interface definition.
     Allows communication between the basket and specific algorithms. Intended to
     hold any kind of portfolio joint loss, latent models, top-down,....
@@ -156,7 +152,7 @@ namespace QuantLib {
             until the basket takes in a new model....
             ..alternatively both old basket and model could be forced reset here
             */
-            basket_.linkTo(boost::shared_ptr<Basket>(bskt, detail::no_deletion),
+            basket_.linkTo(boost::shared_ptr<Basket>(bskt, no_deletion),
                            false);
             resetModel();// or rename to setBasketImpl(...)
         }

@@ -3,6 +3,7 @@
 /*
  Copyright (C) 2001, 2002, 2003 Sadruddin Rejeb
  Copyright (C) 2004, 2007 StatPro Italia srl
+ Copyrtigh (C) 2015 Peter Caspers
 
  This file is part of QuantLib, a free-software/open-source library
  for financial quantitative analysts and developers - http://quantlib.org/
@@ -27,22 +28,87 @@
 
 #include <ql/instruments/swaption.hpp>
 #include <ql/discretizedasset.hpp>
+#include <ql/pricingengines/swap/discretizedswap.hpp>
 
 namespace QuantLib {
 
-    class DiscretizedSwaption : public DiscretizedOption {
-      public:
-        DiscretizedSwaption(const Swaption::arguments&,
-                            const Date& referenceDate,
-                            const DayCounter& dayCounter);
-        void reset(Size size);
-      private:
-        Swaption::arguments arguments_;
-        Time lastPayment_;
-    };
+template <class T> class DiscretizedSwaption_t : public DiscretizedOption_t<T> {
+  public:
+    DiscretizedSwaption_t(const typename Swaption_t<T>::arguments &,
+                          const Date &referenceDate,
+                          const DayCounter &dayCounter);
+    void reset(Size size);
 
+  private:
+    typename Swaption_t<T>::arguments arguments_;
+    Time lastPayment_;
+};
+
+typedef DiscretizedSwaption_t<Real> DiscretizedSwaption;
+
+// implementation
+
+namespace {
+
+inline bool withinPreviousWeek(const Date &d1, const Date &d2) {
+    return d2 >= d1 - 7 && d2 <= d1;
 }
 
+inline bool withinNextWeek(const Date &d1, const Date &d2) {
+    return d2 >= d1 && d2 <= d1 + 7;
+}
+}
+
+template <class T>
+DiscretizedSwaption_t<T>::DiscretizedSwaption_t(
+    const typename Swaption_t<T>::arguments &args, const Date &referenceDate,
+    const DayCounter &dayCounter)
+    : DiscretizedOption_t<T>(boost::shared_ptr<DiscretizedAsset_t<T> >(),
+                             args.exercise->type(), std::vector<Time>()),
+      arguments_(args) {
+
+    this->exerciseTimes_.resize(arguments_.exercise->dates().size());
+    for (Size i = 0; i < this->exerciseTimes_.size(); ++i)
+        this->exerciseTimes_[i] = dayCounter.yearFraction(
+            referenceDate, arguments_.exercise->date(i));
+
+    // Date adjustments can get time vectors out of synch.
+    // Here, we try and collapse similar dates which could cause
+    // a mispricing.
+    for (Size i = 0; i < arguments_.exercise->dates().size(); i++) {
+        Date exerciseDate = arguments_.exercise->date(i);
+        for (Size j = 0; j < arguments_.fixedPayDates.size(); j++) {
+            if (withinNextWeek(exerciseDate, arguments_.fixedPayDates[j])
+                // coupons in the future are dealt with below
+                &&
+                arguments_.fixedResetDates[j] < referenceDate)
+                arguments_.fixedPayDates[j] = exerciseDate;
+        }
+        for (Size j = 0; j < arguments_.fixedResetDates.size(); j++) {
+            if (withinPreviousWeek(exerciseDate, arguments_.fixedResetDates[j]))
+                arguments_.fixedResetDates[j] = exerciseDate;
+        }
+        for (Size j = 0; j < arguments_.floatingResetDates.size(); j++) {
+            if (withinPreviousWeek(exerciseDate,
+                                   arguments_.floatingResetDates[j]))
+                arguments_.floatingResetDates[j] = exerciseDate;
+        }
+    }
+
+    Time lastFixedPayment =
+        dayCounter.yearFraction(referenceDate, arguments_.fixedPayDates.back());
+    Time lastFloatingPayment = dayCounter.yearFraction(
+        referenceDate, arguments_.floatingPayDates.back());
+    lastPayment_ = std::max(lastFixedPayment, lastFloatingPayment);
+
+    this->underlying_ = boost::shared_ptr<DiscretizedAsset_t<T> >(
+        new DiscretizedSwap_t<T>(arguments_, referenceDate, dayCounter));
+}
+
+template <class T> void DiscretizedSwaption_t<T>::reset(Size size) {
+    this->underlying_->initialize(this->method(), lastPayment_);
+    DiscretizedOption_t<T>::reset(size);
+}
+} // namespace QuantLib
 
 #endif
-

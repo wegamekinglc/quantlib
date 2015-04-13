@@ -33,7 +33,8 @@
 
 namespace QuantLib {
 
-    class CapFloor;
+    // template<class> class CapFloor_t;
+    // typedef CapFloor_t<Real> CapFloor;
 
     typedef std::vector<std::vector<boost::shared_ptr<CapFloor> > > CapFloorMatrix;
 

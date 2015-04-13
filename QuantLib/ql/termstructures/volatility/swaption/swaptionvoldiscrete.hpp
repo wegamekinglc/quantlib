@@ -129,7 +129,7 @@ SwaptionVolatilityDiscrete_t<T>::SwaptionVolatilityDiscrete_t(
     const std::vector<Period> &optionTenors,
     const std::vector<Period> &swapTenors, Natural settlementDays,
     const Calendar &cal, BusinessDayConvention bdc, const DayCounter &dc)
-    : SwaptionVolatilityStructure(settlementDays, cal, bdc, dc),
+    : SwaptionVolatilityStructure_t<T>(settlementDays, cal, bdc, dc),
       nOptionTenors_(optionTenors.size()), optionTenors_(optionTenors),
       optionDates_(nOptionTenors_), optionTimes_(nOptionTenors_),
       optionDatesAsReal_(nOptionTenors_), nSwapTenors_(swapTenors.size()),

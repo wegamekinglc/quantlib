@@ -3,7 +3,7 @@
 /*
  Copyright (C) 2007 François du Vignaud
  Copyright (C) 2007 Giorgio Facchinetti
- Copyright (C) 2013 Peter Caspers
+ Copyright (C) 2013, 2015 Peter Caspers
 
  This file is part of QuantLib, a free-software/open-source library
  for financial quantitative analysts and developers - http://quantlib.org/
@@ -30,28 +30,89 @@
 
 namespace QuantLib {
 
-    class Projection {
-      public:
-        Projection(const Array &parameterValues,
-                   const std::vector<bool> &fixParameters = std::vector<bool>());
+    template<class T>
+class Projection_t {
+  public:
+    Projection_t(const Array_t<T> &parameterValues,
+                 const std::vector<bool> &fixParameters = std::vector<bool>());
 
-        //! returns the subset of free parameters corresponding
-        // to set of parameters
-        virtual Disposable<Array> project(const Array &parameters) const;
+    //! returns the subset of free parameters corresponding
+    // to set of parameters
+    virtual Disposable<Array_t<T> > project(const Array_t<T> &parameters) const;
 
-        //! returns whole set of parameters corresponding to the set
-        // of projected parameters
-        virtual Disposable<Array>
-        include(const Array &projectedParameters) const;
+    //! returns whole set of parameters corresponding to the set
+    // of projected parameters
+    virtual Disposable<Array_t<T> >
+    include(const Array_t<T> &projectedParameters) const;
 
-      protected:
-        void mapFreeParameters(const Array &parameterValues) const;
-        Size numberOfFreeParameters_;
-        const Array fixedParameters_;
-        mutable Array actualParameters_;
-        std::vector<bool> fixParameters_;
-    };
+  protected:
+    void mapFreeParameters(const Array_t<T> &parameterValues) const;
+    Size numberOfFreeParameters_;
+    const Array_t<T> fixedParameters_;
+    mutable Array_t<T> actualParameters_;
+    std::vector<bool> fixParameters_;
+};
 
+typedef Projection_t<Real> Projection;
+
+// implementation
+
+    template<class T>
+Projection_t<T>::Projection_t(const Array_t<T> &parameterValues,
+                              const std::vector<bool> &fixParameters)
+    : numberOfFreeParameters_(0), fixedParameters_(parameterValues),
+      actualParameters_(parameterValues), fixParameters_(fixParameters) {
+
+    if (fixParameters_.size() == 0)
+        fixParameters_ = std::vector<bool>(actualParameters_.size(), false);
+
+    QL_REQUIRE(fixedParameters_.size() == fixParameters_.size(),
+               "fixedParameters_.size()!=parametersFreedoms_.size()");
+    for (Size i = 0; i < fixParameters_.size(); i++)
+        if (!fixParameters_[i])
+            numberOfFreeParameters_++;
+    QL_REQUIRE(numberOfFreeParameters_ > 0, "numberOfFreeParameters==0");
 }
+
+    template<class T>
+void Projection_t<T>::mapFreeParameters(
+    const Array_t<T> &parameterValues) const {
+
+    QL_REQUIRE(parameterValues.size() == numberOfFreeParameters_,
+               "parameterValues.size()!=numberOfFreeParameters");
+    Size i = 0;
+    for (Size j = 0; j < actualParameters_.size(); j++)
+        if (!fixParameters_[j])
+            actualParameters_[j] = parameterValues[i++];
+}
+
+    template<class T>
+Disposable<Array_t<T> >
+Projection_t<T>::project(const Array_t<T> &parameters) const {
+
+    QL_REQUIRE(parameters.size() == fixParameters_.size(),
+               "parameters.size()!=parametersFreedoms_.size()");
+    Array_t<T> projectedParameters(numberOfFreeParameters_);
+    Size i = 0;
+    for (Size j = 0; j < fixParameters_.size(); j++)
+        if (!fixParameters_[j])
+            projectedParameters[i++] = parameters[j];
+    return projectedParameters;
+}
+
+    template<class T>
+Disposable<Array_t<T> >
+Projection_t<T>::include(const Array_t<T> &projectedParameters) const {
+
+    QL_REQUIRE(projectedParameters.size() == numberOfFreeParameters_,
+               "projectedParameters.size()!=numberOfFreeParameters");
+    Array_t<T> y(fixedParameters_);
+    Size i = 0;
+    for (Size j = 0; j < y.size(); j++)
+        if (!fixParameters_[j])
+            y[j] = projectedParameters[i++];
+    return y;
+}
+} // namespace QuantLib
 
 #endif

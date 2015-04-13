@@ -25,8 +25,8 @@
 #ifndef quantlib_pricers_capfloor_pricer_h
 #define quantlib_pricers_capfloor_pricer_h
 
-#include <ql/instruments/capfloor.hpp>
 #include <ql/discretizedasset.hpp>
+#include <ql/instruments/capfloorbase.hpp>
 
 namespace QuantLib {
 

@@ -13,8 +13,6 @@ this_include_HEADERS = \
     treeswaptionengine.hpp
 
 libSwaptionEngines_la_SOURCES = \
-    blackswaptionengine.cpp \
-    discretizedswaption.cpp \
     jamshidianswaptionengine.cpp \
     fdg2swaptionengine.cpp \
     fdhullwhiteswaptionengine.cpp \

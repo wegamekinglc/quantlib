@@ -64,7 +64,7 @@ void OISRateHelper::setTermStructure(YieldTermStructure *t) {
     // force recalculation when needed
     bool observer = false;
 
-    shared_ptr<YieldTermStructure> temp(t, no_deletion<Real>);
+    shared_ptr<YieldTermStructure> temp(t, no_deletion);
     termStructureHandle_.linkTo(temp, observer);
 
     if (discountHandle_.empty())
@@ -122,7 +122,7 @@ void DatedOISRateHelper::setTermStructure(YieldTermStructure *t) {
     // force recalculation when needed
     bool observer = false;
 
-    shared_ptr<YieldTermStructure> temp(t, no_deletion<Real>);
+    shared_ptr<YieldTermStructure> temp(t, no_deletion);
     termStructureHandle_.linkTo(temp, observer);
 
     if (discountHandle_.empty())

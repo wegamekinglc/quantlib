@@ -1,7 +1,7 @@
 /* -*- mode: c++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*- */
 
 /*
- Copyright (C) 2014 Peter Caspers
+ Copyright (C) 2014, 2015 Peter Caspers
 
  This file is part of QuantLib, a free-software/open-source library
  for financial quantitative analysts and developers - http://quantlib.org/
@@ -37,7 +37,7 @@ class BackwardflatLinearInterpolationImpl_t
     BackwardflatLinearInterpolationImpl_t(const I1 &xBegin, const I1 &xEnd,
                                           const I2 &yBegin, const I2 &yEnd,
                                           const M<T> &zData)
-        : Interpolation2D::templateImpl<I1, I2, M>(xBegin, xEnd, yBegin, yEnd,
+        : Interpolation2D_t<T>::template templateImpl<I1, I2, M>(xBegin, xEnd, yBegin, yEnd,
                                                    zData) {
         calculate();
     }
@@ -75,7 +75,7 @@ class BackwardflatLinearInterpolation_t : public Interpolation2D_t<T> {
     BackwardflatLinearInterpolation_t(const I1 &xBegin, const I1 &xEnd,
                                       const I2 &yBegin, const I2 &yEnd,
                                       const M<T> &zData) {
-        this->impl_ = boost::shared_ptr<typename Interpolation2D::Impl>(
+        this->impl_ = boost::shared_ptr<typename Interpolation2D_t<T>::Impl>(
             new detail::BackwardflatLinearInterpolationImpl_t<I1, I2, M, T>(
                 xBegin, xEnd, yBegin, yEnd, zData));
     }

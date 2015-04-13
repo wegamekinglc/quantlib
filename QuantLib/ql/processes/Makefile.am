@@ -26,7 +26,6 @@ libProcesses_la_SOURCES = \
 	blackscholesprocess.cpp \
 	endeulerdiscretization.cpp \
 	eulerdiscretization.cpp \
-	forwardmeasureprocess.cpp \
 	g2process.cpp \
 	geometricbrownianprocess.cpp \
 	gjrgarchprocess.cpp \

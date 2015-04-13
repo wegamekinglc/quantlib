@@ -155,7 +155,7 @@ template <class T> class CubicInterpolation_t : public Interpolation_t<T> {
                          T leftConditionValue,
                          CubicInterpolation_t<T>::BoundaryCondition rightCond,
                          T rightConditionValue) {
-        this->impl_ = boost::shared_ptr<Interpolation::Impl>(
+        this->impl_ = boost::shared_ptr<typename Interpolation_t<T>::Impl>(
             new detail::CubicInterpolationImpl_t<I1, I2, T>(
                 xBegin, xEnd, yBegin, da, monotonic, leftCond,
                 leftConditionValue, rightCond, rightConditionValue));
@@ -335,8 +335,9 @@ template <class T = Real> class Cubic {
 namespace detail {
 
 template <class I1, class I2, class T>
-class CubicInterpolationImpl_t : public CoefficientHolder_t<T>,
-                                 public Interpolation::templateImpl<I1, I2> {
+class CubicInterpolationImpl_t
+    : public CoefficientHolder_t<T>,
+      public Interpolation_t<T>::template templateImpl<I1, I2> {
   public:
     CubicInterpolationImpl_t(
         const I1 &xBegin, const I1 &xEnd, const I2 &yBegin,
@@ -346,8 +347,9 @@ class CubicInterpolationImpl_t : public CoefficientHolder_t<T>,
         typename CubicInterpolation_t<T>::BoundaryCondition rightCondition,
         T rightConditionValue)
         : CoefficientHolder_t<T>(xEnd - xBegin),
-          Interpolation::templateImpl<I1, I2>(xBegin, xEnd, yBegin), da_(da),
-          monotonic_(monotonic), leftType_(leftCondition),
+          Interpolation_t<T>::template templateImpl<I1, I2>(xBegin, xEnd,
+                                                            yBegin),
+          da_(da), monotonic_(monotonic), leftType_(leftCondition),
           rightType_(rightCondition), leftValue_(leftConditionValue),
           rightValue_(rightConditionValue), tmp_(this->n_), dx_(this->n_ - 1),
           S_(this->n_ - 1), L_(this->n_) {
@@ -411,10 +413,12 @@ class CubicInterpolationImpl_t : public CoefficientHolder_t<T>,
                 // ignoring end condition value
                 L_.setLastRow(-(dx_[this->n_ - 2] + dx_[this->n_ - 3]) *
                                   (dx_[this->n_ - 2] + dx_[this->n_ - 3]),
-                              -dx_[this->n_ - 3] * (dx_[this->n_ - 3] + dx_[this->n_ - 2]));
-                tmp_[this->n_ - 1] = -S_[this->n_ - 3] * dx_[this->n_ - 2] * dx_[this->n_ - 2] -
-                               S_[this->n_ - 2] * dx_[this->n_ - 3] *
-                                   (3.0 * dx_[this->n_ - 2] + 2.0 * dx_[this->n_ - 3]);
+                              -dx_[this->n_ - 3] *
+                                  (dx_[this->n_ - 3] + dx_[this->n_ - 2]));
+                tmp_[this->n_ - 1] =
+                    -S_[this->n_ - 3] * dx_[this->n_ - 2] * dx_[this->n_ - 2] -
+                    S_[this->n_ - 2] * dx_[this->n_ - 3] *
+                        (3.0 * dx_[this->n_ - 2] + 2.0 * dx_[this->n_ - 3]);
                 break;
             case CubicInterpolation_t<T>::FirstDerivative:
                 L_.setLastRow(0.0, 1.0);
@@ -422,8 +426,8 @@ class CubicInterpolationImpl_t : public CoefficientHolder_t<T>,
                 break;
             case CubicInterpolation_t<T>::SecondDerivative:
                 L_.setLastRow(1.0, 2.0);
-                tmp_[this->n_ - 1] =
-                    3.0 * S_[this->n_ - 2] + rightValue_ * dx_[this->n_ - 2] / 2.0;
+                tmp_[this->n_ - 1] = 3.0 * S_[this->n_ - 2] +
+                                     rightValue_ * dx_[this->n_ - 2] / 2.0;
                 break;
             case CubicInterpolation_t<T>::Periodic:
                 QL_FAIL("this end condition is not implemented yet");
@@ -469,7 +473,8 @@ class CubicInterpolationImpl_t : public CoefficientHolder_t<T>,
             Matrix_t<T> W_ = Z_ * S_;
             Matrix_t<T> Q_(this->n_, this->n_, 0.0);
             Q_[0][0] = 1.0 / (this->n_ - 1) * dx_[0] * dx_[0] * dx_[0];
-            Q_[0][1] = 7.0 / 8 * 1.0 / (this->n_ - 1) * dx_[0] * dx_[0] * dx_[0];
+            Q_[0][1] =
+                7.0 / 8 * 1.0 / (this->n_ - 1) * dx_[0] * dx_[0] * dx_[0];
             for (Size i = 1; i < this->n_ - 1; ++i) {
                 Q_[i][i - 1] = 7.0 / 8 * 1.0 / (this->n_ - 1) * dx_[i - 1] *
                                dx_[i - 1] * dx_[i - 1];
@@ -479,10 +484,12 @@ class CubicInterpolationImpl_t : public CoefficientHolder_t<T>,
                 Q_[i][i + 1] =
                     7.0 / 8 * 1.0 / (this->n_ - 1) * dx_[i] * dx_[i] * dx_[i];
             }
-            Q_[this->n_ - 1][this->n_ - 2] = 7.0 / 8 * 1.0 / (this->n_ - 1) * dx_[this->n_ - 2] *
-                                 dx_[this->n_ - 2] * dx_[this->n_ - 2];
+            Q_[this->n_ - 1][this->n_ - 2] =
+                7.0 / 8 * 1.0 / (this->n_ - 1) * dx_[this->n_ - 2] *
+                dx_[this->n_ - 2] * dx_[this->n_ - 2];
             Q_[this->n_ - 1][this->n_ - 1] =
-                1.0 / (this->n_ - 1) * dx_[this->n_ - 2] * dx_[this->n_ - 2] * dx_[this->n_ - 2];
+                1.0 / (this->n_ - 1) * dx_[this->n_ - 2] * dx_[this->n_ - 2] *
+                dx_[this->n_ - 2];
             Matrix_t<T> J_ =
                 (I_ -
                  V_ * inverse(transpose(V_) * Q_ * V_) * transpose(V_) * Q_) *
@@ -494,8 +501,9 @@ class CubicInterpolationImpl_t : public CoefficientHolder_t<T>,
             for (Size i = 0; i < this->n_ - 1; ++i)
                 tmp_[i] = (Y_[i + 1] - Y_[i]) / dx_[i] -
                           (2.0 * D_[i] + D_[i + 1]) * dx_[i] / 6.0;
-            tmp_[this->n_ - 1] = tmp_[this->n_ - 2] + D_[this->n_ - 2] * dx_[this->n_ - 2] +
-                           (D_[this->n_ - 1] - D_[this->n_ - 2]) * dx_[this->n_ - 2] / 2.0;
+            tmp_[this->n_ - 1] =
+                tmp_[this->n_ - 2] + D_[this->n_ - 2] * dx_[this->n_ - 2] +
+                (D_[this->n_ - 1] - D_[this->n_ - 2]) * dx_[this->n_ - 2] / 2.0;
 
         } else if (da_ == CubicInterpolation_t<T>::SplineOM2) {
             Matrix_t<T> T_(this->n_ - 2, this->n_, 0.0);
@@ -527,12 +535,14 @@ class CubicInterpolationImpl_t : public CoefficientHolder_t<T>,
             Q_[0][1] = 1.0 / 2 * 1.0 / (this->n_ - 1) * dx_[0];
             for (Size i = 1; i < this->n_ - 1; ++i) {
                 Q_[i][i - 1] = 1.0 / 2 * 1.0 / (this->n_ - 1) * dx_[i - 1];
-                Q_[i][i] =
-                    1.0 / (this->n_ - 1) * dx_[i] + 1.0 / (this->n_ - 1) * dx_[i - 1];
+                Q_[i][i] = 1.0 / (this->n_ - 1) * dx_[i] +
+                           1.0 / (this->n_ - 1) * dx_[i - 1];
                 Q_[i][i + 1] = 1.0 / 2 * 1.0 / (this->n_ - 1) * dx_[i];
             }
-            Q_[this->n_ - 1][this->n_ - 2] = 1.0 / 2 * 1.0 / (this->n_ - 1) * dx_[this->n_ - 2];
-            Q_[this->n_ - 1][this->n_ - 1] = 1.0 / (this->n_ - 1) * dx_[this->n_ - 2];
+            Q_[this->n_ - 1][this->n_ - 2] =
+                1.0 / 2 * 1.0 / (this->n_ - 1) * dx_[this->n_ - 2];
+            Q_[this->n_ - 1][this->n_ - 1] =
+                1.0 / (this->n_ - 1) * dx_[this->n_ - 2];
             Matrix_t<T> J_ =
                 (I_ -
                  V_ * inverse(transpose(V_) * Q_ * V_) * transpose(V_) * Q_) *
@@ -544,8 +554,9 @@ class CubicInterpolationImpl_t : public CoefficientHolder_t<T>,
             for (Size i = 0; i < this->n_ - 1; ++i)
                 tmp_[i] = (Y_[i + 1] - Y_[i]) / dx_[i] -
                           (2.0 * D_[i] + D_[i + 1]) * dx_[i] / 6.0;
-            tmp_[this->n_ - 1] = tmp_[this->n_ - 2] + D_[this->n_ - 2] * dx_[this->n_ - 2] +
-                           (D_[this->n_ - 1] - D_[this->n_ - 2]) * dx_[this->n_ - 2] / 2.0;
+            tmp_[this->n_ - 1] =
+                tmp_[this->n_ - 2] + D_[this->n_ - 2] * dx_[this->n_ - 2] +
+                (D_[this->n_ - 1] - D_[this->n_ - 2]) * dx_[this->n_ - 2] / 2.0;
         } else { // local schemes
             if (this->n_ == 2)
                 tmp_[0] = tmp_[1] = S_[0];
@@ -564,7 +575,8 @@ class CubicInterpolationImpl_t : public CoefficientHolder_t<T>,
                         ((2.0 * dx_[0] + dx_[1]) * S_[0] - dx_[0] * S_[1]) /
                         (dx_[0] + dx_[1]);
                     tmp_[this->n_ - 1] =
-                        ((2.0 * dx_[this->n_ - 2] + dx_[this->n_ - 3]) * S_[this->n_ - 2] -
+                        ((2.0 * dx_[this->n_ - 2] + dx_[this->n_ - 3]) *
+                             S_[this->n_ - 2] -
                          dx_[this->n_ - 2] * S_[this->n_ - 3]) /
                         (dx_[this->n_ - 2] + dx_[this->n_ - 3]);
                     break;
@@ -580,18 +592,19 @@ class CubicInterpolationImpl_t : public CoefficientHolder_t<T>,
                         ((2.0 * dx_[0] + dx_[1]) * S_[0] - dx_[0] * S_[1]) /
                         (dx_[0] + dx_[1]);
                     tmp_[this->n_ - 1] =
-                        ((2.0 * dx_[this->n_ - 2] + dx_[this->n_ - 3]) * S_[this->n_ - 2] -
+                        ((2.0 * dx_[this->n_ - 2] + dx_[this->n_ - 3]) *
+                             S_[this->n_ - 2] -
                          dx_[this->n_ - 2] * S_[this->n_ - 3]) /
                         (dx_[this->n_ - 2] + dx_[this->n_ - 3]);
                     break;
                 case CubicInterpolation_t<T>::Akima:
                     tmp_[0] = (QLFCT::abs(S_[1] - S_[0]) * 2 * S_[0] * S_[1] +
                                QLFCT::abs(2 * S_[0] * S_[1] -
-                                        4 * S_[0] * S_[0] * S_[1]) *
+                                          4 * S_[0] * S_[0] * S_[1]) *
                                    S_[0]) /
                               (QLFCT::abs(S_[1] - S_[0]) +
                                QLFCT::abs(2 * S_[0] * S_[1] -
-                                        4 * S_[0] * S_[0] * S_[1]));
+                                          4 * S_[0] * S_[0] * S_[1]));
                     tmp_[1] = (QLFCT::abs(S_[2] - S_[1]) * S_[0] +
                                QLFCT::abs(S_[0] - 2 * S_[0] * S_[1]) * S_[1]) /
                               (QLFCT::abs(S_[2] - S_[1]) +
@@ -615,19 +628,24 @@ class CubicInterpolationImpl_t : public CoefficientHolder_t<T>,
                                  QLFCT::abs(S_[i - 1] - S_[i - 2]));
                     }
                     tmp_[this->n_ - 2] =
-                        (QLFCT::abs(2 * S_[this->n_ - 2] * S_[this->n_ - 3] - S_[this->n_ - 2]) *
+                        (QLFCT::abs(2 * S_[this->n_ - 2] * S_[this->n_ - 3] -
+                                    S_[this->n_ - 2]) *
                              S_[this->n_ - 3] +
-                         QLFCT::abs(S_[this->n_ - 3] - S_[this->n_ - 4]) * S_[this->n_ - 2]) /
-                        (QLFCT::abs(2 * S_[this->n_ - 2] * S_[this->n_ - 3] - S_[this->n_ - 2]) +
+                         QLFCT::abs(S_[this->n_ - 3] - S_[this->n_ - 4]) *
+                             S_[this->n_ - 2]) /
+                        (QLFCT::abs(2 * S_[this->n_ - 2] * S_[this->n_ - 3] -
+                                    S_[this->n_ - 2]) +
                          QLFCT::abs(S_[this->n_ - 3] - S_[this->n_ - 4]));
                     tmp_[this->n_ - 1] =
-                        (QLFCT::abs(4 * S_[this->n_ - 2] * S_[this->n_ - 2] * S_[this->n_ - 3] -
-                                  2 * S_[this->n_ - 2] * S_[this->n_ - 3]) *
+                        (QLFCT::abs(4 * S_[this->n_ - 2] * S_[this->n_ - 2] *
+                                        S_[this->n_ - 3] -
+                                    2 * S_[this->n_ - 2] * S_[this->n_ - 3]) *
                              S_[this->n_ - 2] +
-                         QLFCT::abs(S_[this->n_ - 2] - S_[this->n_ - 3]) * 2 * S_[this->n_ - 2] *
-                             S_[this->n_ - 3]) /
-                        (QLFCT::abs(4 * S_[this->n_ - 2] * S_[this->n_ - 2] * S_[this->n_ - 3] -
-                                  2 * S_[this->n_ - 2] * S_[this->n_ - 3]) +
+                         QLFCT::abs(S_[this->n_ - 2] - S_[this->n_ - 3]) * 2 *
+                             S_[this->n_ - 2] * S_[this->n_ - 3]) /
+                        (QLFCT::abs(4 * S_[this->n_ - 2] * S_[this->n_ - 2] *
+                                        S_[this->n_ - 3] -
+                                    2 * S_[this->n_ - 2] * S_[this->n_ - 3]) +
                          QLFCT::abs(S_[this->n_ - 2] - S_[this->n_ - 3]));
                     break;
                 case CubicInterpolation_t<T>::Kruger:
@@ -644,7 +662,8 @@ class CubicInterpolationImpl_t : public CoefficientHolder_t<T>,
                     }
                     // end points
                     tmp_[0] = (3.0 * S_[0] - tmp_[1]) / 2.0;
-                    tmp_[this->n_ - 1] = (3.0 * S_[this->n_ - 2] - tmp_[this->n_ - 2]) / 2.0;
+                    tmp_[this->n_ - 1] =
+                        (3.0 * S_[this->n_ - 2] - tmp_[this->n_ - 2]) / 2.0;
                     break;
                 default:
                     QL_FAIL("unknown scheme");
@@ -673,9 +692,10 @@ class CubicInterpolationImpl_t : public CoefficientHolder_t<T>,
                     }
                 } else if (i == this->n_ - 1) {
                     if (tmp_[i] * S_[this->n_ - 2] > 0.0) {
-                        correction = tmp_[i] / QLFCT::abs(tmp_[i]) *
-                                     std::min<T>(QLFCT::abs(tmp_[i]),
-                                                 QLFCT::abs(3.0 * S_[this->n_ - 2]));
+                        correction =
+                            tmp_[i] / QLFCT::abs(tmp_[i]) *
+                            std::min<T>(QLFCT::abs(tmp_[i]),
+                                        QLFCT::abs(3.0 * S_[this->n_ - 2]));
                     } else {
                         correction = 0.0;
                     }
@@ -734,7 +754,8 @@ class CubicInterpolationImpl_t : public CoefficientHolder_t<T>,
         for (Size i = 0; i < this->n_ - 1; ++i) {
             this->a_[i] = tmp_[i];
             this->b_[i] = (3.0 * S_[i] - tmp_[i + 1] - 2.0 * tmp_[i]) / dx_[i];
-            this->c_[i] = (tmp_[i + 1] + tmp_[i] - 2.0 * S_[i]) / (dx_[i] * dx_[i]);
+            this->c_[i] =
+                (tmp_[i + 1] + tmp_[i] - 2.0 * S_[i]) / (dx_[i] * dx_[i]);
         }
 
         this->primitiveConst_[0] = 0.0;
@@ -752,7 +773,8 @@ class CubicInterpolationImpl_t : public CoefficientHolder_t<T>,
     T value(T x) const {
         Size j = this->locate(x);
         T dx_ = x - this->xBegin_[j];
-        return this->yBegin_[j] + dx_ * (this->a_[j] + dx_ * (this->b_[j] + dx_ * this->c_[j]));
+        return this->yBegin_[j] +
+               dx_ * (this->a_[j] + dx_ * (this->b_[j] + dx_ * this->c_[j]));
     }
     T primitive(T x) const {
         Size j = this->locate(x);
@@ -760,12 +782,14 @@ class CubicInterpolationImpl_t : public CoefficientHolder_t<T>,
         return this->primitiveConst_[j] +
                dx_ * (this->yBegin_[j] +
                       dx_ * (this->a_[j] / 2.0 +
-                             dx_ * (this->b_[j] / 3.0 + dx_ * this->c_[j] / 4.0)));
+                             dx_ * (this->b_[j] / 3.0 +
+                                    dx_ * this->c_[j] / 4.0)));
     }
     T derivative(T x) const {
         Size j = this->locate(x);
         T dx_ = x - this->xBegin_[j];
-        return this->a_[j] + (2.0 * this->b_[j] + 3.0 * this->c_[j] * dx_) * dx_;
+        return this->a_[j] +
+               (2.0 * this->b_[j] + 3.0 * this->c_[j] * dx_) * dx_;
     }
     T secondDerivative(T x) const {
         Size j = this->locate(x);
@@ -780,7 +804,7 @@ class CubicInterpolationImpl_t : public CoefficientHolder_t<T>,
     T leftValue_, rightValue_;
     mutable Array_t<T> tmp_;
     mutable std::vector<T> dx_, S_;
-    mutable TridiagonalOperator L_;
+    mutable TridiagonalOperator_t<T> L_;
 
     inline T cubicInterpolatingPolynomialDerivative(T a, T b, T c, T d, T u,
                                                     T v, T w, T z, T x) const {

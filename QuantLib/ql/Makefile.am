@@ -59,7 +59,6 @@ this_include_HEADERS = \
 
 libQuantLib_la_SOURCES = \
     currency.cpp \
-	discretizedasset.cpp \
 	errors.cpp \
 	event.cpp \
 	exchangerate.cpp \

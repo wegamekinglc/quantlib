@@ -35,8 +35,7 @@ this_include_HEADERS = \
 
 libFiniteDifferences_la_SOURCES = \
     boundarycondition.cpp \
-    bsmoperator.cpp \
-    tridiagonaloperator.cpp
+    bsmoperator.cpp
 
 libFiniteDifferences_la_LIBADD = \
     meshers/libFdmMeshers.la \

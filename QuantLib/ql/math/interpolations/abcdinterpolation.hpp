@@ -33,8 +33,10 @@
 
 namespace QuantLib {
 
-class EndCriteria;
-class OptimizationMethod;
+template <class> class EndCriteria_t;
+typedef EndCriteria_t<Real> EndCriteria;
+template <class> class OptimizationMethod_t;
+typedef OptimizationMethod_t<Real> OptimizationMethod;
 
 namespace detail {
 

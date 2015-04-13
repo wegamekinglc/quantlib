@@ -216,10 +216,6 @@ namespace QuantLib {
         return asw_->fairSpread();
     }
 
-    namespace {
-        void no_deletion(DefaultProbabilityTermStructure*) {}
-    }
-
     void AssetSwapHelper::setTermStructure(
                                         DefaultProbabilityTermStructure* ts) {
         DefaultProbabilityHelper::setTermStructure(ts);

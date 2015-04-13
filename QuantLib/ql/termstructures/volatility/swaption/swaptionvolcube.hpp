@@ -41,13 +41,13 @@ template <class T>
 class SwaptionVolatilityCube_t : public SwaptionVolatilityDiscrete_t<T> {
   public:
     SwaptionVolatilityCube_t(
-        const Handle<SwaptionVolatilityStructure> &atmVolStructure,
+        const Handle<SwaptionVolatilityStructure_t<T> > &atmVolStructure,
         const std::vector<Period> &optionTenors,
         const std::vector<Period> &swapTenors,
         const std::vector<T> &strikeSpreads,
         const std::vector<std::vector<Handle<Quote_t<T> > > > &volSpreads,
-        const boost::shared_ptr<SwapIndex> &swapIndexBase,
-        const boost::shared_ptr<SwapIndex> &shortSwapIndexBase,
+        const boost::shared_ptr<SwapIndex_t<T> > &swapIndexBase,
+        const boost::shared_ptr<SwapIndex_t<T> > &shortSwapIndexBase,
         bool vegaWeightedSmileFit);
     //! \name TermStructure interface
     //@{
@@ -79,13 +79,13 @@ class SwaptionVolatilityCube_t : public SwaptionVolatilityDiscrete_t<T> {
     T volatilityImpl(Time optionTime, Time swapLength, T strike) const;
     T volatilityImpl(const Date &optionDate, const Period &swapTenor,
                      T strike) const;
-    Handle<SwaptionVolatilityStructure> atmVol_;
+    Handle<SwaptionVolatilityStructure_t<T> > atmVol_;
     Size nStrikes_;
     std::vector<T> strikeSpreads_;
     mutable std::vector<T> localStrikes_;
     mutable std::vector<T> localSmile_;
     std::vector<std::vector<Handle<Quote_t<T> > > > volSpreads_;
-    boost::shared_ptr<SwapIndex> swapIndexBase_, shortSwapIndexBase_;
+    boost::shared_ptr<SwapIndex_t<T> > swapIndexBase_, shortSwapIndexBase_;
     bool vegaWeightedSmileFit_;
 };
 
@@ -111,14 +111,14 @@ inline T SwaptionVolatilityCube_t<T>::volatilityImpl(const Date &optionDate,
 
 template <class T>
 SwaptionVolatilityCube_t<T>::SwaptionVolatilityCube_t(
-    const Handle<SwaptionVolatilityStructure> &atmVol,
+    const Handle<SwaptionVolatilityStructure_t<T> > &atmVol,
     const std::vector<Period> &optionTenors,
     const std::vector<Period> &swapTenors, const std::vector<T> &strikeSpreads,
     const std::vector<std::vector<Handle<Quote_t<T> > > > &volSpreads,
-    const boost::shared_ptr<SwapIndex> &swapIndexBase,
-    const boost::shared_ptr<SwapIndex> &shortSwapIndexBase,
+    const boost::shared_ptr<SwapIndex_t<T> > &swapIndexBase,
+    const boost::shared_ptr<SwapIndex_t<T> > &shortSwapIndexBase,
     bool vegaWeightedSmileFit)
-    : SwaptionVolatilityDiscrete(
+    : SwaptionVolatilityDiscrete_t<T>(
           optionTenors, swapTenors, 0, atmVol->calendar(),
           atmVol->businessDayConvention(), atmVol->dayCounter()),
       atmVol_(atmVol), nStrikes_(strikeSpreads.size()),
@@ -128,7 +128,9 @@ SwaptionVolatilityCube_t<T>::SwaptionVolatilityCube_t(
       vegaWeightedSmileFit_(vegaWeightedSmileFit) {
     QL_REQUIRE(!atmVol.empty(), "atm vol handle not linked to anything");
 
-    QL_REQUIRE(nStrikes_ > 1, "too few strikes (" << nStrikes_ << ")");
+    QL_REQUIRE(nStrikes_ >= 1, "too few strikes ("
+                                   << nStrikes_
+                                   << ")"); // quick fix (merge master !)
     for (Size i = 1; i < nStrikes_; ++i)
         QL_REQUIRE(strikeSpreads_[i - 1] < strikeSpreads_[i],
                    "non increasing strike spreads: "
@@ -140,8 +142,8 @@ SwaptionVolatilityCube_t<T>::SwaptionVolatilityCube_t(
 
     QL_REQUIRE(this->nOptionTenors_ * this->nSwapTenors_ == volSpreads_.size(),
                "mismatch between number of option tenors * swap tenors ("
-                   << this->nOptionTenors_ * this->nSwapTenors_ << ") and number of rows ("
-                   << volSpreads_.size() << ")");
+                   << this->nOptionTenors_ * this->nSwapTenors_
+                   << ") and number of rows (" << volSpreads_.size() << ")");
 
     for (Size i = 0; i < volSpreads_.size(); i++)
         QL_REQUIRE(this->nStrikes_ == this->volSpreads_[i].size(),
@@ -181,47 +183,50 @@ T SwaptionVolatilityCube_t<T>::atmStrike(const Date &optionD,
     // FIXME use a familyName-based index factory
     if (swapTenor > shortSwapIndexBase_->tenor()) {
         if (swapIndexBase_->exogenousDiscount()) {
-            return SwapIndex(swapIndexBase_->familyName(), swapTenor,
-                             swapIndexBase_->fixingDays(),
-                             swapIndexBase_->currency(),
-                             swapIndexBase_->fixingCalendar(),
-                             swapIndexBase_->fixedLegTenor(),
-                             swapIndexBase_->fixedLegConvention(),
-                             swapIndexBase_->dayCounter(),
-                             swapIndexBase_->iborIndex(),
-                             swapIndexBase_->discountingTermStructure())
+            return SwapIndex_t<T>(swapIndexBase_->familyName(), swapTenor,
+                                  swapIndexBase_->fixingDays(),
+                                  swapIndexBase_->currency(),
+                                  swapIndexBase_->fixingCalendar(),
+                                  swapIndexBase_->fixedLegTenor(),
+                                  swapIndexBase_->fixedLegConvention(),
+                                  swapIndexBase_->dayCounter(),
+                                  swapIndexBase_->iborIndex(),
+                                  swapIndexBase_->discountingTermStructure())
                 .fixing(optionD);
         } else {
-            return SwapIndex(swapIndexBase_->familyName(), swapTenor,
-                             swapIndexBase_->fixingDays(),
-                             swapIndexBase_->currency(),
-                             swapIndexBase_->fixingCalendar(),
-                             swapIndexBase_->fixedLegTenor(),
-                             swapIndexBase_->fixedLegConvention(),
-                             swapIndexBase_->dayCounter(),
-                             swapIndexBase_->iborIndex()).fixing(optionD);
+            return SwapIndex_t<T>(swapIndexBase_->familyName(), swapTenor,
+                                  swapIndexBase_->fixingDays(),
+                                  swapIndexBase_->currency(),
+                                  swapIndexBase_->fixingCalendar(),
+                                  swapIndexBase_->fixedLegTenor(),
+                                  swapIndexBase_->fixedLegConvention(),
+                                  swapIndexBase_->dayCounter(),
+                                  swapIndexBase_->iborIndex())
+                .fixing(optionD);
         }
     } else {
         if (shortSwapIndexBase_->exogenousDiscount()) {
-            return SwapIndex(shortSwapIndexBase_->familyName(), swapTenor,
-                             shortSwapIndexBase_->fixingDays(),
-                             shortSwapIndexBase_->currency(),
-                             shortSwapIndexBase_->fixingCalendar(),
-                             shortSwapIndexBase_->fixedLegTenor(),
-                             shortSwapIndexBase_->fixedLegConvention(),
-                             shortSwapIndexBase_->dayCounter(),
-                             shortSwapIndexBase_->iborIndex(),
-                             shortSwapIndexBase_->discountingTermStructure())
+            return SwapIndex_t<T>(
+                       shortSwapIndexBase_->familyName(), swapTenor,
+                       shortSwapIndexBase_->fixingDays(),
+                       shortSwapIndexBase_->currency(),
+                       shortSwapIndexBase_->fixingCalendar(),
+                       shortSwapIndexBase_->fixedLegTenor(),
+                       shortSwapIndexBase_->fixedLegConvention(),
+                       shortSwapIndexBase_->dayCounter(),
+                       shortSwapIndexBase_->iborIndex(),
+                       shortSwapIndexBase_->discountingTermStructure())
                 .fixing(optionD);
         } else {
-            return SwapIndex(shortSwapIndexBase_->familyName(), swapTenor,
-                             shortSwapIndexBase_->fixingDays(),
-                             shortSwapIndexBase_->currency(),
-                             shortSwapIndexBase_->fixingCalendar(),
-                             shortSwapIndexBase_->fixedLegTenor(),
-                             shortSwapIndexBase_->fixedLegConvention(),
-                             shortSwapIndexBase_->dayCounter(),
-                             shortSwapIndexBase_->iborIndex()).fixing(optionD);
+            return SwapIndex_t<T>(shortSwapIndexBase_->familyName(), swapTenor,
+                                  shortSwapIndexBase_->fixingDays(),
+                                  shortSwapIndexBase_->currency(),
+                                  shortSwapIndexBase_->fixingCalendar(),
+                                  shortSwapIndexBase_->fixedLegTenor(),
+                                  shortSwapIndexBase_->fixedLegConvention(),
+                                  shortSwapIndexBase_->dayCounter(),
+                                  shortSwapIndexBase_->iborIndex())
+                .fixing(optionD);
         }
     }
 }

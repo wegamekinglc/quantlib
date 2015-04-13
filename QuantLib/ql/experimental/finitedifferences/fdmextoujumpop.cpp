@@ -187,7 +187,9 @@ namespace QuantLib {
 
         for (FdmBoundaryConditionSet::const_iterator iter=bcSet_.begin();
             iter < bcSet_.end(); ++iter) {
-            valueOfDerivative=(*iter)->applyAfterApplying(y, valueOfDerivative);
+            //Klaus to check
+            //valueOfDerivative=(*iter)->applyAfterApplying(y, valueOfDerivative);
+            QL_FAIL("compile error fdmextoujumpop.cpp L190, Klaus to check");
         }
 
         return std::exp(-u)*valueOfDerivative;

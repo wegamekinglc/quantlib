@@ -27,7 +27,6 @@ libMatrixUtilities_la_SOURCES = \
 	pseudosqrt.cpp \
 	qrdecomposition.cpp \
 	sparseilupreconditioner.cpp \
-	svd.cpp \
 	symmetricschurdecomposition.cpp \
 	tapcorrelations.cpp \
 	tqreigendecomposition.cpp
