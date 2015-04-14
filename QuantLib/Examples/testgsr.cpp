@@ -201,18 +201,18 @@ int main() {
     std::vector<Date> stepDates(exerciseDates.begin(), exerciseDates.end() - 1);
 
     // standard sigmas
-    // std::vector<dbl> sigmas(stepDates.size() + 1, 0.01);
+    std::vector<dbl> sigmas(stepDates.size() + 1, 0.01);
 
     // sigmas calibrated
-    std::vector<dbl> sigmas;
+    // std::vector<dbl> sigmas;
     // strike 5 percent
     // sigmas += 0.0048487, 0.00486706, 0.00489049, 0.00487795, 0.00492656,
     //     0.00490272, 0.00493519, 0.00492715, 0.0049653;
     // strike atm
-    sigmas += 0.00372794749994, 0.00374715655346, 0.00374209625552,
-        0.0037592713444, 0.00379849214083, 0.00375681533587,
-        0.00377164551162,
-        0.00378151210676, 0.00385943120977;
+    // sigmas += 0.00372794749994, 0.00374715655346, 0.00374209625552,
+    //     0.0037592713444, 0.00379849214083, 0.00375681533587,
+    //     0.00377164551162,
+    //     0.00378151210676, 0.00385943120977;
     // pertube sigmas, so to get sensis
     // for (Size i = 0; i < sigmas.size(); ++i)
     //     sigmas[i] *= 1+1E-6;
@@ -223,7 +223,7 @@ int main() {
 
     // Compute Sensis to sigmas
 
-    CppAD::Independent(sigmasAD);
+    // CppAD::Independent(sigmasAD);
 
     boost::shared_ptr<Gsr_t<dbl> > gsr =
         boost::make_shared<Gsr_t<dbl> >(yts6m_h, stepDates, sigmas, reversion);
@@ -249,7 +249,7 @@ int main() {
         inputVolAD[i - 1] = inputVol[i - 1];
     }
 
-    // CppAD::Independent(inputVolAD);
+    CppAD::Independent(inputVolAD);
 
     for (Size i = 1; i < 10; ++i) {
         Period swapLength = (10 - i) * Years;
@@ -281,13 +281,13 @@ int main() {
     EndCriteria_t<dblAD> ecAD(1000, 10, 1E-8, 1E-8, 1E-8);
 
     timer.start();
-    // gsr->calibrateVolatilitiesIterative(basket, method, ec);
+    gsr->calibrateVolatilitiesIterative(basket, method, ec);
     timer.stop();
     std::cout << "dbl model calibration timing = " << timer.elapsed()
               << std::endl;
 
     timer.start();
-    // gsrAD->calibrateVolatilitiesIterative(basketAD, methodAD, ecAD);
+    gsrAD->calibrateVolatilitiesIterative(basketAD, methodAD, ecAD);
     timer.stop();
     std::cout << "AD model calibration timing = " << timer.elapsed()
               << std::endl;
@@ -375,8 +375,8 @@ int main() {
     std::cout << "AD pricing =" << timer.elapsed() << std::endl;
 
     timer.start();
-    // CppAD::ADFun<Real> f(inputVolAD, yAD);
-    CppAD::ADFun<Real> f(sigmasAD, yAD);
+    CppAD::ADFun<Real> f(inputVolAD, yAD);
+    // CppAD::ADFun<Real> f(sigmasAD, yAD);
     std::vector<Real> vega(sigmasAD.size()), w(1, 1.0);
     vega = f.Reverse(1, w);
     timer.stop();
