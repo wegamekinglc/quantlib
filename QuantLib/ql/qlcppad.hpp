@@ -51,6 +51,7 @@ using CppAD::sin; using CppAD::cos; using CppAD::tan;
 using CppAD::sinh; using CppAD::cosh; using CppAD::tanh;
 using CppAD::asin; using CppAD::acos; using CppAD::atan;
 // using CppAD::asinh; using CppAD::acosh; using CppAD::atanh; // not yet in cppad
+using CppAD::erf;
 using CppAD::CondExpLt; using CppAD::CondExpLe;
 using CppAD::CondExpGt; using CppAD::CondExpGe;
 using CppAD::CondExpEq;

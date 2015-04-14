@@ -171,7 +171,8 @@ namespace QLFCT {
     using std::sin; using std::cos; using std::tan;
     using std::asin; using std::acos; using std::atan;
     using std::sinh; using std::cosh; using std::tanh;
-    using std::asinh; using std::acosh; using std::atanh; // not yet in cppad
+    using std::asinh; using std::acosh; using std::atanh; // not yet in cppad, c++11
+    using std::erf; // c++11
 	template<class T> const T CondExpLt(const T& x, const T& y, const T& a, const T& b) { return x < y ? a : b; }
 	template<class T> const T CondExpLe(const T& x, const T& y, const T& a, const T& b) { return x <= y ? a : b; }
 	template<class T> const T CondExpGt(const T& x, const T& y, const T& a, const T& b) { return x > y ? a : b; }
