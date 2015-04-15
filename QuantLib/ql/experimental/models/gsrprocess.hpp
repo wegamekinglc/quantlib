@@ -22,8 +22,7 @@
            the dynamic is expressed in some T-forward measure.
            You may provide a single value for the mean reversion, then
            it is assumed to be constant. For many grid points (like 20 and
-   above)
-           evaluation may get slow. A caching is therefore provided.
+           above) evaluation may get slow. A caching is therefore provided.
            By that the results become inconsistent as soon as the parameters
            change. In that case flushCache() must be called. To ensure correct
            calibration this is done in the generateArguments() of the GSR model
@@ -93,7 +92,8 @@ typedef GsrProcess_t<Real> GsrProcess;
 // implementation
 
 template <class T>
-GsrProcess_t<T>::GsrProcess_t(const Array_t<Time> &times, const Array_t<T> &vols,
+GsrProcess_t<T>::GsrProcess_t(const Array_t<Time> &times,
+                              const Array_t<T> &vols,
                               const Array_t<T> &reversions, const Time T0)
     : ForwardMeasureProcess1D_t<T>(T0), times_(times), vols_(vols),
       reversions_(reversions), revZero_(reversions.size(), false) {

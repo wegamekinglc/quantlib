@@ -703,7 +703,7 @@ template <class T> Disposable<Matrix_t<T> > inverse(const Matrix_t<T> &m) {
 
     std::copy(m.begin(), m.end(), a.data().begin());
 
-    boost::numeric::ublas::permutation_matrix<T> pert(m.rows());
+    boost::numeric::ublas::permutation_matrix<Size> pert(m.rows());
 
     // lu decomposition
     const Size singular = lu_factorize(a, pert);
