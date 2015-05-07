@@ -1,7 +1,7 @@
 /* -*- mode: c++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*- */
 
 /*
- Copyright (C) 2008, 2014 Ferdinando Ametrano
+ Copyright (C) 2015 Peter Caspers
 
  This file is part of QuantLib, a free-software/open-source library
  for financial quantitative analysts and developers - http://quantlib.org/
@@ -17,28 +17,21 @@
  FOR A PARTICULAR PURPOSE.  See the license for more details.
 */
 
-#include <ql/quotes/lastfixingquote.hpp>
-#include <ql/settings.hpp>
+#include <ql/experimental/fx/proxyfxtarfengine.hpp>
+
+#include <iostream>
 
 namespace QuantLib {
 
-    LastFixingQuote::LastFixingQuote(const boost::shared_ptr<Index>& index)
-    : index_(index) {
-        registerWith(index_);
-    }
-
-    Real LastFixingQuote::value() const {
-        QL_ENSURE(isValid(),
-                  index_->name() << " has no fixing");
-        return index_->fixing(referenceDate());
-    }
-
-    bool LastFixingQuote::isValid() const {
-        return !index_->timeSeries().empty();
-    }
-
-    Date LastFixingQuote::referenceDate() const {
-        return std::min<Date>(index_->timeSeries().lastDate(),
-                              Settings::instance().evaluationDate());
-    }
+void ProxyFxTarfEngine::calculate() const {
+    // stub only
+    results_.value = exchangeRate_->value();
+    // debug results
+    std::cout << "ProxyEngine: evalDate = " << Settings::instance().evaluationDate() << "\n";
+    std::cout << "             FX rate  = " << exchangeRate_->value() << "\n";
+    std::cout << "             acc      = " << arguments_.accumulatedAmount << "\n";
+    std::cout << "             mat      = " << arguments_.schedule.dates().back() << "\n";
+    return;
 }
+
+} // namespace QuantLib
