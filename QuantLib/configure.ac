@@ -307,7 +307,6 @@ AC_CONFIG_FILES([
     ql/experimental/convertiblebonds/Makefile
     ql/experimental/coupons/Makefile
     ql/experimental/credit/Makefile
-    ql/experimental/exercise/Makefile
     ql/experimental/exoticoptions/Makefile
     ql/experimental/finitedifferences/Makefile
     ql/experimental/fx/Makefile
@@ -335,9 +334,10 @@ AC_CONFIG_FILES([
     ql/math/Makefile
     ql/math/copulas/Makefile
     ql/math/distributions/Makefile
-    ql/math/matrixutilities/Makefile
     ql/math/integrals/Makefile
     ql/math/interpolations/Makefile
+    ql/math/matrixutilities/Makefile
+    ql/math/ode/Makefile
     ql/math/optimization/Makefile
     ql/math/randomnumbers/Makefile
     ql/math/solvers1d/Makefile
