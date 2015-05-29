@@ -6,6 +6,8 @@ this_include_HEADERS = \
     all.hpp \
     adjusterhelper.hpp \
     betaeta.hpp \
+    betaetacore.hpp \
+    betaetaswaptionengine.hpp \
     mcgaussian1dnonstandardswaptionengine.hpp \
     quadraticlfm.hpp \
     sbsmilesection.hpp \
@@ -14,6 +16,8 @@ this_include_HEADERS = \
 libModels_la_SOURCES = \
     adjusterhelper.cpp \
     betaeta.cpp \
+    betaetacore.cpp \
+    betaetaswaptionengine.cpp \
     mcgaussian1dnonstandardswaptionengine.cpp \
     quadraticlfm.cpp \
     sbsmilesection.cpp \

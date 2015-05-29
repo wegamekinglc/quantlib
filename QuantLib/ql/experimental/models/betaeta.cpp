@@ -18,123 +18,313 @@
 */
 
 #include <ql/experimental/models/betaeta.hpp>
-#include <ql/errors.hpp>
-#include <ql/math/modifiedbessel.hpp>
+#include <ql/quotes/simplequote.hpp>
+#include <ql/time/schedule.hpp>
 
-#include <boost/math/special_functions/gamma.hpp>
+#include <boost/make_shared.hpp>
 
 namespace QuantLib {
 
-BetaEta::BetaEta(const std::vector<Real> &times, const std::vector<Real> &alpha,
-                 const std::vector<Real> &lambda, const Real &beta,
-                 const Real &eta)
-    : times_(times), alpha_(alpha), lambda_(lambda), beta_(beta), eta_(eta) {
-    QL_REQUIRE(beta > 0.0, "beta (" << beta << ") must be positive");
-    QL_REQUIRE(eta > 0.0 && eta <= 1.0, " eta (" << eta
-                                                 << ") must be in (0,1]");
-    QL_REQUIRE(alpha.size() == times.size() + 1,
-               "alpha size (" << alpha.size()
-                              << ") must be equal to times size ("
-                              << times.size() << ") plus one");
-    QL_REQUIRE(lambda.size() == times.size() + 1,
-               "lambda size (" << lambda.size()
-                               << ") must be equal to times size ("
-                               << times.size() << ") plus one");
-    for (Size i = 0; i < times.size(); ++i) {
-        QL_REQUIRE(times[i] > 0.0, "time #" << i << " (" << times[i]
-                                            << ") must be positive");
-        if (i < times.size() - 1) {
-            QL_REQUIRE(times[i] < times[i + 1],
-                       "times must be strictly increasing, #"
-                           << i << " and #" << (i + 1) << " are " << times[i]
-                           << " and " << times[i + 1] << " respectively");
-        }
+BetaEta::BetaEta(const Handle<YieldTermStructure> &termStructure,
+                 const std::vector<Date> &volstepdates,
+                 const std::vector<Real> &volatilities, const Real reversion,
+                 const Real beta, const Real eta)
+    : TermStructureConsistentModel(termStructure), CalibratedModel(4),
+      reversion_(arguments_[0]), sigma_(arguments_[1]), pBeta_(arguments_[2]),
+      pEta_(arguments_[3]), volstepdates_(volstepdates) {
+    QL_REQUIRE(!termStructure.empty(),
+               "no yield term structure given (empty handle)");
+    volatilities_.resize(volatilities.size());
+    for (Size i = 0; i < volatilities.size(); ++i)
+        volatilities_[i] =
+            Handle<Quote>(boost::make_shared<SimpleQuote>(volatilities[i]));
+    reversions_.resize(1);
+    reversions_[0] = Handle<Quote>(boost::make_shared<SimpleQuote>(reversion));
+    beta_ = Handle<Quote>(boost::make_shared<SimpleQuote>(beta));
+    eta_ = Handle<Quote>(boost::make_shared<SimpleQuote>(eta));
+    initialize();
+}
+
+BetaEta::BetaEta(const Handle<YieldTermStructure> &termStructure,
+                 const std::vector<Date> &volstepdates,
+                 const std::vector<Real> &volatilities,
+                 const std::vector<Real> &reversions, const Real beta,
+                 const Real eta)
+    : TermStructureConsistentModel(termStructure), CalibratedModel(4),
+      reversion_(arguments_[0]), sigma_(arguments_[1]), pBeta_(arguments_[2]),
+      pEta_(arguments_[3]), volstepdates_(volstepdates) {
+    QL_REQUIRE(!termStructure.empty(),
+               "no yield term structure given (empty handle)");
+    volatilities_.resize(volatilities.size());
+    for (Size i = 0; i < volatilities.size(); ++i)
+        volatilities_[i] =
+            Handle<Quote>(boost::make_shared<SimpleQuote>(volatilities[i]));
+    reversions_.resize(reversions_.size());
+    for (Size i = 0; i < reversions_.size(); ++i)
+        reversions_[i] =
+            Handle<Quote>(boost::make_shared<SimpleQuote>(volatilities[i]));
+    beta_ = Handle<Quote>(boost::make_shared<SimpleQuote>(beta));
+    eta_ = Handle<Quote>(boost::make_shared<SimpleQuote>(eta));
+    initialize();
+}
+
+BetaEta::BetaEta(const Handle<YieldTermStructure> &termStructure,
+                 const std::vector<Date> &volstepdates,
+                 const std::vector<Handle<Quote> > &volatilities,
+                 const Handle<Quote> reversion, const Handle<Quote> beta,
+                 const Handle<Quote> eta)
+    : TermStructureConsistentModel(termStructure), CalibratedModel(4),
+      reversion_(arguments_[0]), sigma_(arguments_[1]), pBeta_(arguments_[2]),
+      pEta_(arguments_[3]), volatilities_(volatilities),
+      reversions_(std::vector<Handle<Quote> >(1, reversion)),
+      volstepdates_(volstepdates) {
+
+    QL_REQUIRE(!termStructure.empty(),
+               "no yield term structure given (empty handle)");
+    initialize();
+}
+
+BetaEta::BetaEta(const Handle<YieldTermStructure> &termStructure,
+                 const std::vector<Date> &volstepdates,
+                 const std::vector<Handle<Quote> > &volatilities,
+                 const std::vector<Handle<Quote> > &reversions,
+                 const Handle<Quote> beta, const Handle<Quote> eta)
+    : TermStructureConsistentModel(termStructure), CalibratedModel(4),
+      reversion_(arguments_[0]), sigma_(arguments_[1]), pBeta_(arguments_[2]),
+      pEta_(arguments_[3]), volatilities_(volatilities),
+      reversions_(reversions), volstepdates_(volstepdates) {
+
+    QL_REQUIRE(!termStructure.empty(),
+               "no yield term structure given (empty handle)");
+    initialize();
+}
+
+void BetaEta::updateTimes() const {
+    volsteptimes_.clear();
+    int j = 0;
+    for (std::vector<Date>::const_iterator i = volstepdates_.begin();
+         i != volstepdates_.end(); ++i, ++j) {
+        volsteptimes_.push_back(termStructure()->timeFromReference(*i));
+        volsteptimesArray_[j] = volsteptimes_[j];
+        if (j == 0)
+            QL_REQUIRE(volsteptimes_[0] > 0.0, "volsteptimes must be positive ("
+                                                   << volsteptimes_[0] << ")");
+        else
+            QL_REQUIRE(volsteptimes_[j] > volsteptimes_[j - 1],
+                       "volsteptimes must be strictly increasing ("
+                           << volsteptimes_[j - 1] << "@" << (j - 1) << ", "
+                           << volsteptimes_[j] << "@" << j << ")");
     }
-    // TODO move the magic constants to some better place
-    integrator_ = boost::shared_ptr<GaussLobattoIntegral>(
-        new GaussLobattoIntegral(100, 1E-8));
-};
+}
 
-class BetaEta::mIntegrand {
-    const BetaEta *model_;
-    const Real t0_, x0_, t_;
-
-  public:
-    mIntegrand(const BetaEta *model, const Real t0, const Real x0, const Real t)
-        : model_(model), t0_(t0), x0_(x0), t_(t) {}
-    Real operator()(Real x) const {
-        return model_->p(t0_, x0_, t_, x) *
-               exp(-model_->lambda(t_) * (x - x0_));
+void BetaEta::updateState() const {
+    for (Size i = 0; i < reversion_.size(); i++) {
+        reversion_.setParam(i, reversions_[i]->value());
     }
-};
+    for (Size i = 0; i < sigma_.size(); i++) {
+        sigma_.setParam(i, volatilities_[i]->value());
+    }
+    pBeta_.setParam(0, beta_->value());
+    pEta_.setParam(0, eta_->value());
+    betaLink_ = beta_->value();
+    etaLink_ = eta_->value();
+}
 
-// TODO, due to (4.11b) M can be tabulated a priori to increase efficiency
-const Real
-BetaEta::M(const Time t0, const Real x0, const Real t) const {
-    // determine a suitable integration domain
-    Real s = std::sqrt(tau(t0, t));
-    // TODO move the magic constants to some better place
-    Real a = x0 - 6.0 * s;
-    Real b = x0 + 6.0 * s;
-    return std::log(integrator_->operator()(mIntegrand(this, t0, x0, t), a, b));
-};
+void BetaEta::initialize() {
+    volsteptimesArray_ = Array(volstepdates_.size());
+    updateTimes();
+    QL_REQUIRE(volatilities_.size() == volsteptimes_.size() + 1,
+               "there must be n+1 volatilities ("
+                   << volatilities_.size() << ") for n volatility step times ("
+                   << volsteptimes_.size() << ")");
+    sigma_ = PiecewiseConstantParameter(volsteptimes_, NoConstraint());
 
-const Real BetaEta::p(const Time t0, const Real x0, const Real t,
-                      const Real x) const {
-    Real nu = 1.0 / (2.0 - 2.0 * eta_);
-    Real y0 = this->y(x0);
-    Real y = this->y(x);
-    Real tau0 = this->tau(t0);
-    Real tau = this->tau(t);
-    if (eta_ < 0.5) {
-        if (close(y, 0.0)) // i.e. x = -1/beta
-            return 0.0;    // TODO is it reasonable to return 0.0 here ?
-        if (x > -1.0 / beta_) {
-            return 0.5 * std::pow(y0 / y, nu) * y / (tau - tau0) *
-                   (modifiedBesselFunction_i_exponentiallyWeighted(
-                        -nu, y0 * y / (tau - tau0)) +
-                    modifiedBesselFunction_i_exponentiallyWeighted(
-                        nu, y0 * y / (tau - tau0))) *
-                   exp(-(y - y0) * (y - y0) / (2.0 * (tau - tau0))) * dydx(y);
-        } else {
-            return std::sin(M_PI * nu) * M_1_PI * std::pow(y0 / y, nu) * y /
-                   (tau - tau0) *
-                   modifiedBesselFunction_k_exponentiallyWeighted(
-                       nu, y0 * y / (tau - tau0)) *
-                   exp(-(y - y0) * (y - y0) / (2.0 * (tau - tau0))) * dydx(y);
-        }
+    QL_REQUIRE(reversions_.size() == 1 ||
+                   reversions_.size() == volsteptimes_.size() + 1,
+               "there must be 1 or n+1 reversions ("
+                   << reversions_.size() << ") for n volatility step times ("
+                   << volsteptimes_.size() << ")");
+    if (reversions_.size() == 1) {
+        reversion_ = ConstantParameter(reversions_[0]->value(), NoConstraint());
     } else {
-        if (close(eta_, 1.0)) {
-            // TODO is it reaonsable to return 0.0 here ?
-            if (x <= -1.0 / beta_ || x0 <= -1.0 / beta_)
-                return 0.0;
-            // if both x and x0 are > -1/beta, y and y0 are well defined
-            return exp(-beta_ * y) / std::sqrt(2.0 * M_PI * (tau - tau0)) *
-                   exp(-(y - y0 + beta_ * (tau - tau0) / 2.0) *
-                       (y - y0 + beta_ * (tau - tau0) / 2.0) /
-                       (2.0 * (tau - tau0)));
-        }
-        // TODO is it reasonable to return 0.0 here ?
-        // if we only exclude x=-1/beta, we get a
-        // bimodal density with integral 2
-        if (x <= -1 / beta_ || x0 <= -1.0 / beta_)
-            return 0.0; // the singularTerm_y_0 contributes to the integral
-        return std::pow(y0 / y, nu) * y / (tau - tau0) *
-               modifiedBesselFunction_i_exponentiallyWeighted(
-                   nu, y0 * y / (tau - tau0)) *
-               exp(-(y - y0) * (y - y0) / (2.0 * (tau - tau0))) * dydx(y);
+        reversion_ = PiecewiseConstantParameter(volsteptimes_, NoConstraint());
     }
-};
 
-const Real BetaEta::singularTerm_y_0(const Time t0, const Real x0,
-                                     const Time t) const {
-    if (eta_ < 0.5 || close(eta_, 1.0))
-        return 0.0;
-    Real nu = 1.0 / (2.0 - 2.0 * eta_);
-    Real y0 = this->y(x0);
-    Real tau0 = this->tau(t0);
-    Real tau = this->tau(t);
-    return boost::math::gamma_q(nu, y0 * y0 / (2.0 * (tau - tau0)));
-};
+    pBeta_ = ConstantParameter(beta_->value(), NoConstraint());
+    pEta_ = ConstantParameter(eta_->value(), NoConstraint());
+    betaLink_ = beta_->value();
+    etaLink_ = eta_->value();
+
+    for (Size i = 0; i < sigma_.size(); i++) {
+        sigma_.setParam(i, volatilities_[i]->value());
+    }
+    for (Size i = 0; i < reversion_.size(); i++) {
+        reversion_.setParam(i, reversions_[i]->value());
+    }
+
+    registerWith(termStructure());
+
+    for (Size i = 0; i < reversions_.size(); ++i)
+        registerWith(reversions_[i]);
+    for (Size i = 0; i < volatilities_.size(); ++i)
+        registerWith(volatilities_[i]);
+
+    registerWith(beta_);
+    registerWith(eta_);
+
+    core_ = boost::make_shared<BetaEtaCore>(volsteptimesArray_, sigma_.params(),
+                                            reversion_.params(), betaLink_,
+                                            etaLink_);
+}
+
+const Real BetaEta::numeraire(const Time t, const Real x,
+                              const Handle<YieldTermStructure> &yts) const {
+    Real d =
+        yts.empty() ? this->termStructure()->discount(t) : yts->discount(t);
+    return d * std::exp(core_->lambda(t) * x + core_->M(0, 0, t));
+}
+
+const Real BetaEta::zerobond(const Time T, const Time t, const Real x,
+                             const Handle<YieldTermStructure> &yts) const {
+
+    Real d = yts.empty()
+                 ? this->termStructure()->discount(T) /
+                       this->termStructure()->discount(t)
+                 : yts->discount(T) / yts->discount(t);
+
+    return d * std::exp(-(core_->lambda(T) - core_->lambda(t)) * x -
+                        (core_->M(0, 0, T) - core_->M(0, 0, t)) +
+                        core_->M(t, x, T));
+}
+
+const Real BetaEta::forwardRate(const Date &fixing, const Date &referenceDate,
+                                const Real x,
+                                boost::shared_ptr<IborIndex> iborIdx) const {
+
+    QL_REQUIRE(iborIdx != NULL, "no ibor index given");
+
+    calculate();
+
+    if (fixing <= (evaluationDate_ + (enforcesTodaysHistoricFixings_ ? 0 : -1)))
+        return iborIdx->fixing(fixing);
+
+    Handle<YieldTermStructure> yts =
+        iborIdx->forwardingTermStructure(); // might be empty, then use
+                                            // model curve
+
+    Date valueDate = iborIdx->valueDate(fixing);
+    Date endDate = iborIdx->fixingCalendar().advance(
+        valueDate, iborIdx->tenor(), iborIdx->businessDayConvention(),
+        iborIdx->endOfMonth());
+    // FIXME Here we should use the calculation date calendar ?
+    Real dcf = iborIdx->dayCounter().yearFraction(valueDate, endDate);
+
+    return (zerobond(valueDate, referenceDate, x, yts) -
+            zerobond(endDate, referenceDate, x, yts)) /
+           (dcf * zerobond(endDate, referenceDate, x, yts));
+}
+
+const Real BetaEta::swapRate(const Date &fixing, const Period &tenor,
+                             const Date &referenceDate, const Real x,
+                             boost::shared_ptr<SwapIndex> swapIdx) const {
+
+    QL_REQUIRE(swapIdx != NULL, "no swap index given");
+
+    calculate();
+
+    if (fixing <= (evaluationDate_ + (enforcesTodaysHistoricFixings_ ? 0 : -1)))
+        return swapIdx->fixing(fixing);
+
+    Handle<YieldTermStructure> ytsf =
+        swapIdx->iborIndex()->forwardingTermStructure();
+    Handle<YieldTermStructure> ytsd =
+        swapIdx->discountingTermStructure(); // either might be empty, then
+                                             // use model curve
+
+    Schedule sched, floatSched;
+
+    boost::shared_ptr<VanillaSwap> underlying =
+        underlyingSwap(swapIdx, fixing, tenor);
+
+    sched = underlying->fixedSchedule();
+
+    boost::shared_ptr<OvernightIndexedSwapIndex> oisIdx =
+        boost::dynamic_pointer_cast<OvernightIndexedSwapIndex>(swapIdx);
+    if (oisIdx != NULL) {
+        floatSched = sched;
+    } else {
+        floatSched = underlying->floatingSchedule();
+    }
+
+    // should be fine for overnightindexed swap indices as well
+    Real annuity = swapAnnuity(fixing, tenor, referenceDate, x, swapIdx);
+    Rate floatleg = 0.0;
+    if (ytsf.empty() && ytsd.empty()) { // simple 100-formula can be used
+                                        // only in one curve setup
+        floatleg =
+            (zerobond(sched.dates().front(), referenceDate, x,
+                      Handle<YieldTermStructure>()) -
+             zerobond(sched.calendar().adjust(sched.dates().back(),
+                                              underlying->paymentConvention()),
+                      referenceDate, x, Handle<YieldTermStructure>()));
+    } else {
+        for (Size i = 1; i < floatSched.size(); i++) {
+            floatleg +=
+                (zerobond(floatSched[i - 1], referenceDate, x, ytsf) /
+                     zerobond(floatSched[i], referenceDate, x, ytsf) -
+                 1.0) *
+                zerobond(floatSched.calendar().adjust(
+                             floatSched[i], underlying->paymentConvention()),
+                         referenceDate, x, ytsd);
+        }
+    }
+    return floatleg / annuity;
+}
+
+const Real BetaEta::swapAnnuity(const Date &fixing, const Period &tenor,
+                                const Date &referenceDate, const Real x,
+                                boost::shared_ptr<SwapIndex> swapIdx) const {
+
+    QL_REQUIRE(swapIdx != NULL, "no swap index given");
+
+    calculate();
+
+    Handle<YieldTermStructure> ytsd =
+        swapIdx->discountingTermStructure(); // might be empty, then use
+                                             // model curve
+
+    boost::shared_ptr<VanillaSwap> underlying =
+        underlyingSwap(swapIdx, fixing, tenor);
+
+    Schedule sched = underlying->fixedSchedule();
+
+    Real annuity = 0.0;
+    for (unsigned int j = 1; j < sched.size(); j++) {
+        annuity += zerobond(sched.calendar().adjust(
+                                sched.date(j), underlying->paymentConvention()),
+                            referenceDate, x, ytsd) *
+                   swapIdx->dayCounter().yearFraction(sched.date(j - 1),
+                                                      sched.date(j));
+    }
+    return annuity;
+}
+
+const Disposable<Array> BetaEta::xGrid(const Real stdDevs, const int gridPoints,
+                                       const Real T, const Real t,
+                                       const Real x) const {
+
+    Array result(2 * gridPoints + 1, 0.0);
+
+    // approximate standard deviation for x
+    Real s = std::sqrt(core_->tau(t, T));
+
+    Real h = stdDevs * s / (static_cast<Real>(gridPoints));
+
+    for (int j = -gridPoints; j <= gridPoints; ++j) {
+        result[j + gridPoints] = x + h * (static_cast<Real>(j));
+    }
+
+    return result;
+}
 
 } // namespace QuantLib
