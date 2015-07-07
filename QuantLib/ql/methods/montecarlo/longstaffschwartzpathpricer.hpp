@@ -2,6 +2,7 @@
 
 /*
  Copyright (C) 2006 Klaus Spanderen
+ Copyright (C) 2015 Peter Caspers
 
  This file is part of QuantLib, a free-software/open-source library
  for financial quantitative analysts and developers - http://quantlib.org/
@@ -69,10 +70,12 @@ namespace QuantLib {
 
         Real operator()(const PathType& path) const;
         virtual void calibrate();
-        const boost::scoped_array<Array>& coefficients() { return coeff_; }
-        const std::vector<boost::function1<Real, StateType> >& basisSystem() { return v_; }
 
       protected:
+        virtual void post_processing(const Size i,
+                                     const std::vector<StateType> &state,
+                                     const std::vector<Real> &price,
+                                     const std::vector<Real> &exercise) {}
         bool  calibrationPhase_;
         const boost::shared_ptr<EarlyExercisePathPricer<PathType> >
             pathPricer_;
@@ -94,7 +97,7 @@ namespace QuantLib {
         const boost::shared_ptr<YieldTermStructure>& termStructure)
     : calibrationPhase_(true),
       pathPricer_(pathPricer),
-      coeff_     (new Array[times.size()-1]),
+      coeff_     (new Array[times.size()-2]),
       dF_        (new DiscountFactor[times.size()-1]),
       v_         (pathPricer_->basisSystem()),
       len_       (times.size()) {
@@ -125,7 +128,7 @@ namespace QuantLib {
 
                 Real continuationValue = 0.0;
                 for (Size l=0; l<v_.size(); ++l) {
-                    continuationValue += coeff_[i][l] * v_[l](regValue);
+                    continuationValue += coeff_[i-1][l] * v_[l](regValue);
                 }
 
                 if (continuationValue < exercise) {
@@ -141,9 +144,16 @@ namespace QuantLib {
     void LongstaffSchwartzPathPricer<PathType>::calibrate() {
         const Size n = paths_.size();
         Array prices(n), exercise(n);
+        std::vector<StateType> p_state(n);
+        std::vector<Real> p_price(n), p_exercise(n);
 
-        for (Size i=0; i<n; ++i)
-            prices[i] = (*pathPricer_)(paths_[i], len_-1);
+        for (Size i=0; i<n; ++i) {
+            p_state[i] = pathPricer_->state(paths_[i],len_-1);
+            prices[i] = p_price[i] = (*pathPricer_)(paths_[i], len_-1);
+            p_exercise[i] = prices[i];
+        }
+
+        post_processing(len_ - 1, p_state, p_price, p_exercise);
 
         std::vector<Real>      y;
         std::vector<StateType> x;
@@ -154,7 +164,6 @@ namespace QuantLib {
             //roll back step
             for (Size j=0; j<n; ++j) {
                 exercise[j]=(*pathPricer_)(paths_[j], i);
-
                 if (exercise[j]>0.0) {
                     x.push_back(pathPricer_->state(paths_[j], i));
                     y.push_back(dF_[i]*prices[j]);
@@ -162,12 +171,12 @@ namespace QuantLib {
             }
 
             if (v_.size() <=  x.size()) {
-                coeff_[i] = GeneralLinearLeastSquares(x, y, v_).coefficients();
+                coeff_[i-1] = GeneralLinearLeastSquares(x, y, v_).coefficients();
             }
             else {
             // if number of itm paths is smaller then the number of
             // calibration functions then early exercise if exerciseValue > 0
-                coeff_[i] = Array(v_.size(), 0.0);
+                coeff_[i-1] = Array(v_.size(), 0.0);
             }
 
             for (Size j=0, k=0; j<n; ++j) {
@@ -175,14 +184,19 @@ namespace QuantLib {
                 if (exercise[j]>0.0) {
                     Real continuationValue = 0.0;
                     for (Size l=0; l<v_.size(); ++l) {
-                        continuationValue += coeff_[i][l] * v_[l](x[k]);
+                        continuationValue += coeff_[i-1][l] * v_[l](x[k]);
                     }
                     if (continuationValue < exercise[j]) {
                         prices[j] = exercise[j];
                     }
                     ++k;
                 }
+                p_state[j] = pathPricer_->state(paths_[j],i);
+                p_price[j] = prices[j];
+                p_exercise[j] = exercise[j];
             }
+
+            post_processing(i, p_state, p_price, p_exercise);
         }
 
         // remove calibration paths and release memory

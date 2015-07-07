@@ -1,7 +1,8 @@
 /* -*- mode: c++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*- */
 
 /*
- Copyright (C) 2015 Peter Caspers, Roland Lichters
+ Copyright (C) 2015 Peter Caspers
+ Copyright (C) 2015 Roland Lichters
 
  This file is part of QuantLib, a free-software/open-source library
  for financial quantitative analysts and developers - http://quantlib.org/
@@ -20,8 +21,13 @@
 #include <ql/experimental/models/betaeta.hpp>
 #include <ql/quotes/simplequote.hpp>
 #include <ql/time/schedule.hpp>
+#include <ql/math/integrals/gausslobattointegral.hpp>
+#include <ql/math/integrals/segmentintegral.hpp>
+#include <ql/math/interpolations/linearinterpolation.hpp>
 
 #include <boost/make_shared.hpp>
+
+#include <iostream>
 
 namespace QuantLib {
 
@@ -34,6 +40,9 @@ BetaEta::BetaEta(const Handle<YieldTermStructure> &termStructure,
       pEta_(arguments_[3]), volstepdates_(volstepdates) {
     QL_REQUIRE(!termStructure.empty(),
                "no yield term structure given (empty handle)");
+    // integrator and fall back
+    integrator_ = boost::make_shared<GaussLobattoIntegral>(100000, 1E-8, 1E-8);
+    integrator2_ = boost::make_shared<SegmentIntegral>(1000);
     volatilities_.resize(volatilities.size());
     for (Size i = 0; i < volatilities.size(); ++i)
         volatilities_[i] =
@@ -59,10 +68,10 @@ BetaEta::BetaEta(const Handle<YieldTermStructure> &termStructure,
     for (Size i = 0; i < volatilities.size(); ++i)
         volatilities_[i] =
             Handle<Quote>(boost::make_shared<SimpleQuote>(volatilities[i]));
-    reversions_.resize(reversions_.size());
+    reversions_.resize(reversions.size());
     for (Size i = 0; i < reversions_.size(); ++i)
         reversions_[i] =
-            Handle<Quote>(boost::make_shared<SimpleQuote>(volatilities[i]));
+            Handle<Quote>(boost::make_shared<SimpleQuote>(reversions[i]));
     beta_ = Handle<Quote>(boost::make_shared<SimpleQuote>(beta));
     eta_ = Handle<Quote>(boost::make_shared<SimpleQuote>(eta));
     initialize();
@@ -117,20 +126,34 @@ void BetaEta::updateTimes() const {
     }
 }
 
-void BetaEta::updateState() const {
+void BetaEta::updateReversion() {
     for (Size i = 0; i < reversion_.size(); i++) {
         reversion_.setParam(i, reversions_[i]->value());
     }
+    update();
+}
+
+void BetaEta::updateVolatility() {
     for (Size i = 0; i < sigma_.size(); i++) {
         sigma_.setParam(i, volatilities_[i]->value());
     }
+    update();
+}
+
+void BetaEta::updateBeta() {
     pBeta_.setParam(0, beta_->value());
-    pEta_.setParam(0, eta_->value());
     betaLink_ = beta_->value();
+    update();
+}
+
+void BetaEta::updateEta() {
+    pEta_.setParam(0, eta_->value());
     etaLink_ = eta_->value();
+    update();
 }
 
 void BetaEta::initialize() {
+    useTabulation(true);
     volsteptimesArray_ = Array(volstepdates_.size());
     updateTimes();
     QL_REQUIRE(volatilities_.size() == volsteptimes_.size() + 1,
@@ -164,13 +187,18 @@ void BetaEta::initialize() {
 
     registerWith(termStructure());
 
-    for (Size i = 0; i < reversions_.size(); ++i)
-        registerWith(reversions_[i]);
-    for (Size i = 0; i < volatilities_.size(); ++i)
-        registerWith(volatilities_[i]);
+    volatilityObserver_ = boost::make_shared<VolatilityObserver>(this);
+    reversionObserver_ = boost::make_shared<ReversionObserver>(this);
+    betaObserver_ = boost::make_shared<BetaObserver>(this);
+    etaObserver_ = boost::make_shared<EtaObserver>(this);
 
-    registerWith(beta_);
-    registerWith(eta_);
+    for (Size i = 0; i < reversions_.size(); ++i)
+        reversionObserver_->registerWith(reversions_[i]);
+    for (Size i = 0; i < volatilities_.size(); ++i)
+        volatilityObserver_->registerWith(volatilities_[i]);
+
+    betaObserver_->registerWith(beta_);
+    etaObserver_->registerWith(eta_);
 
     core_ = boost::make_shared<BetaEtaCore>(volsteptimesArray_, sigma_.params(),
                                             reversion_.params(), betaLink_,
@@ -181,20 +209,23 @@ const Real BetaEta::numeraire(const Time t, const Real x,
                               const Handle<YieldTermStructure> &yts) const {
     Real d =
         yts.empty() ? this->termStructure()->discount(t) : yts->discount(t);
-    return d * std::exp(core_->lambda(t) * x + core_->M(0, 0, t));
+    Real result =
+        std::exp(core_->lambda(t) * x + core_->M(0, 0, t, useTabulation_)) / d;
+    return result;
 }
 
 const Real BetaEta::zerobond(const Time T, const Time t, const Real x,
                              const Handle<YieldTermStructure> &yts) const {
-
     Real d = yts.empty()
                  ? this->termStructure()->discount(T) /
                        this->termStructure()->discount(t)
                  : yts->discount(T) / yts->discount(t);
 
-    return d * std::exp(-(core_->lambda(T) - core_->lambda(t)) * x -
-                        (core_->M(0, 0, T) - core_->M(0, 0, t)) +
-                        core_->M(t, x, T));
+    Real result = d * std::exp(-(core_->lambda(T) - core_->lambda(t)) * x -
+                               (core_->M(0, 0, T, useTabulation_) -
+                                core_->M(0, 0, t, useTabulation_)) +
+                               core_->M(t, x, T, useTabulation_));
+    return result;
 }
 
 const Real BetaEta::forwardRate(const Date &fixing, const Date &referenceDate,
@@ -320,8 +351,21 @@ const Disposable<Array> BetaEta::xGrid(const Real stdDevs, const int gridPoints,
 
     Real h = stdDevs * s / (static_cast<Real>(gridPoints));
 
+    // ensure that only grid points greater or equal the barrier are generated
+    // do this by scaling the points left from x linearly
+    std::vector<Real> hx, hy;
+    Real leftX = x - h * static_cast<Real>(gridPoints);
+    hx.push_back(leftX);
+    hx.push_back(x);
+    hy.push_back(std::max(leftX, -1.0 / beta_->value()));
+    hy.push_back(x);
+
+    LinearInterpolation l(hx.begin(), hx.end(), hy.begin());
+
     for (int j = -gridPoints; j <= gridPoints; ++j) {
-        result[j + gridPoints] = x + h * (static_cast<Real>(j));
+        Real tmp = x + h * (static_cast<Real>(j));
+        result[j + gridPoints] =
+            (j < 0 && gridPoints > 0 && h > 0.0) ? l(tmp) : tmp;
     }
 
     return result;

@@ -1,7 +1,8 @@
 /* -*- mode: c++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*- */
 
 /*
- Copyright (C) 2015 Peter Caspers, Roland Lichters
+ Copyright (C) 2015 Peter Caspers
+ Copyright (C) 2015 Roland Lichters
 
  This file is part of QuantLib, a free-software/open-source library
  for financial quantitative analysts and developers - http://quantlib.org/
@@ -28,47 +29,65 @@
 #include <ql/math/array.hpp>
 #include <ql/utilities/null.hpp>
 #include <ql/math/comparison.hpp>
-#include <ql/math/integrals/gausslobattointegral.hpp>
+#include <ql/math/integrals/integral.hpp>
+#include <ql/math/integrals/gaussianquadratures.hpp>
+#include <ql/math/interpolations/interpolation2d.hpp>
+
+#include <ostream>
 
 #include <vector>
 
 namespace QuantLib {
 
-/*! cf. Hagan, Woodward: Markov interest rate models,
-    Applied Mathematical Finance 6, 233–260 (1999)
-*/
+/* see betaeta.hpp for references and more comments */
+
+/*! warning: the parameters in the constructor are linked via references
+    to their sources to be able to reflect changes immediately, so you
+    should not initialize an instance of this class with numerical constants
+    or variables with a lifetime shorter than that of this instance. */
 
 class BetaEtaCore {
   public:
-    /*! We assume a piecewise constant reversion \kappa and
-        set \lambda(t) := (1-exp(-\kappa*t))/\kappa */
     BetaEtaCore(const Array &times, const Array &alpha, const Array &kappa,
                 const Real &beta, const Real &eta);
 
-    // M(t0,x0;t)
-    const Real M(const Real t0, const Real x0, const Real t) const;
+    // normally tabulation should be used for efficiency reasons
+    // it can be switched off for validation purposes though
+    const Real M(const Real t0, const Real x0, const Real t,
+                 const bool useTabulation = true) const;
 
-    // transition density
     const Real p(const Time t0, const Real x0, const Real t,
                  const Real x) const;
 
-    // singular term for y=0 (x=-1/beta)
-    // and 1 > eta >= 0.5, otherwise 0 is returned
+    // singular term for y=0 (x=-1/beta) and 1 > eta >= 0.5,
+    // for eta = 1 or eta < 0.5, 0 is returned
     const Real singularTerm_y_0(const Time t0, const Real x0,
                                 const Time t) const;
 
-    // lambda(t)
     const Real lambda(const Time t) const;
 
-    // tau(0,t) and tau(t0,t)
     const Real tau(const Time t) const;
     const Real tau(const Time t0, const Time t) const;
 
-    // integrator
-    boost::shared_ptr<Integrator> integrator() const { return integrator_; }
+    // parameter inspectors
+    const Real beta() const { return beta_; }
+    const Real eta() const { return eta_; }
+
+    // M in transformed variables, mainly there for tabulation purposes
+    const Real M(const Real u0, const Real Su) const;
 
   private:
-    const Real y(const Real x) const;
+    const Real M_eta_1(const Real t0, const Real x0, const Real t) const;
+    const Real M_eta_05(const Real t0, const Real x0, const Real t) const;
+    const Real M_tabulated(const Real t0, const Real x0, const Real t) const;
+    const Real M_tabulated(const Real u0, const Real v) const; // for debug
+
+    const Real p_y(const Real v, const Real y0, const Real y,
+                   const Real eta) const;
+    const Real p_y_core(const Real v, const Real y0, const Real y,
+                        const Real eta) const;
+
+    const Real y(const Real x, const Real eta) const;
     const Real dydx(const Real y) const;
 
     const int lowerIndex(const Time t) const;
@@ -86,11 +105,95 @@ class BetaEtaCore {
     const Array &times_, &alpha_, &kappa_;
     const Real &beta_, &eta_;
 
-    boost::shared_ptr<GaussLobattoIntegral> integrator_;
+    boost::shared_ptr<Integrator> integrator_, integrator2_;
+    boost::shared_ptr<GaussianQuadrature> ghIntegrator_;
+    boost::shared_ptr<Integrator> preIntegrator_, preIntegrator2_;
 
-    class mIntegrand;
-    friend class mIntegrand;
+    // tabulation data
+    Size etaSize_, uSize_, vSize_;
+    std::vector<Real> eta_pre_, u_pre_, Su_pre_;
+    std::vector<boost::shared_ptr<Matrix> > M_datasets_;
+    std::vector<boost::shared_ptr<Interpolation2D> > M_surfaces_;
+
+    // avoid lambda expressions for compiler compatibility
+    class mIntegrand1;
+    friend class mIntegrand1;
+    class mIntegrand1Check;
+    friend class mIntegrand1Check;
+    class mIntegrand2;
+    friend class mIntegrand2;
+    class mIntegrand3;
+    friend class mIntegrand3;
+
+    // constants
+    const Size ghPoints_;
 };
+
+namespace detail {
+
+// tabulate values M(eta, u, v) and generate a c++ source file
+// or a gnuplot file
+
+enum betaeta_tabulation_type { Cpp, GnuplotEUV, GnuplotUEV, GnuplotVEU };
+
+const void
+betaeta_tabulate(betaeta_tabulation_type type, std::ostream &out,
+                 const Real eta_min, const Real eta_max, const Real u0_min,
+                 const Real u0_max, const Real v_min, const Real v_max,
+                 const Size usize, const Size vsize, const Size etasteps,
+                 const Real cu, const Real densityu, const Real cv,
+                 const Real densityv, const Real ce, const Real densitye);
+
+// heuristic to determine reasonable integration domains;
+// given a function f with f(c) > t, f continuous and with
+// limit zero for x to plus and minus infinity we look for
+// a0 < a < c < b < b0 with t2 < f(a) < t, t2 < f(b) < t
+
+template <class F>
+std::pair<Real, Real>
+domain(const F &f, const Real c, const Real t, const Real t2,
+       const Real accuracy = 1E-6, const Real step = 1E-4,
+       const Real a0 = -QL_MAX_REAL, const Real b0 = QL_MAX_REAL) {
+
+    Real la, lb;
+    la = c;
+    lb = c;
+    while (f(la) > t && la > a0) {
+        la = std::max(la - step, a0);
+    }
+    while (f(lb) > t && lb < b0) {
+        lb = std::min(lb + step, b0);
+    }
+    Real tmpa = la;
+    Real tmpb = c;
+    Real m = tmpa;
+    if ((f(tmpa) - t) * (f(tmpb) - t) < 0.0) {
+        while (std::fabs(tmpa - tmpb) > accuracy && f(tmpa) < t2) {
+            m = (tmpa + tmpb) / 2.0;
+            if ((f(tmpa) - t) * (f(m) - t) < 0.0)
+                tmpb = m;
+            else
+                tmpa = m;
+        }
+    }
+    Real a = m;
+    tmpa = c;
+    tmpb = lb;
+    m = tmpb;
+    if ((f(tmpa) - t) * (f(tmpb) - t) < 0.0) {
+        while (std::fabs(tmpa - tmpb) > accuracy && f(tmpb) < t2) {
+            m = (tmpa + tmpb) / 2.0;
+            if ((f(tmpa) - t) * (f(m) - t) < 0.0)
+                tmpb = m;
+            else
+                tmpa = m;
+        }
+    }
+    Real b = m;
+    return std::make_pair(a, b);
+}
+
+} // namespace detail
 
 // implementation
 
@@ -105,16 +208,16 @@ inline const Real BetaEtaCore::tau(const Real t0, const Real t) const {
     return res;
 }
 
-inline const Real BetaEtaCore::y(const Real x) const {
-    // for eta = 1 y is only well defined if x > -1/beta
-    // it is not the responsibility of the code here to ensure this
-    return close(eta_, 1.0) ? std::log(1.0 + beta_ * x) / beta_
-                            : std::pow(std::fabs(1 + beta_ * x), 1.0 - eta_) /
-                                  (beta_ * (1.0 - eta_));
+inline const Real BetaEtaCore::y(const Real x, const Real eta) const {
+    QL_REQUIRE(eta < 1.0 || x > -1.0 / beta_,
+               "for eta = 1, x must be greater than - 1 / beta");
+    return close(eta, 1.0) ? std::log(1.0 + beta_ * x) / beta_
+                           : std::pow(std::fabs(1 + beta_ * x), 1.0 - eta) /
+                                 (beta_ * (1.0 - eta));
 }
 
 inline const Real BetaEtaCore::dydx(const Real y) const {
-    return close(y, 1.0)
+    return close(eta_, 1.0)
                ? std::exp(-beta_ * y)
                : std::pow((1.0 - eta_) * beta_ * y, -eta_ / (1.0 - eta_));
 }
@@ -165,6 +268,12 @@ inline const Real BetaEtaCore::kappa(const Size index) const {
 
 inline const Real BetaEtaCore::lambda(const Time t) const {
     Real kappa = this->kappa(lowerIndex(t));
+    // the model collapses with kappa near zero,
+    // so we just keep it away a bit - this is
+    // not a numerical issue, but inherent in the
+    // model construction
+    if (std::fabs(kappa) < 1E-6)
+        kappa = kappa > 0.0 ? 1E-6 : -1E-6;
     return (1.0 - exp(-kappa * t)) / kappa;
 }
 

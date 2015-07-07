@@ -1,7 +1,8 @@
 /* -*- mode: c++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*- */
 
 /*
- Copyright (C) 2015 Peter Caspers, Roland Lichters
+ Copyright (C) 2015 Peter Caspers
+ Copyright (C) 2015 Roland Lichters
 
  This file is part of QuantLib, a free-software/open-source library
  for financial quantitative analysts and developers - http://quantlib.org/
@@ -34,9 +35,21 @@
 
 namespace QuantLib {
 
-// there is a big overlap with the Gaussian1d model interface
-// refactor this, i.e. create a common base class and build
-// the engines on top of this
+/*! cf. Hagan, Woodward: Markov interest rate models,
+    Applied Mathematical Finance 6, 233–260 (1999)
+
+    We assume a reflecting barrier at x = -1/beta (cf.
+    the last paragraph on p. 241).
+
+    We assume a piecewise constant reversion \kappa and
+    set \lambda(t) := (1-exp(-\kappa*t))/\kappa
+    note that these are effective (integrated) rather
+    than forward-forward reversions though
+*/
+
+// TODO there is a big overlap with the Gaussian1d model interface
+// refactor this, i.e. create a common base class and build the
+// engines on top of this
 
 class BetaEta : public TermStructureConsistentModel,
                 public CalibratedModel,
@@ -101,6 +114,11 @@ class BetaEta : public TermStructureConsistentModel,
                            boost::shared_ptr<SwapIndex> swapIdx =
                                boost::shared_ptr<SwapIndex>()) const;
 
+    const Array &reversion() const { return reversion_.params(); }
+    const Array &volatility() const { return sigma_.params(); }
+    const Real beta() const { return pBeta_.params()[0]; }
+    const Real eta() const { return pEta_.params()[0]; }
+
     /*! Generates a grid of values for the state variable $x$
        at time $T$ conditional on $x(t)=x$, covering stdDevs
        standard deviations assuming an approximate variance
@@ -117,13 +135,47 @@ class BetaEta : public TermStructureConsistentModel,
                          const boost::function<Real(Real)> &f, const Real t0,
                          const Real x0, const Real t) const;
 
+    /*! for testing purposes we can switch off the usage of tabulated values */
+    const void useTabulation(const bool useTabulation) {
+        if (useTabulation_ != useTabulation) {
+            useTabulation_ = useTabulation;
+            update();
+        }
+    }
+
+    // calibration constraints
+    // TODO what is of practical use here ?
+
+    Disposable<std::vector<bool> > MoveVolatility(Size i) {
+        QL_REQUIRE(i < volatilities_.size(),
+                   "volatility with index " << i << " does not exist (0..."
+                                            << volatilities_.size() - 1 << ")");
+        std::vector<bool> res(reversions_.size() + volatilities_.size() + 2,
+                              true);
+        res[reversions_.size() + i] = false;
+        return res;
+    }
+
+    // With fixed reversion, beta and eta calibrate the volatilities
+    // one by one to the given helpers. The same comments as in the
+    // corresonding method in Gsr hold.
+    void calibrateVolatilitiesIterative(
+        const std::vector<boost::shared_ptr<CalibrationHelper> > &helpers,
+        OptimizationMethod &method, const EndCriteria &endCriteria,
+        const Constraint &constraint = Constraint(),
+        const std::vector<Real> &weights = std::vector<Real>()) {
+
+        for (Size i = 0; i < helpers.size(); i++) {
+            std::vector<boost::shared_ptr<CalibrationHelper> > h(1, helpers[i]);
+            calibrate(h, method, endCriteria, constraint, weights,
+                      MoveVolatility(i));
+        }
+    }
+
   private:
     void generateArguments() { notifyObservers(); }
 
-    // It is of great importance for performance reasons to cache underlying
-    // swaps generated from indexes. In addition the indexes may only be given
-    // as templates for the conventions with the tenor replaced by the actual
-    // one later on.
+    // see Gaussian1dModel
 
     struct CachedSwapKey {
         const boost::shared_ptr<SwapIndex> index;
@@ -176,11 +228,14 @@ class BetaEta : public TermStructureConsistentModel,
         enforcesTodaysHistoricFixings_ =
             Settings::instance().enforcesTodaysHistoricFixings();
         updateTimes();
-        updateState();
     }
 
     void updateTimes() const;
-    void updateState() const;
+    void updateVolatility();
+    void updateReversion();
+    void updateBeta();
+    void updateEta();
+
     void initialize();
 
     Parameter &reversion_, &sigma_, &pBeta_, &pEta_;
@@ -202,6 +257,51 @@ class BetaEta : public TermStructureConsistentModel,
     mutable bool enforcesTodaysHistoricFixings_;
 
     boost::shared_ptr<BetaEtaCore> core_;
+    boost::shared_ptr<Integrator> integrator_, integrator2_;
+
+    class integrand {
+      public:
+        integrand(const Real t0, const Real x0, const Real t,
+                  const boost::function<Real(Real)> &f, const BetaEtaCore &core)
+            : t0_(t0), x0_(x0), t_(t), f_(f), core_(core) {}
+        Real operator()(Real x) const {
+            return f_(x) * core_.p(t0_, x0_, t_, x);
+        }
+
+      private:
+        const Real t0_, x0_, t_;
+        const boost::function<Real(Real)> &f_;
+        const BetaEtaCore &core_;
+    };
+    friend class integrand;
+
+    bool useTabulation_; // for testing, normally it should be true
+
+    struct VolatilityObserver : public Observer {
+        VolatilityObserver(BetaEta *p) : p_(p) {}
+        void update() { p_->updateVolatility(); }
+        BetaEta *p_;
+    };
+    struct ReversionObserver : public Observer {
+        ReversionObserver(BetaEta *p) : p_(p) {}
+        void update() { p_->updateReversion(); }
+        BetaEta *p_;
+    };
+    struct BetaObserver : public Observer {
+        BetaObserver(BetaEta *p) : p_(p) {}
+        void update() { p_->updateBeta(); }
+        BetaEta *p_;
+    };
+    struct EtaObserver : public Observer {
+        EtaObserver(BetaEta *p) : p_(p) {}
+        void update() { p_->updateEta(); }
+        BetaEta *p_;
+    };
+
+    boost::shared_ptr<VolatilityObserver> volatilityObserver_;
+    boost::shared_ptr<ReversionObserver> reversionObserver_;
+    boost::shared_ptr<BetaObserver> betaObserver_;
+    boost::shared_ptr<EtaObserver> etaObserver_;
 };
 
 // implementation
@@ -214,23 +314,32 @@ BetaEta::numeraire(const Date &referenceDate, const Real x,
 }
 
 inline const Real
-BetaEta::zerobond(const Date &maturity, const Date &referenceDate, const Real y,
+BetaEta::zerobond(const Date &maturity, const Date &referenceDate, const Real x,
                   const Handle<YieldTermStructure> &yts) const {
 
     return zerobond(termStructure()->timeFromReference(maturity),
                     referenceDate != Null<Date>()
                         ? termStructure()->timeFromReference(referenceDate)
                         : 0.0,
-                    y, yts);
+                    x, yts);
 }
 
 inline const Real BetaEta::integrate(const Real stdDevs,
                                      const boost::function<Real(Real)> &f,
                                      const Real t0, const Real x0,
                                      const Real t) const {
-    Real s = core_->tau(t0, t);
-    boost::shared_ptr<Integrator> i = core_->integrator();
-    return (*i)(f, x0 - stdDevs * s, x0 + stdDevs * s);
+    Real s = std::sqrt(core_->tau(t0, t));
+    integrand phi(t0, x0, t, f, *core_);
+    Real result;
+    // left integration bound should be greater or equal to barrier
+    Real a = std::max(x0 - stdDevs * s, -1.0 / beta_->value());
+    Real b = x0 + stdDevs * s;
+    try {
+        result = (*integrator_)(phi, a, b);
+    } catch (QuantLib::Error) {
+        result = (*integrator2_)(phi, a, b);
+    }
+    return result;
 }
 
 } // namespace QuantLib
