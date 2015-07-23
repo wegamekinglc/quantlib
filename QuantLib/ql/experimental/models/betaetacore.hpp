@@ -46,6 +46,11 @@ namespace QuantLib {
     should not initialize an instance of this class with numerical constants
     or variables with a lifetime shorter than that of this instance. */
 
+/*! TODO very small probabilities for y=0 sometimes cause numerical
+    instabilities when multiplied by huge terms (e.g. to compute M),
+    therefore we set them to zero if smaller than 1E-6 for the time
+    being; to be revisited */
+
 class BetaEtaCore {
   public:
     BetaEtaCore(const Array &times, const Array &alpha, const Array &kappa,
@@ -59,10 +64,9 @@ class BetaEtaCore {
     const Real p(const Time t0, const Real x0, const Real t,
                  const Real x) const;
 
-    // singular term for y=0 (x=-1/beta) and 1 > eta >= 0.5,
-    // for eta = 1 or eta < 0.5, 0 is returned
-    const Real singularTerm_y_0(const Time t0, const Real x0,
-                                const Time t) const;
+    // probability for y being zero (or x = -1 / beta)
+    const Real prob_y_0(const Time t0, const Real x0, const Time t,
+                        const bool useTabulation = true) const;
 
     const Real lambda(const Time t) const;
 
@@ -76,16 +80,26 @@ class BetaEtaCore {
     // M in transformed variables, mainly there for tabulation purposes
     const Real M(const Real u0, const Real Su) const;
 
+    // prob_y_0 in transformed variables (warning: no cutoff is applied)
+    const Real prob_y_0(const Real v, const Real y0) const;
+
   private:
     const Real M_eta_1(const Real t0, const Real x0, const Real t) const;
     const Real M_eta_05(const Real t0, const Real x0, const Real t) const;
     const Real M_tabulated(const Real t0, const Real x0, const Real t) const;
-    const Real M_tabulated(const Real u0, const Real v) const; // for debug
 
+    // density (without singular term)
     const Real p_y(const Real v, const Real y0, const Real y,
                    const Real eta) const;
-    const Real p_y_core(const Real v, const Real y0, const Real y,
-                        const Real eta) const;
+    // density (without singular term, without dy/dx)
+    const Real p_y_core0(const Real v, const Real y0, const Real y,
+                         const Real eta) const;
+    // density (without singular term, without dy/dx, but including y^{-2\nu+1})
+    const Real p_y_core1(const Real v, const Real y0, const Real y,
+                         const Real eta) const;
+
+    // warning: no cutoff is applied
+    const Real prob_y_0_tabulated(const Real v, const Real y0) const;
 
     const Real y(const Real x, const Real eta) const;
     const Real dydx(const Real y) const;
@@ -110,39 +124,65 @@ class BetaEtaCore {
     boost::shared_ptr<Integrator> preIntegrator_, preIntegrator2_;
 
     // tabulation data
-    Size etaSize_, uSize_, vSize_;
-    std::vector<Real> eta_pre_, u_pre_, Su_pre_;
-    std::vector<boost::shared_ptr<Matrix> > M_datasets_;
-    std::vector<boost::shared_ptr<Interpolation2D> > M_surfaces_;
+    Size etaSize_, uSize_, SuSize_, vSize_, y0Size_;
+    std::vector<Real> eta_pre_, u_pre_, Su_pre_, v_pre_, y0_pre_;
+    std::vector<boost::shared_ptr<Matrix> > M_datasets_, p_datasets_;
+    std::vector<boost::shared_ptr<Interpolation2D> > M_surfaces_, p_surfaces_;
 
     // avoid lambda expressions for compiler compatibility
     class mIntegrand1;
     friend class mIntegrand1;
-    class mIntegrand1Check;
-    friend class mIntegrand1Check;
+    class pIntegrand1;
+    friend class pIntegrand1;
     class mIntegrand2;
     friend class mIntegrand2;
+    class pIntegrand2;
+    friend class pIntegrand2;
     class mIntegrand3;
     friend class mIntegrand3;
 
     // constants
     const Size ghPoints_;
+    const Real prob_y_0_cutoff;
+    const Real kappa_cutoff;
 };
 
 namespace detail {
 
-// tabulate values M(eta, u, v) and generate a c++ source file
-// or a gnuplot file
+// declarations for tabulated data
 
-enum betaeta_tabulation_type { Cpp, GnuplotEUV, GnuplotUEV, GnuplotVEU };
+const unsigned int eta_pre_size = 99, u_pre_size = 100, Su_pre_size = 100;
+const unsigned int v_pre_size = 50, y0_pre_size = 50;
+extern "C" const double eta_pre[];
+extern "C" const double u_pre[];
+extern "C" const double Su_pre[];
+extern "C" const double v_pre[];
+extern "C" const double y0_pre[];
+extern "C" const double M_pre[eta_pre_size][u_pre_size][Su_pre_size];
+extern "C" const double p_pre[eta_pre_size][v_pre_size][y0_pre_size];
+
+// tabulate values M(eta, u, Su) or prob_y_0(v,y0)
+// note that the parameters for v and y0 and taken
+// from Su and u; and the eta parameters
+// (min, max, size, concentrating point, density)
+// must be identical for M and p tabulation
+
+enum betaeta_tabulation_type {
+    Cpp_M,      // cpp tabulation of M
+    Cpp_p,      // cpp tabulation of prob_y_0
+    GnuplotEUV, // gnuplot file of M, order eta-u0-Su
+    GnuplotUEV, // gnuplot file of M, order u0-eta-Su
+    GnuplotVEU, // gnuplot file of M, order Su-eta-u0
+    GnuplotP    // gnuplot file of prob_y_0
+};
 
 const void
 betaeta_tabulate(betaeta_tabulation_type type, std::ostream &out,
                  const Real eta_min, const Real eta_max, const Real u0_min,
-                 const Real u0_max, const Real v_min, const Real v_max,
-                 const Size usize, const Size vsize, const Size etasteps,
-                 const Real cu, const Real densityu, const Real cv,
-                 const Real densityv, const Real ce, const Real densitye);
+                 const Real u0_max, const Real Su_min, const Real Su_max,
+                 const Size u_size, const Size Su_size, const Size eta_size,
+                 const Real c_u, const Real density_u, const Real c_Su,
+                 const Real density_Su, const Real c_e, const Real density_e);
 
 // heuristic to determine reasonable integration domains;
 // given a function f with f(c) > t, f continuous and with
@@ -152,17 +192,25 @@ betaeta_tabulate(betaeta_tabulation_type type, std::ostream &out,
 template <class F>
 std::pair<Real, Real>
 domain(const F &f, const Real c, const Real t, const Real t2,
-       const Real accuracy = 1E-6, const Real step = 1E-4,
+       const Real accuracy = 1E-6, const Real step = 1.1,
        const Real a0 = -QL_MAX_REAL, const Real b0 = QL_MAX_REAL) {
 
     Real la, lb;
     la = c;
     lb = c;
     while (f(la) > t && la > a0) {
-        la = std::max(la - step, a0);
+        if (fabs(la) < 1.0)
+            la -= step - 1.0;
+        else
+            la = la > 0 ? la / step : la * step;
+        la = std::max(std::min(la, b0), a0);
     }
     while (f(lb) > t && lb < b0) {
-        lb = std::min(lb + step, b0);
+        if (fabs(lb) < 1.0)
+            lb += step - 1.0;
+        else
+            lb = lb > 0 ? lb * step : lb / step;
+        lb = std::max(std::min(lb, b0), a0);
     }
     Real tmpa = la;
     Real tmpb = c;
@@ -272,8 +320,8 @@ inline const Real BetaEtaCore::lambda(const Time t) const {
     // so we just keep it away a bit - this is
     // not a numerical issue, but inherent in the
     // model construction
-    if (std::fabs(kappa) < 1E-6)
-        kappa = kappa > 0.0 ? 1E-6 : -1E-6;
+    if (std::fabs(kappa) < kappa_cutoff)
+        kappa = kappa > 0.0 ? kappa_cutoff : -kappa_cutoff;
     return (1.0 - exp(-kappa * t)) / kappa;
 }
 
