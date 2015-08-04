@@ -8,8 +8,13 @@ this_include_HEADERS = \
     betaeta.hpp \
     betaetacore.hpp \
     betaetaswaptionengine.hpp \
+	gsrprocess_riskneutral.hpp \
+	lgmparametrization.hpp \
+	lgmpiecewisealphaconstantkappa.hpp \
     longstaffschwartzproxypathpricer.hpp \
     mcgaussian1dnonstandardswaptionengine.hpp \
+	multicurrencygsr.hpp \
+	multicurrencygsrprocess.hpp \
     proxynonstandardswaptionengine.hpp \
     quadraticlfm.hpp \
     sbsmilesection.hpp \
@@ -22,8 +27,12 @@ libModels_la_SOURCES = \
     betaetaswaptionengine.cpp \
     betaetatabulation.cpp \
     betaetatabulation2.cpp \
+	gsrprocess_riskneutral.cpp \
+	lgmpiecewisealphaconstantkappa.cpp \
     longstaffschwartzproxypathpricer.cpp \
     mcgaussian1dnonstandardswaptionengine.cpp \
+	multicurrencygsr.cpp \
+	multicurrencygsrprocess.cpp \
     proxynonstandardswaptionengine.cpp \
     quadraticlfm.cpp \
     sbsmilesection.cpp \

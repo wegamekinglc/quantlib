@@ -20,6 +20,8 @@
 #include <ql/experimental/models/proxynonstandardswaptionengine.hpp>
 #include <ql/math/solvers1d/brent.hpp>
 #include <ql/rebatedexercise.hpp>
+#include <ql/math/interpolations/cubicinterpolation.hpp>
+#include <ql/payoff.hpp>
 
 namespace QuantLib {
 
@@ -45,8 +47,6 @@ void ProxyNonstandardSwaptionEngine::calculate() const {
                          arguments_.exercise->dates().end(), today);
 
     Size exerciseIdx = nextExerciseDate - proxy_->expiryDates.begin();
-    Size exerciseIdxOrig =
-        nextExerciseDateOrig - arguments_.exercise->dates().begin();
 
     Real todaysTime = proxy_->model->termStructure()->timeFromReference(today);
 
