@@ -17,16 +17,33 @@
  FOR A PARTICULAR PURPOSE.  See the license for more details.
 */
 
+/*! \file cclgmpiecewise.hpp
+    \brief cross currency parametrization using piecewise alpha, constant kappa,
+           piecewise fx sigma, constant correlation
+*/
+
+#ifndef quantlib_cclgm_piecewise_hpp
+#define quantlib_cclgm_piecewise_hpp
+
+#include <ql/experimental/models/cclgmparametrization.hpp>
 #include <ql/experimental/models/lgmpiecewisealphaconstantkappa.hpp>
+#include <ql/experimental/models/lgmfxpiecewisesigma.hpp>
 
 namespace QuantLib {
 
 namespace detail {
 
-LgmPiecewiseAlphaConstantKappa::LgmPiecewiseAlphaConstantKappa(
-    const Array &times, const Array &alphas, const Array &kappa)
-    : LgmParametrization<LgmPiecewiseAlphaConstantKappa>(), times_(times),
-      alphas_(alphas), kappa_(kappa), zetas_(std::vector<Real>(times.size())) {
-}
+class CcLgmPiecewise : CcLgmParametrization<CcLgmPiecewise, LgmFxPiecewiseSigma,
+                                            LgmPiecewiseAlphaConstantKappa> {
+  public:
+    CcLgmPiecewise(
+        const std::vector<boost::shared_ptr<
+            LgmFxParametrization<LgmFxPiecewiseSigma> > > &fxParametrizations,
+        const std::vector<boost::shared_ptr<LgmParametrization<
+            LgmPiecewiseAlphaConstantKappa> > > &lgmParametrizations);
+};
+
 } // namespace detail
 } // namespace QuantLib
+
+#endif

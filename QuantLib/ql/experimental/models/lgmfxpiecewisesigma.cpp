@@ -17,16 +17,16 @@
  FOR A PARTICULAR PURPOSE.  See the license for more details.
 */
 
-#include <ql/experimental/models/lgmpiecewisealphaconstantkappa.hpp>
+#include <ql/experimental/models/lgmfxpiecewisesigma.hpp>
 
 namespace QuantLib {
 
 namespace detail {
 
-LgmPiecewiseAlphaConstantKappa::LgmPiecewiseAlphaConstantKappa(
-    const Array &times, const Array &alphas, const Array &kappa)
-    : LgmParametrization<LgmPiecewiseAlphaConstantKappa>(), times_(times),
-      alphas_(alphas), kappa_(kappa), zetas_(std::vector<Real>(times.size())) {
-}
+LgmFxPiecewiseSigma::LgmFxPiecewiseSigma(const Array &times,
+                                         const Array &sigmas)
+    : LgmFxParametrization<LgmFxPiecewiseSigma>(), times_(times),
+      sigmas_(sigmas), variances_(std::vector<Real>(times.size())) {}
+
 } // namespace detail
 } // namespace QuantLib

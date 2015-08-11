@@ -17,16 +17,26 @@
  FOR A PARTICULAR PURPOSE.  See the license for more details.
 */
 
-#include <ql/experimental/models/lgmpiecewisealphaconstantkappa.hpp>
+#include <ql/experimental/models/cclgmpiecewise.hpp>
 
 namespace QuantLib {
 
 namespace detail {
 
-LgmPiecewiseAlphaConstantKappa::LgmPiecewiseAlphaConstantKappa(
-    const Array &times, const Array &alphas, const Array &kappa)
-    : LgmParametrization<LgmPiecewiseAlphaConstantKappa>(), times_(times),
-      alphas_(alphas), kappa_(kappa), zetas_(std::vector<Real>(times.size())) {
-}
+CcLgmPiecewise::CcLgmPiecewise(
+    const std::vector<boost::shared_ptr<
+        LgmFxParametrization<LgmFxPiecewiseSigma> > > &fxParametrizations,
+    const std::vector<boost::shared_ptr<LgmParametrization<
+        detail::LgmPiecewiseAlphaConstantKappa> > > &lgmParametrizations)
+    : CcLgmParametrization<CcLgmPiecewise, LgmFxPiecewiseSigma,
+                           LgmPiecewiseAlphaConstantKappa>(
+          fxParametrizations, lgmParametrizations) {}
+
+/*! TODO implement closed form solutions for the interface methods
+  replacing the standard implementation which uses numerical integration */
+
+/* ... */
+
 } // namespace detail
+
 } // namespace QuantLib
