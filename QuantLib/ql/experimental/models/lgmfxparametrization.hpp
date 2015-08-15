@@ -31,10 +31,12 @@
 
 namespace QuantLib {
 
+namespace detail {
+
 template <class Impl>
 class LgmFxParametrization : public CuriouslyRecurringTemplate<Impl> {
   public:
-    void update() const;
+    void update();
     //! inspectors
     const Real sigma(const Time t) const;
     const Real variance(const Time t) const;
@@ -44,7 +46,7 @@ class LgmFxParametrization : public CuriouslyRecurringTemplate<Impl> {
     LgmFxParametrization() : h_(1E-6) {}
 
     //! interface
-    const void updateImpl() const {}             // optional to implement (.)
+    const void updateImpl() {}             // optional to implement (.)
     const Real varianceImpl(const Time t) const; // must be implemented (*)
     const Real sigmaImpl(const Time t) const;    // (.)
     const Real stdDeviationImpl(const Time t) const; // (.)
@@ -55,23 +57,23 @@ class LgmFxParametrization : public CuriouslyRecurringTemplate<Impl> {
 
 // inline
 
-template <class Impl> inline void LgmFxParametrization<Impl>::update() const {
+template <class Impl> inline void LgmFxParametrization<Impl>::update() {
     return this->impl().updateImpl();
 }
 
 template <class Impl>
 inline const Real LgmFxParametrization<Impl>::sigma(const Time t) const {
-    return this->impl().sigmaImpl();
+    return this->impl().sigmaImpl(t);
 }
 
 template <class Impl>
 inline const Real LgmFxParametrization<Impl>::variance(const Time t) const {
-    return this->impl().varianceImpl();
+    return this->impl().varianceImpl(t);
 }
 
 template <class Impl>
 inline const Real LgmFxParametrization<Impl>::stdDeviation(const Time t) const {
-    return this->impl().stdDeviationImpl();
+    return this->impl().stdDeviationImpl(t);
 }
 
 // default implementations
@@ -91,6 +93,8 @@ inline const Real
 LgmFxParametrization<Impl>::stdDeviationImpl(const Time t) const {
     return std::sqrt(variance(t));
 }
+
+} // namespace detail
 
 } // namespace QuantLib
 
