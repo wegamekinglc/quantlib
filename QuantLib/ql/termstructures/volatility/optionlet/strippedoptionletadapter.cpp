@@ -3,6 +3,7 @@
 /*
  Copyright (C) 2007 Giorgio Facchinetti
  Copyright (C) 2007 Katiuscia Manzoni
+ Copyright (C) 2015 Peter Caspers
 
  This file is part of QuantLib, a free-software/open-source library
  for financial quantitative analysts and developers - http://quantlib.org/
@@ -71,7 +72,8 @@ namespace QuantLib {
         return boost::shared_ptr<SmileSection>(
             new InterpolatedSmileSection<Cubic>(
                 t, optionletStrikes, stddevs, atm,
-                Cubic(CubicInterpolation::Spline, false, bc, 0.0, bc, 0.0)));
+                Cubic(CubicInterpolation::Spline, false, bc, 0.0, bc, 0.0),
+                Actual365Fixed(), volatilityType(), displacement()));
         // ----------------------
         // SABR
         // ----------------------
@@ -158,6 +160,14 @@ namespace QuantLib {
 
     Date StrippedOptionletAdapter::maxDate() const {
         return optionletStripper_->optionletFixingDates().back();
+    }
+
+    const VolatilityType StrippedOptionletAdapter::volatilityType() const {
+        return optionletStripper_->volatilityType();
+    }
+
+    const Real StrippedOptionletAdapter::displacement() const {
+        return optionletStripper_->displacement();
     }
 
 }
