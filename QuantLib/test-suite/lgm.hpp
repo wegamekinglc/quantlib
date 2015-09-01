@@ -17,23 +17,25 @@
  FOR A PARTICULAR PURPOSE.  See the license for more details.
 */
 
-#include <ql/experimental/math/piecewiseintegral.hpp>
+/*! \file lgm.hpp
+    \brief tests for the lgm one factor and cross currency models
+*/
 
-namespace QuantLib {
+#ifndef quantlib_test_lgm_hpp
+#define quantlib_test_lgm_hpp
 
-PiecewiseIntegral::PiecewiseIntegral(
-    const boost::shared_ptr<Integrator> &integrator,
-    const std::vector<Real> &criticalPoints, const bool avoidCriticalPoints)
-    : Integrator(1.0, 1), integrator_(integrator),
-      criticalPoints_(criticalPoints),
-      eps_(avoidCriticalPoints ? (1.0 + QL_EPSILON) : 1.0) {
+#include <boost/test/unit_test.hpp>
 
-    std::sort(criticalPoints_.begin(), criticalPoints_.end());
-    std::vector<Real>::const_iterator end =
-        std::unique(criticalPoints_.begin(), criticalPoints_.end(),
-                    std::ptr_fun(close_enough));
-    criticalPoints_.resize(end - criticalPoints_.begin());
+/* remember to document new and/or updated tests in the Doxygen
+   comment block of the corresponding class */
 
-}
+class LgmTest {
+  public:
+    static void testBermudanLgm1fGsr();
+    static void testLgm1fCalibration();
+    static void testLgm3fForeignPayouts();
+    static void testLgm4fAndFxCalibration();
+    static boost::unit_test_framework::test_suite *suite();
+};
 
-} // namespace QuantLib
+#endif

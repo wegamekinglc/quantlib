@@ -110,6 +110,8 @@ class CcLgmParametrization : public CuriouslyRecurringTemplate<Impl> {
                                         const Real a, const Real b) const;
     const Real int_alpha_i_sigma_j_impl(const Size i, const Size j,
                                         const Real a, const Real b) const;
+    // for i=j this is not used, but the native variance implementation
+    // in LgmFxParametrization
     const Real int_sigma_i_sigma_j_impl(const Size i, const Size j,
                                         const Real a, const Real b) const;
     const Real int_H_i_alpha_i_alpha_j_impl(const Size i, const Size j,
@@ -120,6 +122,7 @@ class CcLgmParametrization : public CuriouslyRecurringTemplate<Impl> {
     const Real int_H_i_alpha_i_sigma_j_impl(const Size i, const Size j,
                                             const Real a, const Real b) const;
 
+    //! optionally changes the integrator
     void setIntegrator(const boost::shared_ptr<Integrator> &integrator) {
         integrator_ = integrator;
     }
@@ -223,6 +226,10 @@ template <class Impl, class ImplFx, class ImplLgm>
 inline const Real
 CcLgmParametrization<Impl, ImplFx, ImplLgm>::int_sigma_i_sigma_j(
     const Size i, const Size j, const Real a, const Real b) const {
+    // use the "native" implementation if possible
+    if(i==j)
+        return fxParametrizations_[i]->variance(b) -
+               fxParametrizations_[i]->variance(a);
     return this->impl().int_sigma_i_sigma_j_impl(i, j, a, b);
 }
 
@@ -283,10 +290,12 @@ const Real CcLgmParametrization<Impl, ImplFx, ImplLgm>::rho_sigma_sigma_impl(
 
 template <class Impl, class ImplFx, class ImplLgm>
 const void CcLgmParametrization<Impl, ImplFx, ImplLgm>::update_impl() const {
-    for (Size i = 0; i < fxParametrizations_.size(); ++i)
+    for (Size i = 0; i < fxParametrizations_.size(); ++i) {
         fxParametrizations_[i]->update();
-    for (Size i = 0; i < lgmParametrizations_.size(); ++i)
+    }
+    for (Size i = 0; i < lgmParametrizations_.size(); ++i) {
         lgmParametrizations_[i]->update();
+    }
 }
 
 template <class Impl, class ImplFx, class ImplLgm>

@@ -26,6 +26,7 @@
 
 #include <ql/experimental/models/lgm.hpp>
 #include <ql/experimental/models/lgmpiecewisealphaconstantkappa.hpp>
+#include <ql/experimental/models/lgmstateprocess.hpp>
 #include <ql/models/model.hpp>
 
 namespace QuantLib {
@@ -33,7 +34,9 @@ namespace QuantLib {
 class Lgm1 : public Lgm<detail::LgmPiecewiseAlphaConstantKappa>,
              public CalibratedModel {
   public:
-    // fixed model data
+    typedef Lgm<detail::LgmPiecewiseAlphaConstantKappa> model_type;
+    typedef LgmStateProcess<detail::LgmPiecewiseAlphaConstantKappa>
+        process_type;
     Lgm1(const Handle<YieldTermStructure> &yts,
          const std::vector<Date> &volstepdates, const std::vector<Real> &alphas,
          const Real &kappa);
@@ -80,7 +83,9 @@ class Lgm1 : public Lgm<detail::LgmPiecewiseAlphaConstantKappa>,
     }
 
   protected:
-    void generateArguments() { notifyObservers(); }
+    void generateArguments() {
+        Lgm<detail::LgmPiecewiseAlphaConstantKappa>::generateArguments();
+    }
     void update() { LazyObject::update(); }
     void performCalculations() const {
         Lgm::performCalculations();

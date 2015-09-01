@@ -19,6 +19,9 @@
 
 /*! \file cclgm.hpp
     \brief multicurrency lgm model with generic parametrization
+
+    Reference: Lichters, Stamm, Gallagher: Modern Derivatives Pricing
+               and Credit Exposure Analysis, Palgrave Macmillan, 2015
 */
 
 #ifndef quantlib_multicurrency_lgm_hpp
@@ -46,7 +49,7 @@ class CcLgm : public virtual Observer, public virtual Observable {
     const Handle<YieldTermStructure> termStructure(const Size i) const {
         return boost::static_pointer_cast<CcLgmProcess<Impl, ImplFx, ImplLgm> >(
                    stateProcess())
-            ->curve(i);
+            ->termStructure(i);
     }
 
     const Size n() const { return n_; }
@@ -66,7 +69,7 @@ class CcLgm : public virtual Observer, public virtual Observable {
         QL_REQUIRE(parametrization->n() == n(),
                    "parametrization's dimension (n="
                        << parametrization->n()
-                       << ") is inconsistent to the number of models ("
+                       << ") is inconsistent with the number of models ("
                        << n() + 1 << "=n+1)");
         parametrization_->update();
     }
@@ -93,7 +96,7 @@ class CcLgm : public virtual Observer, public virtual Observable {
 template <class Impl, class ImplFx, class ImplLgm>
 CcLgm<Impl, ImplFx, ImplLgm>::CcLgm(
     const std::vector<boost::shared_ptr<Lgm<ImplLgm> > > &models)
-    : n_(models_.size() - 1), models_(models) {
+    : n_(models.size() - 1), models_(models) {
     QL_REQUIRE(models.size() >= 2, "at least two models ("
                                        << models.size() << ") must be given");
     for (Size i = 1; i < models.size(); ++i) {

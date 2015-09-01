@@ -19,8 +19,14 @@
 
 /*! \file lgm.hpp
     \brief LGM model base class
-           Reference: Patrick S. Hagan, Evaluating and hedging exotic swap
-                      instruments via LGM
+
+           References:
+
+           Patrick S. Hagan: Evaluating and hedging exotic swap
+           instruments via LGM
+
+           Lichters, Stamm, Gallagher: Modern Derivatives Pricing
+           and Credit Exposure Analysis, Palgrave Macmillan, 2015
 */
 
 #ifndef quantlib_lgm_hpp
@@ -38,8 +44,19 @@ template <class Impl> class Lgm : public Gaussian1dModel {
         return parametrization_;
     }
 
+    const Real hullWhiteSigma(const Time t) const {
+        return parametrization()->hullWhiteSigma(t);
+    }
+    const Real hullWhiteKappa(const Time t) const {
+        return parametrization()->hullWhiteKappa(t);
+    }
+
   protected:
     Lgm(const Handle<YieldTermStructure> &yts);
+    void generateArguments() {
+        parametrization()->update();
+        notifyObservers();
+    }
     void setParametrization(
         const boost::shared_ptr<detail::LgmParametrization<Impl> >
             &parametrization);
