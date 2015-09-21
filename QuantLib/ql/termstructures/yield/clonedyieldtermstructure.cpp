@@ -17,27 +17,38 @@
  FOR A PARTICULAR PURPOSE.  See the license for more details.
 */
 
-#include <ql/termstructures/yield/frozenyieldtermstructure.hpp>
+#include <ql/termstructures/yield/clonedyieldtermstructure.hpp>
 #include <ql/math/interpolations/loginterpolation.hpp>
 
 #include <boost/make_shared.hpp>
 
 namespace QuantLib {
 
-FrozenYieldTermStructure::FrozenYieldTermStructure(
+ClonedYieldTermStructure::ClonedYieldTermStructure(
     const boost::shared_ptr<YieldTermStructure> source,
-    const ReactionToTimeDecay reactionToTimeDecay)
-    : YieldTermStructure(source->dayCounter(), source->jumps(),
-                         source->jumpDates()),
+    const ReactionToTimeDecay reactionToTimeDecay,
+    const Processing processing,
+    const Calendar calendar)
+    : YieldTermStructure(source->dayCounter()),
       reactionToTimeDecay_(reactionToTimeDecay),
+      processing_(processing),
       originalEvalDate_(Settings::instance().evaluationDate()),
-      originalReferenceDate_(source->referenceDate()),
+      originalReferenceDate_(Date(source->referenceDate())),
       originalMaxDate_(source->maxDate()) {
+
+    calendar_ = calendar.empty() ? source->calendar() : calendar;
+    QL_REQUIRE(!calendar_.empty() || reactionToTimeDecay_ == FixedReferenceDate,
+               "a floating termstructure needs a calendar, none given and "
+               "source termstructures' calendar is empty, too");
 
     referenceDate_ = originalReferenceDate_;
     maxDate_ = originalMaxDate_;
     offset_ = 0.0;
     valid_ = true;
+
+    instFwdMax_ =
+        source->forwardRate(maxDate_, maxDate_, Actual365Fixed(), Continuous)
+            .rate();
 
     if (reactionToTimeDecay != FixedReferenceDate) {
         QL_REQUIRE(originalReferenceDate_ >= originalEvalDate_,
@@ -47,17 +58,36 @@ FrozenYieldTermStructure::FrozenYieldTermStructure(
                        << ") after the evaluation date ("
                        << originalEvalDate_
                        << ")");
+            try {
+                impliedSettlementDays_ = source->settlementDays();
+            } catch(...) {
+                // if the source ts has no settlement days we imply
+                // them from the difference of the original reference
+                // date and the original evaluation date
+                impliedSettlementDays_ = this->calendar().businessDaysBetween(
+                    originalEvalDate_, originalReferenceDate_);
+            }
     }
 
     discounts_.resize(originalMaxDate_.serialNumber() -
-                      originalReferenceDate_.serialNumber());
+                      originalReferenceDate_.serialNumber()+1);
     times_.resize(discounts_.size());
 
-    for (BigInteger i = originalReferenceDate_.serialNumber();
-         i <= originalMaxDate_.serialNumber(); ++i) {
-        Date d = Date(i);
+    for (BigInteger i = 0; i <= originalMaxDate_.serialNumber() -
+                                    originalReferenceDate_.serialNumber();
+         ++i) {
+        Date d = Date(originalReferenceDate_.serialNumber()
+                      +i);
         discounts_[i] = source->discount(d);
         times_[i] = timeFromReference(d);
+        if(processing == PositiveYieldsAndForwards) {
+            discounts_[i] = std::min(1.0, discounts_[i]);
+        }
+        if (processing == PositiveForwards ||
+            processing == PositiveYieldsAndForwards) {
+            if (i > 0)
+                discounts_[i] = std::min(discounts_[i - 1], discounts_[i]);
+        }
     }
 
     interpolation_ = boost::make_shared<LogLinearInterpolation>(
@@ -69,7 +99,7 @@ FrozenYieldTermStructure::FrozenYieldTermStructure(
     }
 }
 
-DiscountFactor FrozenYieldTermStructure::discountImpl(Time t) const {
+DiscountFactor ClonedYieldTermStructure::discountImpl(Time t) const {
     QL_REQUIRE(valid_, "termstructure not valid, evaluation date ("
                            << Settings::instance().evaluationDate()
                            << ") is before the evaluation date when the "
@@ -85,19 +115,18 @@ DiscountFactor FrozenYieldTermStructure::discountImpl(Time t) const {
 
     // flat fwd extrapolation
     DiscountFactor dMax = discounts_.back();
-    Rate instFwdMax = -interpolation_->derivative(tMax) / dMax;
-    return dMax * std::exp(-instFwdMax * (tEff - tMax));
+    return dMax * std::exp(-instFwdMax_ * (tEff - tMax));
 }
 
-void FrozenYieldTermStructure::update() {
+void ClonedYieldTermStructure::update() {
+    YieldTermStructure::update();
     if (reactionToTimeDecay_ != FixedReferenceDate) {
         Date today = Settings::instance().evaluationDate();
         if (today < originalEvalDate_) {
             valid_ = false;
         } else {
             valid_ = true;
-            referenceDate_ = today + (originalReferenceDate_.serialNumber() -
-                                      originalEvalDate_.serialNumber());
+            referenceDate_ = calendar().advance(today, impliedSettlementDays_ * Days);
             if (reactionToTimeDecay_ == ForwardForward) {
                 offset_ = dayCounter().yearFraction(originalReferenceDate_,
                                                     referenceDate_);
