@@ -25,13 +25,11 @@
 #define quantlib_quasigaussian1d_linear_model_hpp
 
 #include <ql/experimental/models/qg1dlocalvolmodel.hpp>
-#include <ql/models/model.hpp>
 
 namespace QuantLib {
 
 class Qg1dLinearModel
     : public Qg1dLocalVolModel,
-      public TermStructureConsistentModel,
       public virtual Observer /* delete if deriving from CalibratedModel */
 {
   public:
@@ -42,23 +40,30 @@ class Qg1dLinearModel
         with \lambda, \alpha, \beta, \kappa stepwise constant on
         a common grid */
     Qg1dLinearModel(const Handle<YieldTermStructure> &yts,
-                          const std::vector<Date> stepDates,
-                          const std::vector<Real> &lambda,
-                          const std::vector<Real> &alpha,
-                          const std::vector<Real> &beta,
-                          const std::vector<Real> &kappa);
-
+                    const std::vector<Date> stepDates,
+                    const std::vector<Real> &lambda,
+                    const std::vector<Real> &alpha,
+                    const std::vector<Real> &beta,
+                    const std::vector<Real> &kappa);
+    /* qG local vol model interface */
     Real kappa(const Real t) const;
     Real g(const Real t, const Real x, const Real y) const;
 
+    /* overwrite default implementations by more efficient ones */
+    Real h(const Real t) const;
+    Real sigma_f(const Real t, const Real T, const Real x, const Real y) const;
+
+    /* additional inspectors */
     Real lambda(const Real t) const;
     Real alpha(const Real t) const;
     Real beta(const Real t) const;
 
+    /* Observer interface */
     void update();
 
   private:
     void updateTimes() const;
+    void updateIntKappa() const;
     void initialize();
 
     mutable std::vector<Real> volsteptimes_;
@@ -67,7 +72,21 @@ class Qg1dLinearModel
     const Handle<YieldTermStructure> yts_;
     const std::vector<Date> stepDates_;
     const std::vector<Real> lambda_, alpha_, beta_, kappa_;
+    mutable std::vector<Real> intKappa_;
 };
+
+// inline
+
+inline void Qg1dLinearModel::update() { updateTimes(); }
+
+inline Real Qg1dLinearModel::g(const Real t, const Real x, const Real y) const {
+    return lambda(t) * (alpha(t) + beta(t) * x) / h(t);
+}
+
+inline Real Qg1dLinearModel::sigma_f(const Real t, const Real T, const Real x,
+                                     const Real y) const {
+    return lambda(t) * (alpha(t) + beta(t) * x);
+}
 
 } // namespace QuantLib
 
