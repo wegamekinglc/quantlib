@@ -136,7 +136,7 @@ testCaseCollection.xml
 *~
 *.ncb
 *.suo
-*.vcproj.*.userg
+*.vcproj.*.user
 *.vcxproj.user
 *.log
 *.sdf
