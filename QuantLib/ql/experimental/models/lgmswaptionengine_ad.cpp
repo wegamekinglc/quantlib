@@ -25,16 +25,17 @@ namespace QuantLib {
 namespace {
 // ad library interface
 // for the plain interface, remove ad_ from the method name
-// and the parameter dres from the parameter list
+// and the parameter dres from the parameter list, and below
+// in the invokation.
 // for a stub interface remove extern "C" and add a dummy
-// implementation (with just a return statement)
-/*extern "C"*/ void lgm_swaption_engine_(
+// implementation (with just a return statement).
+extern "C" void lgm_swaption_engine_ad_(
     int *n_times, double *times, double *modpar, int *n_expiries, int *expiries,
     int *callput, int *n_floats, int *float_startidxes, double *float_mults,
     double *index_acctimes, double *float_spreads, int *float_t1s,
     int *float_t2s, int *float_tps, int *fix_startidxes, int *n_fixs,
     double *fix_cpn, int *fix_tps, int *integration_points, double *stddevs,
-    double *res /*, double *dres*/) {}
+    double *res, double *dres);
 }
 
 void LgmSwaptionEngineAD::calculate() const {
@@ -182,16 +183,27 @@ void LgmSwaptionEngineAD::calculate() const {
     int nfixs = fix_cpn.size();
 
     double res = 0.0;
+    std::vector<Real> dres(3*ntimes);
     int integration_pts = integrationPoints_;
     double std_devs = stddevs_;
-    lgm_swaption_engine_(&ntimes, &allTimes[0], &modpar[0], &nexpiries,
+    lgm_swaption_engine_ad_(&ntimes, &allTimes[0], &modpar[0], &nexpiries,
                          &expiries[0], &callput, &nfloats, &float_startidxes[0],
                          &float_mults[0], &index_acctimes[0], &float_spreads[0],
                          &floatt1s[0], &floatt2s[0], &floattps[0],
                          &fix_startidxes[0], &nfixs, &fix_cpn[0], &fixtps[0],
-                         &integration_pts, &std_devs, &res);
+                         &integration_pts, &std_devs, &res, &dres[0]);
 
     results_.value = res;
+
+    std::vector<Real> H_sensitivity(dres.begin(),dres.begin()+ntimes);
+    std::vector<Real> zeta_sensitivity(dres.begin()+ntimes,dres.begin()+2*ntimes);
+    std::vector<Real> discount_sensitivity(dres.begin()+2*ntimes,dres.begin()+3*ntimes);
+
+    results_.additionalResults["sensitivityTimes"] = allTimes;
+    results_.additionalResults["sensitivityH"] = H_sensitivity;
+    results_.additionalResults["sensitivityZeta"] = zeta_sensitivity;
+    results_.additionalResults["sensitivityDiscount"] = discount_sensitivity;
+
 }
 
 } // namespace QuantLib
