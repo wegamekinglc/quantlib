@@ -1,12 +1,47 @@
 ! to dos:
 ! multicurve
 
+! erf is not known in OpenAD/F, so we have to define an own version here
+! see numerical recipes, 6.2.2
+double precision function erfc_tmp(x)
+  implicit none
+  double precision:: x, t, z, ans
+  z = abs(x)
+  t = 2.0d0/(2.0d0+z)
+  ans=t*exp(-z*z-1.26551223+t*(1.00002368+t*(0.37409196+t*(0.09678418+ &
+       t*(-0.18628806+t*(0.27886807+t*(-1.13520398+t*(1.48851587+ &
+       t*(-0.82215223+t*0.17087277)))))))))
+  if (x >= 0.0d0) then
+     erfc_tmp = ans
+  else
+     erfc_tmp = 2.0d0-ans
+  endif
+end function erfc_tmp
+
+! floor is not known in OpenAD/F, this is an own implementation
+double precision function floor_tmp(x)
+  implicit none
+  double precision:: x
+  floor_tmp = int(x)
+end function floor_tmp
+
+double precision function discount(t1,t0,x,n_times,modpar)
+  implicit none
+  integer:: t1, t0, n_times
+  double precision:: x
+  double precision:: modpar(0:3*n_times)
+  discount = modpar(2*n_times+t1) * exp(-modpar(t1)*(x+0.5*modpar(n_times+t0)*modpar(t1)))
+end function discount
+
 subroutine lgm_swaption_engine(n_times, times, modpar, n_expiries, &
      expiries, callput, n_floats, &
      float_startidxes, float_mults, index_acctimes, float_spreads, float_t1s, float_t2s, float_tps, &
      fix_startidxes, n_fixs, fix_cpn, fix_tps, integration_points, stddevs, res)
 
   implicit none
+
+  ! functions
+  double precision:: discount, erfc_tmp, floor_tmp
 
   ! constants
 
@@ -46,7 +81,7 @@ subroutine lgm_swaption_engine(n_times, times, modpar, n_expiries, &
   double precision:: h, sigma_t0_t1, sigma_0_t0, sigma_0_t1
   double precision:: center, yidx, c, d, e, ca, da, x0, x1, price
   double precision:: weight0, weight1, floatlegnpv, fixlegnpv
-  double precision:: discount, forward, exercisevalue
+  double precision:: df, df2, forward, exercisevalue
 
   integer:: swapflag
 
@@ -59,7 +94,7 @@ subroutine lgm_swaption_engine(n_times, times, modpar, n_expiries, &
 
   swapflag = 0
 
-  !$openad INDEPENDENT(activevars)
+  !$openad INDEPENDENT(modpar)
 
   expiry0idx = expiries(n_expiries-1)
   expiry1idx = 0
@@ -105,7 +140,7 @@ subroutine lgm_swaption_engine(n_times, times, modpar, n_expiries, &
            do i=0, 2*integration_points, 1
               yidx = ((center*sigma_0_t0+dble(i-integration_points)/dble(integration_points)* &
                    stddevs*sigma_t0_t1)/sigma_0_t1 + stddevs) / (2.0d0*stddevs) * dble(2*integration_points)
-              yidx0 = floor(yidx)
+              yidx0 = floor_tmp(yidx)
               yidx1 = yidx0+1
               weight0 = yidx1 - yidx
               weight1 = yidx - yidx0
@@ -137,10 +172,10 @@ subroutine lgm_swaption_engine(n_times, times, modpar, n_expiries, &
               d = (val(i+1)-val(i))/(z(i+1)-z(i))
               e = (val(i)*z(i+1)-val(i+1)*z(i)) / (z(i+1)-z(i))
               da = M_SQRT2 * d
-              price = price + (0.5d0 * e * erf(x1) - &
+              price = price + (0.5d0 * e * (1.0 - erfc_tmp(x1)) - &
                    1.0d0 / (4.0d0 * M_SQRTPI) * exp(-x1 * x1) * &
                    (2.0d0 * da)) - &
-                   (0.5d0 * e * erf(x0) - &
+                   (0.5d0 * e * (1.0 - erfc_tmp(x0)) - &
                    1.0d0 / (4.0d0 * M_SQRTPI) * exp(-x0 * x0) * &
                    (2.0d0 * da))
            end do
@@ -152,24 +187,16 @@ subroutine lgm_swaption_engine(n_times, times, modpar, n_expiries, &
         if(idx >= 0) then
            floatlegnpv = 0.0d0
            do l = float_startidxes(idx), n_floats-1, 1
-              forward = (modpar(2*n_times+float_t1s(l)) * &
-                   exp(-modpar(float_t1s(l))*(z(k)*sigma_0_t0+ &
-                   0.5*modpar(n_times+expiries(idx))*modpar(float_t1s(l)))) / &
-                   (modpar(2*n_times+float_t2s(l)) * &
-                   exp(-modpar(float_t2s(l))*(z(k)*sigma_0_t0+ &
-                   0.5*modpar(n_times+expiries(idx))*modpar(float_t2s(l))))) &
+              forward = (discount(float_t1s(l),expiries(idx),z(k)*sigma_0_t0,n_times,modpar) / &
+                   discount(float_t2s(l),expiries(idx),z(k)*sigma_0_t0,n_times,modpar) &
                    - 1.0d0) / index_acctimes(l)
-              discount =  modpar(2*n_times+float_tps(l)) * &
-                   exp(-modpar(float_tps(l))*(z(k)*sigma_0_t0+ &
-                   0.5*modpar(n_times+expiries(idx))*modpar(float_tps(l))))
-              floatlegnpv = floatlegnpv + float_mults(l) * ( float_spreads(l) + forward) * discount
+              df =  discount(float_tps(l),expiries(idx),z(k)*sigma_0_t0,n_times,modpar)
+              floatlegnpv = floatlegnpv + float_mults(l) * ( float_spreads(l) + forward) * df
            end do
            fixlegnpv = 0.0d0
            do l = fix_startidxes(idx), n_fixs-1, 1
-              discount =  modpar(2*n_times+fix_tps(l)) * &
-                   exp(-modpar(fix_tps(l))*(z(k)*sigma_0_t0+ &
-                   0.5*modpar(n_times+expiries(idx))*modpar(fix_tps(l))))
-              fixlegnpv = fixlegnpv + fix_cpn(l) * discount
+              df =  discount(fix_tps(l),expiries(idx),z(k)*sigma_0_t0,n_times,modpar)
+              fixlegnpv = fixlegnpv + fix_cpn(l) * df
            end do
            exercisevalue = callput * (floatlegnpv - fixlegnpv)
            npv(k,swapflag) = max(npv(k,swapflag),exercisevalue)

@@ -1,7 +1,7 @@
 subroutine lgm_swaption_engine_ad(n_times, times, modpar, n_expiries, &
      expiries, callput, n_floats, &
      float_startidxes, float_mults, index_acctimes, float_spreads, float_t1s, float_t2s, float_tps, &
-     fix_startidxes, n_fixs, fix_cpn, fix_tps, integration_points, stddevs, res)
+     fix_startidxes, n_fixs, fix_cpn, fix_tps, integration_points, stddevs, res, dres)
 
   use OAD_active
   use OAD_rev
@@ -30,15 +30,17 @@ subroutine lgm_swaption_engine_ad(n_times, times, modpar, n_expiries, &
   double precision:: stddevs
 
   double precision:: res
+  double precision, dimension(0:3*n_times-1):: dres
 
+  ! additional variables
   integer:: i
 
   ! copy inputs to active types and initialize derivatives
 
-  type(active):: times_ad(0:n_times-1), res_ad
+  type(active):: modpar_ad(0:3*n_times-1), res_ad
 
-  do i = 0, n_times-1, 1
-     times_ad(i)%v = times(i)
+  do i = 0, 3*n_times-1, 1
+     modpar_ad(i)%v = modpar(i)
   end do
 
   res_ad%v=0.0d0
@@ -46,12 +48,15 @@ subroutine lgm_swaption_engine_ad(n_times, times, modpar, n_expiries, &
 
   ! call routine
   our_rev_mode%tape=.true.
-  call lgm_swaption_engine(n_times, times_ad, res_ad)
+  call lgm_swaption_engine(n_times, times, modpar_ad, n_expiries, &
+     expiries, callput, n_floats, &
+     float_startidxes, float_mults, index_acctimes, float_spreads, float_t1s, float_t2s, float_tps, &
+     fix_startidxes, n_fixs, fix_cpn, fix_tps, integration_points, stddevs, res_ad)
 
   ! copy results
   res = res_ad%v
-  do i = 0, n_times-1, 1
-     dres(i) = times_ad(i)%d
+  do i = 0, 3*n_times-1, 1
+     dres(i) = modpar_ad(i)%d
   end do
 
 end subroutine lgm_swaption_engine_ad
