@@ -19,44 +19,48 @@ int main() {
         boost::shared_ptr<IborIndex> euribor6m =
             boost::make_shared<Euribor>(6 * Months, yts);
 
-        Real strike = 0.02;
-
-        Date effectiveDate = TARGET().advance(evalDate, 2 * Days);
-        Date startDate = TARGET().advance(effectiveDate, 1 * Years);
-        Date maturityDate = TARGET().advance(startDate, 9 * Years);
-
-        Schedule fixedSchedule(startDate, maturityDate, 1 * Years, TARGET(),
-                               ModifiedFollowing, ModifiedFollowing,
-                               DateGeneration::Forward, false);
-        Schedule floatingSchedule(startDate, maturityDate, 6 * Months, TARGET(),
-                                  ModifiedFollowing, ModifiedFollowing,
-                                  DateGeneration::Forward, false);
-
-        boost::shared_ptr<VanillaSwap> underlying =
-            boost::make_shared<VanillaSwap>(VanillaSwap(
-                VanillaSwap::Payer, 1.0, fixedSchedule, strike, Thirty360(),
-                floatingSchedule, euribor6m, 0.0, Actual360()));
-
-        boost::shared_ptr<PricingEngine> discountingEngine =
-            boost::make_shared<DiscountingSwapEngine>(yts);
-        underlying->setPricingEngine(discountingEngine);
-
-        std::clog << "underlying price = " << underlying->NPV() << std::endl;
-        std::clog << "fair rate = " << underlying->fairRate() << std::endl;
+        std::vector<boost::shared_ptr<Swaption> > swaptions;
 
         std::vector<Date> exerciseDates;
-        std::clog << "exercise dates:" << std::endl;
-        for (Size i = 0; i < 9; ++i) {
-            exerciseDates.push_back(
-                TARGET().advance(fixedSchedule[i], -2 * Days));
-            std::clog << exerciseDates.back() << "\n";
+
+        for (Size i = 0; i < 10; ++i) {
+
+            Real strike = 0.02 + static_cast<Real>(i) * 0.0010;
+
+            Date effectiveDate = TARGET().advance(evalDate, 2 * Days);
+            Date startDate = TARGET().advance(effectiveDate, 1 * Years);
+            Date maturityDate =
+                TARGET().advance(startDate, 10 * Years); // maturity here !!!
+
+            Schedule fixedSchedule(startDate, maturityDate, 1 * Years, TARGET(),
+                                   ModifiedFollowing, ModifiedFollowing,
+                                   DateGeneration::Forward, false);
+            Schedule floatingSchedule(startDate, maturityDate, 6 * Months,
+                                      TARGET(), ModifiedFollowing,
+                                      ModifiedFollowing,
+                                      DateGeneration::Forward, false);
+
+            // std::clog << "exercise dates:" << std::endl;
+            exerciseDates.clear();
+            for (Size ii = 0; ii < 9; ++ii) {
+                exerciseDates.push_back(
+                    TARGET().advance(fixedSchedule[ii], -2 * Days));
+                // std::clog << exerciseDates.back() << "\n";
+            }
+
+            boost::shared_ptr<Exercise> exercise =
+                boost::make_shared<BermudanExercise>(exerciseDates, false);
+
+            boost::shared_ptr<VanillaSwap> underlying =
+                boost::make_shared<VanillaSwap>(VanillaSwap(
+                    VanillaSwap::Payer, 1.0, fixedSchedule, strike, Thirty360(),
+                    floatingSchedule, euribor6m, 0.0, Actual360()));
+
+            boost::shared_ptr<Swaption> swaption =
+                boost::make_shared<Swaption>(underlying, exercise);
+
+            swaptions.push_back(swaption);
         }
-
-        boost::shared_ptr<Exercise> exercise =
-            boost::make_shared<BermudanExercise>(exerciseDates, false);
-
-        boost::shared_ptr<Swaption> swaption =
-            boost::make_shared<Swaption>(underlying, exercise);
 
         std::vector<Date> stepDates(exerciseDates.begin(),
                                     exerciseDates.end() - 1);
@@ -71,21 +75,38 @@ int main() {
             boost::make_shared<Lgm1>(yts, stepDates, sigmas, reversion);
 
         boost::shared_ptr<PricingEngine> swaptionEngineGsr =
-            boost::make_shared<Gaussian1dSwaptionEngine>(
-                gsr, 64, 7.0, true, false);
+            boost::make_shared<Gaussian1dSwaptionEngine>(gsr, 64, 6.0, false,
+                                                         false);
 
         boost::shared_ptr<PricingEngine> swaptionEngineLgm =
-            boost::make_shared<Gaussian1dSwaptionEngine>(
-                lgm, 64, 7.0, true, false);
+            boost::make_shared<Gaussian1dSwaptionEngine>(lgm, 64, 6.0, false,
+                                                         false);
 
-        swaption->setPricingEngine(swaptionEngineGsr);
-        Real npvGsr = swaption->NPV();
-        swaption->setPricingEngine(swaptionEngineLgm);
-        Real npvLgm = swaption->NPV();
+        // ----------------------------------
+        // test fortran (ad) engine
+        // ----------------------------------
 
-        std::clog.precision(16);
-        std::clog << "npv (Gsr) = " << npvGsr << std::endl;
-        std::clog << "npv (Lgm) = " << npvLgm << std::endl;
+        boost::shared_ptr<PricingEngine> swaptionEngineLgmAD =
+            boost::make_shared<LgmSwaptionEngineAD>(lgm, 64, 6.0);
+
+        for (Size i = 0; i < 1; ++i) {
+            swaptions[i]->setPricingEngine(swaptionEngineLgmAD);
+            Real npvLgmAD = swaptions[i]->NPV();
+            std::clog << "i=" << i << " npv (LgmAD) = " << npvLgmAD
+                      << std::endl;
+            std::vector<Real> times =
+                swaptions[i]->result<std::vector<Real> >("sensitivityTimes");
+            std::vector<Real> sensH =
+                swaptions[i]->result<std::vector<Real> >("sensitivityH");
+            std::vector<Real> sensZ =
+                swaptions[i]->result<std::vector<Real> >("sensitivityZeta");
+            std::vector<Real> sensD =
+                swaptions[i]->result<std::vector<Real> >("sensitivityDiscount");
+            for (Size j = 0; j < times.size(); ++j) {
+                std::clog << j << ";" << times[j] << ";" << sensH[j] << ";"
+                          << sensZ[j] << ";" << sensD[j] << std::endl;
+            }
+        }
 
         return 0;
 

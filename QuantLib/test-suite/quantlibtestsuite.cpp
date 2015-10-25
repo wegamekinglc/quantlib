@@ -117,6 +117,7 @@
 #include "libormarketmodelprocess.hpp"
 #include "linearleastsquaresregression.hpp"
 #include "jumpdiffusion.hpp"
+#include "lgm.hpp"
 #include "lookbackoptions.hpp"
 #include "lowdiscrepancysequences.hpp"
 #include "margrabeoption.hpp"
@@ -239,6 +240,8 @@ namespace QuantLib {
 
 test_suite* init_unit_test_suite(int, char* []) {
 
+    configure();
+
     std::ostringstream settingsDesc;
     settingsDesc << QuantLib::Settings::instance();
     std::string header =
@@ -276,8 +279,6 @@ test_suite* init_unit_test_suite(int, char* []) {
     test_suite* test = BOOST_TEST_SUITE("QuantLib test suite");
 
     test->add(QUANTLIB_TEST_CASE(startTimer));
-    // ensure execution even when a test case filter is specified
-    configure();
 
     test->add(AmericanOptionTest::suite());
     test->add(ArrayTest::suite());

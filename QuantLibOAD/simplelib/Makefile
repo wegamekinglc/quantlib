@@ -15,7 +15,7 @@ toolChain : simplelib.f90
 plain: libsimplelib.so
 
 libsimplelib.so: simplelib.o
-	${F90C} -shared -o $@ $^
+	${F90C} -shared -o simplelibad.so $^
 
 %.o: %.f90
 	${F90C} -g -O3 -o $@ -c $< -fpic
